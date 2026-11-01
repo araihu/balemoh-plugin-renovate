@@ -141,6 +141,10 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 		d.SourceOccurrences = len(rows)
 		base := rows[0]
 		d.CurrentValue = base.Current
+		// Renovate uses an empty tag for digest-only references; the wire contract uses null.
+		if d.CurrentValue != nil && *d.CurrentValue == "" {
+			d.CurrentValue = nil
+		}
 		d.CurrentDigest = base.Digest
 		ambiguous := false
 		for _, row := range rows[1:] {
@@ -178,7 +182,7 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 				if len(u.Branch) <= 256 && !strings.ContainsAny(u.Branch, "\r\n\t") {
 					c.BranchName = u.Branch
 				}
-				key := (rawUpgrade{File: d.PackageFile, Package: d.PackageName, Name: base.Name, Current: d.CurrentValue, CurrentDigest: d.CurrentDigest, Value: u.Value, Digest: u.Digest, Type: u.Type}).tuple(u.Branch)
+				key := (rawUpgrade{File: d.PackageFile, Package: d.PackageName, Name: base.Name, Current: base.Current, CurrentDigest: base.Digest, Value: u.Value, Digest: u.Digest, Type: u.Type}).tuple(u.Branch)
 				matches := []rawBranch{}
 				for _, b := range r.Branches {
 					if b.Name != u.Branch || b.Name == "" {

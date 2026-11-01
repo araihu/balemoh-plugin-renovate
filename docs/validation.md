@@ -110,3 +110,8 @@ Evidence: image-upgrades-review-fixes-2026-10-31 contains final screenshots, che
 The first cluster run failed closed in preparation before repository access. With an empty tmpfs, the pinned image's containerbase wrapper writes tool initialization messages to stdout before the version. Exact comparison of the wrapper output therefore rejected a valid installed engine. Version validation now invokes the installed Renovate Node entry point directly; the scan still uses the image wrapper and the fixed full dry-run profile.
 
 `TestCollectorColdReadOnlyImage` builds the real collector and runs it in the pinned image with network disabled, a read-only root, empty tmpfs work/tmp/snapshots and an inert fake token. It must pass preparation and fail in provenance, proving a cold image reaches the network boundary without loosening version validation. The test, race suite and vet passed locally on ARM64. Native AMD64 is covered by the existing container-test CI job.
+
+
+## Digest-only reference correction, 2026-11-01
+
+The real repository report exposed empty currentValue strings on digest-only references. The strict snapshot schema correctly rejects empty tags, so normalization now emits null for that absent display tag while retaining the native empty value for exact branch/PR joins. The new synthetic regression failed before the fix, then passed with digest and PR association retained. The previously captured private image-scope report now normalizes to 190 source records and 158 groups. Raw private reports are not committed. Race/vet passed; final cluster publication still requires the corrected image.
