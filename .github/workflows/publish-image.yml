@@ -12,13 +12,13 @@ concurrency:
 
 jobs:
   checks:
-    if: github.repository == 'araihu/balemoh-plugin-renovate' && github.ref == 'refs/heads/main'
+    if: github.repository == 'araihu/balemoh-plugin-renovate' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
   publish:
     needs: checks
-    if: github.repository == 'araihu/balemoh-plugin-renovate' && github.ref == 'refs/heads/main'
+    if: github.repository == 'araihu/balemoh-plugin-renovate' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

@@ -4,6 +4,7 @@ USER root
 COPY dist/package/ /opt/image-upgrades/package/
 COPY dist/collector-${TARGETARCH} /usr/local/bin/image-upgrades-collector
 COPY dist/snapshot-server-${TARGETARCH} /usr/local/bin/image-upgrades-server
+COPY dist/request-controller-${TARGETARCH} /usr/local/bin/image-upgrades-controller
 USER 12021
 ENTRYPOINT []
 CMD ["/usr/local/bin/image-upgrades-collector"]

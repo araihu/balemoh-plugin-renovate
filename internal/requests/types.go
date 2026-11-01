@@ -1,0 +1,79 @@
+// Package requests owns durable, explicitly approved Renovate execution requests.
+package requests
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
+)
+
+type Selection struct {
+	DependencyID   string `json:"dependencyId"`
+	CandidateID    string `json:"candidateId"`
+	SnapshotDigest string `json:"snapshotDigest"`
+}
+
+type PullRequest struct {
+	Number  int    `json:"number"`
+	URL     string `json:"url"`
+	HeadSHA string `json:"headSha"`
+	State   string `json:"state"`
+	Checks  string `json:"checks"`
+}
+
+type Record struct {
+	SnapshotDigest string              `json:"snapshotDigest"`
+	ID             string              `json:"id"`
+	Repository     snapshot.Repository `json:"repository"`
+	Dependency     snapshot.Dependency `json:"dependency"`
+	Candidate      snapshot.Candidate  `json:"candidate"`
+	Branch         string              `json:"branch"`
+	State          string              `json:"state"`
+	Reason         string              `json:"reason,omitempty"`
+	CreatedAt      time.Time           `json:"createdAt"`
+	UpdatedAt      time.Time           `json:"updatedAt"`
+	TrackedAt      *time.Time          `json:"trackedAt,omitempty"`
+	TrackingError  bool                `json:"trackingError"`
+	PR             *PullRequest        `json:"pr,omitempty"`
+}
+
+type Catalog struct {
+	Enabled  bool     `json:"enabled"`
+	Requests []Record `json:"requests"`
+}
+
+func Digest(s *snapshot.Snapshot) string {
+	data, _ := json.Marshal(s)
+	// The adapter's canonical ID also keeps input representation unambiguous.
+	return snapshot.ID(string(data))
+}
+
+func Supported(d snapshot.Dependency, c snapshot.Candidate) bool {
+	return (d.Manager == "kubernetes" || d.Manager == "docker-compose" || d.Manager == "dockerfile") &&
+		!strings.ContainsAny(d.PackageFile, "*?[]{}!\\") && regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./:_-]*$`).MatchString(d.PackageName) &&
+		d.Assessment == "updates_found" && d.CurrentValue != nil && c.NewValue != nil &&
+		regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`).MatchString(*d.CurrentValue) && regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`).MatchString(*c.NewValue) &&
+		c.NewDigest == nil && d.CurrentDigest == nil &&
+		(c.UpdateType == "major" || c.UpdateType == "minor" || c.UpdateType == "patch") &&
+		c.Policy != "excluded" && c.Policy != "ignored"
+}
+
+func (r Record) Validate() error {
+	states := map[string]bool{"queued": true, "running": true, "awaiting_pr": true, "open": true, "draft": true, "closed": true, "merged": true, "blocked": true, "needs_attention": true}
+	if !identifier.MatchString(r.SnapshotDigest) || !states[r.State] || !Supported(r.Dependency, r.Candidate) || !identifier.MatchString(r.ID) || r.ID != snapshot.ID(r.Repository, r.Dependency.ID, r.Candidate.ID) || r.Branch != "balemoh-renovate/"+r.ID || !sha.MatchString(r.Repository.Commit) || r.Repository.Platform != "github" || r.CreatedAt.IsZero() || r.UpdatedAt.Before(r.CreatedAt) || r.UpdatedAt.After(time.Now().Add(5*time.Minute)) {
+		return errors.New("invalid request record")
+	}
+	d := r.Dependency
+	if d.ID != snapshot.ID(r.Repository.Platform, r.Repository.Name, r.Repository.BaseBranch, d.Manager, d.PackageFile, d.DependencyKey, d.PackageName) || r.Candidate.ID != snapshot.ID(d.ID, r.Candidate.NewValue, r.Candidate.NewDigest, r.Candidate.UpdateType) {
+		return errors.New("invalid request identity")
+	}
+	if r.PR != nil && (!sha.MatchString(r.PR.HeadSHA) || r.PR.Number < 1 || r.PR.URL != fmt.Sprintf("https://github.com/%s/pull/%d", r.Repository.Name, r.PR.Number) || !regexp.MustCompile(`^(open|draft|closed|merged)$`).MatchString(r.PR.State) || !regexp.MustCompile(`^(passing|pending|failing|unknown)$`).MatchString(r.PR.Checks)) {
+		return errors.New("invalid PR association")
+	}
+	return nil
+}

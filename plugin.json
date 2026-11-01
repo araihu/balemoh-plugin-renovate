@@ -1,32 +1,161 @@
 {
   "manifestVersion": 1,
   "id": "araihu.image-upgrades",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "name": "Image upgrades",
   "protocol": "balemoh.plugins/v1alpha1",
   "uiProfile": "balemoh.goshtoso/v1alpha2",
   "targets": {
-    "darwin/arm64": {"ui": "bin/darwin-arm64/ui", "backend": "bin/darwin-arm64/backend"},
-    "linux/arm64": {"ui": "bin/linux-arm64/ui", "backend": "bin/linux-arm64/backend"},
-    "linux/amd64": {"ui": "bin/linux-amd64/ui", "backend": "bin/linux-amd64/backend"}
+    "darwin/arm64": {
+      "ui": "bin/darwin-arm64/ui",
+      "backend": "bin/darwin-arm64/backend"
+    },
+    "linux/arm64": {
+      "ui": "bin/linux-arm64/ui",
+      "backend": "bin/linux-arm64/backend"
+    },
+    "linux/amd64": {
+      "ui": "bin/linux-amd64/ui",
+      "backend": "bin/linux-amd64/backend"
+    }
   },
   "connectionSchema": "schemas/connection.json",
-  "secrets": [{"id": "snapshot-token", "required": false}, {"id": "snapshot-ca", "required": false}],
+  "secrets": [
+    {
+      "id": "snapshot-token",
+      "required": false
+    },
+    {
+      "id": "snapshot-ca",
+      "required": false
+    },
+    {
+      "id": "controller-read-token",
+      "required": false
+    },
+    {
+      "id": "controller-action-token",
+      "required": false
+    },
+    {
+      "id": "controller-ca",
+      "required": false
+    }
+  ],
   "queries": [
-    {"id": "upgrades.summary", "inputSchema": "schemas/summary-input.json", "outputSchema": "schemas/summary-output.json", "capability": "data.query/v1"},
-    {"id": "upgrades.list", "inputSchema": "schemas/list-input.json", "outputSchema": "schemas/list-output.json", "capability": "data.query/v1"},
-    {"id": "upgrades.get", "inputSchema": "schemas/get-input.json", "outputSchema": "schemas/get-output.json", "capability": "data.query/v1"}
+    {
+      "id": "upgrades.summary",
+      "inputSchema": "schemas/summary-input.json",
+      "outputSchema": "schemas/summary-output.json",
+      "capability": "data.query/v1"
+    },
+    {
+      "id": "upgrades.list",
+      "inputSchema": "schemas/list-input.json",
+      "outputSchema": "schemas/list-output.json",
+      "capability": "data.query/v1"
+    },
+    {
+      "id": "upgrades.get",
+      "inputSchema": "schemas/get-input.json",
+      "outputSchema": "schemas/get-output.json",
+      "capability": "data.query/v1"
+    }
   ],
   "pages": [
-    {"id": "current", "title": "Image upgrades", "path": "/current", "methods": ["GET"], "capabilities": ["data.query/v1"]},
-    {"id": "detail", "title": "Image upgrade details", "path": "/current/{dependency-id}", "methods": ["GET"], "capabilities": ["data.query/v1"]},
-    {"id": "coverage", "title": "Collection coverage", "path": "/coverage", "methods": ["GET"], "capabilities": ["data.query/v1"]}
+    {
+      "id": "current",
+      "title": "Image upgrades",
+      "path": "/current",
+      "methods": [
+        "GET"
+      ],
+      "capabilities": [
+        "data.query/v1"
+      ]
+    },
+    {
+      "id": "detail",
+      "title": "Image upgrade details",
+      "path": "/current/{dependency-id}",
+      "methods": [
+        "GET"
+      ],
+      "capabilities": [
+        "data.query/v1"
+      ]
+    },
+    {
+      "id": "coverage",
+      "title": "Collection coverage",
+      "path": "/coverage",
+      "methods": [
+        "GET"
+      ],
+      "capabilities": [
+        "data.query/v1"
+      ]
+    },
+    {
+      "id": "request",
+      "title": "Request image upgrade PR",
+      "description": "Confirm an image upgrade request. Renovate creates the PR; merging remains manual.",
+      "path": "/current/{dependency-id}/request/{candidate-id}",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "capabilities": [
+        "data.query/v1",
+        "data.action/v1"
+      ]
+    }
   ],
-  "navigation": [{"id": "images", "title": "Image upgrades", "icon": "hi-16-solid-arrow-path", "page": "current"}],
-  "widgets": [{"id": "summary", "title": "Image upgrades", "optionsSchema": "schemas/widget.json", "capabilities": ["data.query/v1"]}],
-  "assets": [{"id": "layout", "file": "assets/layout.css", "mediaType": "text/css", "kind": "style"}],
+  "navigation": [
+    {
+      "id": "images",
+      "title": "Image upgrades",
+      "icon": "hi-16-solid-arrow-path",
+      "page": "current"
+    }
+  ],
+  "widgets": [
+    {
+      "id": "summary",
+      "title": "Image upgrades",
+      "optionsSchema": "schemas/widget.json",
+      "capabilities": [
+        "data.query/v1"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "layout",
+      "file": "assets/layout.css",
+      "mediaType": "text/css",
+      "kind": "style"
+    }
+  ],
   "capabilities": {
-    "required": ["data.query/v1", "page.content/v1", "sidebar.navigation/v1", "home.widget/v1"],
-    "optional": ["catalog.services.read/v1", "notifications.publish/v1"]
-  }
+    "required": [
+      "data.query/v1",
+      "page.content/v1",
+      "sidebar.navigation/v1",
+      "home.widget/v1"
+    ],
+    "optional": [
+      "catalog.services.read/v1",
+      "notifications.publish/v1",
+      "data.action/v1"
+    ]
+  },
+  "actions": [
+    {
+      "id": "upgrades.request",
+      "inputSchema": "schemas/request-input.json",
+      "outputSchema": "schemas/request-output.json",
+      "capability": "data.action/v1"
+    }
+  ]
 }

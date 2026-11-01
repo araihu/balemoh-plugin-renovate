@@ -22,6 +22,7 @@ type Mapping struct {
 	ServiceID    string `json:"serviceId"`
 }
 type Config struct {
+	ControllerURL         string    `json:"controllerURL"`
 	SnapshotURL           string    `json:"snapshotURL"`
 	BrowserRepositoryURL  string    `json:"browserRepositoryURL"`
 	IntervalSeconds       int       `json:"intervalSeconds"`
@@ -53,6 +54,9 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 	if !snapshot.SafeURL(c.SnapshotURL) || len(c.SnapshotURL) > 2048 || !strings.HasPrefix(c.BrowserRepositoryURL, "https://github.com/") || !snapshot.SafeURL(c.BrowserRepositoryURL) || strings.Count(strings.TrimPrefix(c.BrowserRepositoryURL, "https://github.com/"), "/") != 1 || c.IntervalSeconds < 30 || c.IntervalSeconds > 900 || c.MaxSnapshotAgeSeconds < 3600 || c.MaxSnapshotAgeSeconds > 604800 || len(c.ServiceMappingsJSON) > 50000 {
 		return c, nil, backend.Fail("invalid_argument")
 	}
+	if c.ControllerURL != "" && (!snapshot.SafeURL(c.ControllerURL) || len(c.ControllerURL) > 2048 || strings.HasSuffix(c.ControllerURL, "/")) {
+		return c, nil, backend.Fail("invalid_argument")
+	}
 	if c.ServiceMappingsJSON != "" {
 		if !strings.HasPrefix(strings.TrimSpace(c.ServiceMappingsJSON), "[") || decode([]byte(c.ServiceMappingsJSON), &c.ServiceMappings) != nil || len(c.ServiceMappings) > 256 {
 			return c, nil, backend.Fail("invalid_argument")
@@ -71,7 +75,7 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 		return c, nil, backend.Fail("invalid_argument")
 	}
 	for key, value := range secrets {
-		if key != "snapshot-token" && key != "snapshot-ca" || key == "snapshot-token" && !credential.ValidBearer(value) {
+		if key != "snapshot-token" && key != "snapshot-ca" && key != "controller-read-token" && key != "controller-action-token" && key != "controller-ca" || (key == "snapshot-token" || key == "controller-read-token" || key == "controller-action-token") && !credential.ValidBearer(value) {
 			return c, nil, backend.Fail("invalid_argument")
 		}
 	}
@@ -79,7 +83,10 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 	if err != nil {
 		roots = x509.NewCertPool()
 	}
-	if encoded := secrets["snapshot-ca"]; encoded != "" {
+	for _, encoded := range []string{secrets["snapshot-ca"], secrets["controller-ca"]} {
+		if encoded == "" {
+			continue
+		}
 		der, e := base64.StdEncoding.DecodeString(encoded)
 		if e != nil {
 			return c, nil, backend.Fail("invalid_argument")
@@ -89,6 +96,9 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 			return c, nil, backend.Fail("invalid_argument")
 		}
 		roots.AddCert(cert)
+	}
+	if c.ControllerURL != "" && (secrets["controller-read-token"] == "" || secrets["controller-action-token"] == "" || secrets["controller-read-token"] == secrets["controller-action-token"]) {
+		return c, nil, backend.Fail("invalid_argument")
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots}

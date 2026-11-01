@@ -1,0 +1,83 @@
+package view
+
+import (
+ "github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
+ "github.com/araihu/balemoh-plugin-renovate/internal/requests"
+ "github.com/araihu/goshtoso/components/alert"
+ "github.com/araihu/goshtoso/components/form"
+ "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/pageheader"
+ "github.com/araihu/goshtoso/components/panel"
+)
+
+templ UpgradeAction(m Model,u snapshot.Candidate) {
+ if existing:=m.RequestFor(u.ID);existing!=nil {
+ @RequestStatus(m,*existing)
+ if m.CanReviewAgain(u) {
+ @link.Link(m.RequestLinks[u.ID]){ Review a new request }
+ }
+ } else if active:=m.OtherActiveRequest(u.ID);u.PR==nil && active!=nil {
+ <p>Another candidate for this image and file already has an active request.</p>
+ @RequestStatus(m,*active)
+ } else if u.PR==nil && m.CanRequest(u) {
+ @link.Link(m.RequestLinks[u.ID]){ Review PR request }
+ } else if u.PR==nil && m.Meta.ControllerAvailable && !m.Meta.Controller.Enabled {
+ <p>PR requests are disabled pending writer migration.</p>
+ } else if u.PR==nil && m.Meta.ControllerAvailable && m.Meta.Controller.Enabled {
+ <p>This candidate is currently advisory only. Requests support unpinned tag upgrades in Kubernetes, Docker Compose and Dockerfile declarations.</p>
+ }
+}
+
+templ RequestStatus(m Model,r requests.Record) {
+ <section aria-label="Upgrade request status" class="image-upgrades-cell">
+ <h3 class="text-lg font-semibold">{ requestState(r.State) }</h3>
+ if !m.Meta.ControllerAvailable || r.TrackingError {
+ @alert.Alert(alert.Config{Title:"Request tracking unavailable",Description:"Showing the last retained status. Check GitHub before taking any action.",Tone:alert.ToneWarning})
+ }
+ <p>Approved Git reference: { *r.Dependency.CurrentValue }. Requested candidate: { *r.Candidate.NewValue }.</p>
+ if r.PR!=nil {
+ @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open upgrade pull request }
+ <p>{ checksLabel(r.PR.Checks) }</p>
+ }
+ if r.TrackedAt!=nil {
+ <p>Last checked: <time datetime={ r.TrackedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ r.TrackedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</time></p>
+ }
+ <p>Review and merge the PR manually in GitHub.</p>
+ @link.Link(m.StatusURL){ Refresh request status }
+ </section>
+}
+
+templ RequestUpgrade(m Model) {
+ <div class="image-upgrades">
+ @pageheader.PageHeader(pageheader.Config{Title:"Request upgrade PR",Description:"Renovate will prepare the selected upgrade. Review and merge the PR manually in GitHub.",Actions:Back(m)})
+ if m.ActionError!="" {
+ <div role="alert" tabindex="-1" autofocus>
+ @alert.Alert(alert.Config{Title:"Request not confirmed",Description:m.ActionError,Tone:alert.ToneWarning})
+ </div>
+ }
+ @panel.Panel(panel.Config{Header:SectionTitle(m.Detail.Dependency.PackageName),Body:RequestReview(m)})
+ if existing:=m.RequestFor(m.Selected.ID);existing!=nil {
+ @RequestStatus(m,*existing)
+ }
+ if m.CanReviewAgain(m.Selected) {
+ @form.Form(form.Config{ID:m.Request.DOMID("request-form"),Action:m.ActionURL,Method:"post",RootAttrs:templ.Attributes{"x-data":"{ submitting: false }","@submit":"submitting = true","@pageshow.window":"submitting = false"},Footer:&form.FooterConfig{SubmitLabel:"Request pull request",CancelLabel:"Cancel",CancelHref:m.BackURL,SubmitDisabled:"submitting"}}) {
+ <input type="hidden" name="snapshotDigest" value={ m.Meta.SnapshotDigest }/>
+ <input type="hidden" name="approved" value="true"/>
+ <p role="status" x-show="submitting" x-cloak>Submitting request. PR creation may take a few minutes.</p>
+ }
+ } else if m.RequestFor(m.Selected.ID)==nil {
+ @alert.Alert(alert.Config{Title:"PR requests unavailable",Description:"This connection is read-only, the observation is stale, or the selected upgrade is outside the supported request scope.",Tone:alert.ToneWarning})
+ }
+ </div>
+}
+
+templ RequestReview(m Model) {
+ @SourceFile(m,m.Detail.Dependency,"request")
+ <dl class="image-upgrades-status">
+ <div><dt>Repository</dt><dd>{ m.Meta.Repository.Name }</dd></div>
+ <div><dt>Base branch</dt><dd>{ m.Meta.Repository.BaseBranch }</dd></div>
+ <div><dt>Matching declarations</dt><dd>{ count(max(m.Detail.Dependency.SourceOccurrences,1)) }</dd></div>
+ </dl>
+ @CandidateSummary(m.Detail.Dependency,m.Selected)
+ <p>The request covers this image and Git file group. Other files and images are outside this approval.</p>
+}

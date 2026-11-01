@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/araihu/balemoh-plugin-renovate/internal/requests"
 	"github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
 	"github.com/araihu/balemoh/plugin-sdk/backend"
 )
@@ -24,10 +25,13 @@ type Filter struct {
 	Limit      int    `json:"limit,omitempty"`
 }
 type Meta struct {
-	Repository  snapshot.Repository `json:"repository"`
-	Producer    snapshot.Producer   `json:"producer"`
-	Coverage    snapshot.Coverage   `json:"coverage"`
-	CompletedAt time.Time           `json:"completedAt"`
+	SnapshotDigest      string              `json:"snapshotDigest"`
+	Controller          requests.Catalog    `json:"controller"`
+	ControllerAvailable bool                `json:"controllerAvailable"`
+	Repository          snapshot.Repository `json:"repository"`
+	Producer            snapshot.Producer   `json:"producer"`
+	Coverage            snapshot.Coverage   `json:"coverage"`
+	CompletedAt         time.Time           `json:"completedAt"`
 }
 type Item struct {
 	snapshot.Dependency
@@ -53,7 +57,11 @@ type Detail struct {
 
 func (c *connection) meta() Meta {
 	s := c.snapshot
-	return Meta{s.Repository, s.Producer, s.Coverage, s.CompletedAt}
+	catalog := c.controller
+	if catalog.Requests == nil {
+		catalog.Requests = []requests.Record{}
+	}
+	return Meta{Repository: s.Repository, Producer: s.Producer, Coverage: s.Coverage, CompletedAt: s.CompletedAt, SnapshotDigest: requests.Digest(s), Controller: catalog, ControllerAvailable: c.controllerAvailable}
 }
 func (c *connection) item(d snapshot.Dependency) Item {
 	item := Item{Dependency: d}
