@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "snapshotURL": {
+      "type": "string",
+      "maxLength": 2048
+    },
+    "browserRepositoryURL": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "intervalSeconds": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 900,
+      "default": 60
+    },
+    "maxSnapshotAgeSeconds": {
+      "type": "integer",
+      "minimum": 3600,
+      "maximum": 604800,
+      "default": 43200
+    },
+    "notificationsEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "serviceMappingsJSON": {
+      "type": "string",
+      "maxLength": 50000,
+      "description": "Optional JSON array of exact dependencyId/serviceId mappings, at most 256."
+    }
+  },
+  "required": [
+    "snapshotURL",
+    "browserRepositoryURL"
+  ]
+}

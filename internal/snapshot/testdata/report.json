@@ -1,0 +1,569 @@
+{
+  "problems": [],
+  "repositories": {
+    "example/read-only": {
+      "problems": [
+        {
+          "name": "renovate",
+          "level": 40,
+          "logContext": "9c2a1086-10a6-46a5-b308-042ce9a34ffe",
+          "msg": "Some release(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information"
+        },
+        {
+          "name": "renovate",
+          "level": 40,
+          "logContext": "9c2a1086-10a6-46a5-b308-042ce9a34ffe",
+          "msg": "Some release(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information"
+        }
+      ],
+      "branches": [],
+      "packageFiles": {
+        "docker-compose": [
+          {
+            "deps": [
+              {
+                "depName": "docker.io/library/nginx",
+                "packageName": "docker.io/library/nginx",
+                "currentValue": "1.25.3",
+                "replaceString": "docker.io/library/nginx:1.25.3",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "1.31.8",
+                    "newValue": "1.31.8",
+                    "newMajor": 1,
+                    "newMinor": 31,
+                    "newPatch": 8,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "newDigest": "sha256:c4d1df1ca40ef8cf932f19853f00eb0f81ffe5becda1256365bbf0a057060ffb",
+                    "branchName": "renovate/poc-nginx"
+                  },
+                  {
+                    "isPinDigest": true,
+                    "updateType": "pinDigest",
+                    "newValue": "1.25.3",
+                    "newDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+                    "branchName": "renovate/poc-nginx"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/nginx/docker-nginx",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/nginx",
+                "lookupName": "library/nginx",
+                "currentVersion": "1.25.3",
+                "isSingleVersion": true,
+                "fixedVersion": "1.25.3"
+              }
+            ],
+            "packageFile": "compose.yaml"
+          }
+        ],
+        "dockerfile": [
+          {
+            "deps": [
+              {
+                "depName": "docker.io/library/alpine",
+                "packageName": "docker.io/library/alpine",
+                "currentValue": "3.19.0",
+                "replaceString": "docker.io/library/alpine:3.19.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "depType": "final",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "3.24.3",
+                    "newValue": "3.24.3",
+                    "releaseTimestamp": "2026-10-23T05:24:43.473Z",
+                    "newVersionAgeInDays": 6,
+                    "newMajor": 3,
+                    "newMinor": 24,
+                    "newPatch": 3,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "newDigest": "sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a",
+                    "libYears": 2.874335996829021,
+                    "branchName": "renovate/docker.io-library-alpine-3.x"
+                  },
+                  {
+                    "isPinDigest": true,
+                    "updateType": "pinDigest",
+                    "newValue": "3.19.0",
+                    "newDigest": "sha256:51b67269f354137895d43f3b3d810bfacd3945438e94dc5ac55fdac340352f48",
+                    "branchName": "renovate/pin-dependencies"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/alpinelinux/docker-alpine",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/alpine",
+                "lookupName": "library/alpine",
+                "currentVersion": "3.19.0",
+                "currentVersionTimestamp": "2023-12-08T02:13:43.477Z",
+                "currentVersionAgeInDays": 1056,
+                "isSingleVersion": true,
+                "fixedVersion": "3.19.0"
+              }
+            ],
+            "packageFile": "Dockerfile"
+          }
+        ],
+        "helm-values": [
+          {
+            "deps": [
+              {
+                "depName": "docker.io/library/busybox",
+                "packageName": "docker.io/library/busybox",
+                "currentValue": "1.36.0",
+                "datasource": "docker",
+                "replaceString": "1.36.0",
+                "versioning": "docker",
+                "autoReplaceStringTemplate": "{{newValue}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "1.36.1",
+                    "newValue": "1.36.1",
+                    "releaseTimestamp": "2026-03-24T19:58:26.380Z",
+                    "newVersionAgeInDays": 218,
+                    "newMajor": 1,
+                    "newMinor": 36,
+                    "newPatch": 1,
+                    "updateType": "patch",
+                    "isBreaking": false,
+                    "pendingVersions": [
+                      "1.37.0",
+                      "1.38.0"
+                    ],
+                    "libYears": 2.8676482000570775,
+                    "branchName": "renovate/docker.io-library-busybox-1.x"
+                  }
+                ],
+                "warnings": [],
+                "sourceUrl": "https://github.com/docker-library/busybox",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/busybox",
+                "lookupName": "library/busybox",
+                "currentVersion": "1.36.0",
+                "currentVersionTimestamp": "2023-05-12T03:22:32.743Z",
+                "currentVersionAgeInDays": 1266,
+                "isSingleVersion": true,
+                "fixedVersion": "1.36.0"
+              }
+            ],
+            "packageFile": "k8s/values.yaml"
+          }
+        ],
+        "kubernetes": [
+          {
+            "deps": [
+              {
+                "depName": "docker.io/library/alpine",
+                "packageName": "docker.io/library/alpine",
+                "currentValue": "3.19.0",
+                "replaceString": "docker.io/library/alpine:3.19.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "3.24.3",
+                    "newValue": "3.24.3",
+                    "releaseTimestamp": "2026-10-23T05:24:43.473Z",
+                    "newVersionAgeInDays": 6,
+                    "newMajor": 3,
+                    "newMinor": 24,
+                    "newPatch": 3,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "pendingChecks": true,
+                    "libYears": 2.874335996829021,
+                    "branchName": "renovate/docker.io-library-alpine-3.x"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/alpinelinux/docker-alpine",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/alpine",
+                "lookupName": "library/alpine",
+                "currentVersion": "3.19.0",
+                "currentVersionTimestamp": "2023-12-08T02:13:43.477Z",
+                "currentVersionAgeInDays": 1056,
+                "isSingleVersion": true,
+                "fixedVersion": "3.19.0"
+              },
+              {
+                "depName": "Deployment",
+                "currentValue": "apps/v1",
+                "datasource": "kubernetes-api",
+                "versioning": "kubernetes-api",
+                "packageName": "Deployment",
+                "updates": [],
+                "warnings": [],
+                "currentVersion": "apps/v1",
+                "fixedVersion": "apps/v1"
+              }
+            ],
+            "packageFile": "k8s/age.yaml"
+          },
+          {
+            "deps": [
+              {
+                "depName": "nginx",
+                "packageName": "nginx",
+                "currentValue": "1.25.3",
+                "replaceString": "nginx:1.25.3",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "1.31.8",
+                    "newValue": "1.31.8",
+                    "newMajor": 1,
+                    "newMinor": 31,
+                    "newPatch": 8,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "newDigest": "sha256:c4d1df1ca40ef8cf932f19853f00eb0f81ffe5becda1256365bbf0a057060ffb",
+                    "branchName": "renovate/poc-nginx"
+                  },
+                  {
+                    "isPinDigest": true,
+                    "updateType": "pinDigest",
+                    "newValue": "1.25.3",
+                    "newDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+                    "branchName": "renovate/poc-nginx"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/nginx/docker-nginx",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/nginx",
+                "lookupName": "library/nginx",
+                "currentVersion": "1.25.3",
+                "isSingleVersion": true,
+                "fixedVersion": "1.25.3"
+              },
+              {
+                "depName": "registry.example.invalid/disabled",
+                "packageName": "registry.example.invalid/disabled",
+                "currentValue": "1.0.0",
+                "replaceString": "registry.example.invalid/disabled:1.0.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [],
+                "skipReason": "disabled"
+              },
+              {
+                "depName": "ghcr.io/renovate-report-poc-missing/not-a-real-image",
+                "packageName": "ghcr.io/renovate-report-poc-missing/not-a-real-image",
+                "currentValue": "1.0.0",
+                "replaceString": "ghcr.io/renovate-report-poc-missing/not-a-real-image:1.0.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [],
+                "versioning": "docker",
+                "warnings": [
+                  {
+                    "topic": "ghcr.io/renovate-report-poc-missing/not-a-real-image",
+                    "message": "Failed to look up docker package ghcr.io/renovate-report-poc-missing/not-a-real-image: no-result"
+                  }
+                ]
+              },
+              {
+                "depName": "alpine",
+                "packageName": "alpine",
+                "currentValue": "3.19.0",
+                "replaceString": "alpine:3.19.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/alpinelinux/docker-alpine",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/alpine",
+                "lookupName": "library/alpine",
+                "currentVersion": "3.19.0",
+                "currentVersionTimestamp": "2023-12-08T02:13:43.477Z",
+                "currentVersionAgeInDays": 1056,
+                "fixedVersion": "3.19.0"
+              },
+              {
+                "depName": "Deployment",
+                "currentValue": "apps/v1",
+                "datasource": "kubernetes-api",
+                "versioning": "kubernetes-api",
+                "packageName": "Deployment",
+                "updates": [],
+                "warnings": [],
+                "currentVersion": "apps/v1",
+                "fixedVersion": "apps/v1"
+              }
+            ],
+            "packageFile": "k8s/deployment.yaml"
+          },
+          {
+            "deps": [
+              {
+                "depName": "nginx",
+                "packageName": "nginx",
+                "currentValue": "1.25.3",
+                "currentDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "replaceString": "nginx:1.25.3@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "updateType": "digest",
+                    "newValue": "1.25.3",
+                    "newDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+                    "branchName": "renovate/poc-nginx"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/nginx/docker-nginx",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/nginx",
+                "lookupName": "library/nginx",
+                "currentVersion": "1.25.3",
+                "fixedVersion": "1.25.3"
+              },
+              {
+                "depName": "Deployment",
+                "currentValue": "apps/v1",
+                "datasource": "kubernetes-api",
+                "versioning": "kubernetes-api",
+                "packageName": "Deployment",
+                "updates": [],
+                "warnings": [],
+                "currentVersion": "apps/v1",
+                "fixedVersion": "apps/v1"
+              }
+            ],
+            "packageFile": "k8s/digest.yaml"
+          },
+          {
+            "deps": [
+              {
+                "depName": "nginx",
+                "packageName": "nginx",
+                "currentValue": "1.25.3",
+                "replaceString": "nginx:1.25.3",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "1.31.8",
+                    "newValue": "1.31.8",
+                    "newMajor": 1,
+                    "newMinor": 31,
+                    "newPatch": 8,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "newDigest": "sha256:c4d1df1ca40ef8cf932f19853f00eb0f81ffe5becda1256365bbf0a057060ffb",
+                    "branchName": "renovate/poc-nginx"
+                  },
+                  {
+                    "isPinDigest": true,
+                    "updateType": "pinDigest",
+                    "newValue": "1.25.3",
+                    "newDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+                    "branchName": "renovate/poc-nginx"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/nginx/docker-nginx",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/nginx",
+                "lookupName": "library/nginx",
+                "currentVersion": "1.25.3",
+                "isSingleVersion": true,
+                "fixedVersion": "1.25.3"
+              },
+              {
+                "depName": "nginx",
+                "packageName": "nginx",
+                "currentValue": "1.24.0",
+                "replaceString": "nginx:1.24.0",
+                "autoReplaceStringTemplate": "{{depName}}{{#if newValue}}:{{newValue}}{{/if}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "datasource": "docker",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "1.31.8",
+                    "newValue": "1.31.8",
+                    "newMajor": 1,
+                    "newMinor": 31,
+                    "newPatch": 8,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "newDigest": "sha256:c4d1df1ca40ef8cf932f19853f00eb0f81ffe5becda1256365bbf0a057060ffb",
+                    "branchName": "renovate/poc-nginx"
+                  },
+                  {
+                    "isPinDigest": true,
+                    "updateType": "pinDigest",
+                    "newValue": "1.24.0",
+                    "newDigest": "sha256:f6daac2445b0ce70e64d77442ccf62839f3f1b4c24bf6746a857eff014e798c8",
+                    "branchName": "renovate/poc-nginx"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/nginx/docker-nginx",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/nginx",
+                "lookupName": "library/nginx",
+                "currentVersion": "1.24.0",
+                "isSingleVersion": true,
+                "fixedVersion": "1.24.0"
+              },
+              {
+                "depName": "Deployment",
+                "currentValue": "apps/v1",
+                "datasource": "kubernetes-api",
+                "versioning": "kubernetes-api",
+                "packageName": "Deployment",
+                "updates": [],
+                "warnings": [],
+                "currentVersion": "apps/v1",
+                "fixedVersion": "apps/v1"
+              }
+            ],
+            "packageFile": "k8s/duplicates.yaml"
+          }
+        ],
+        "kustomize": [
+          {
+            "deps": [
+              {
+                "depName": "docker.io/library/redis",
+                "packageName": "docker.io/library/redis",
+                "currentValue": "7.2.0-alpine",
+                "datasource": "docker",
+                "replaceString": "7.2.0-alpine",
+                "autoReplaceStringTemplate": "{{newValue}}{{#if newDigest}}@{{newDigest}}{{/if}}",
+                "depType": "Kustomization",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "7.4.12",
+                    "newValue": "7.4.12-alpine",
+                    "newMajor": 7,
+                    "newMinor": 4,
+                    "newPatch": 12,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "branchName": "renovate/docker.io-library-redis-7.x"
+                  },
+                  {
+                    "bucket": "major",
+                    "newVersion": "8.10.3",
+                    "newValue": "8.10.3-alpine",
+                    "newMajor": 8,
+                    "newMinor": 10,
+                    "newPatch": 3,
+                    "updateType": "major",
+                    "isBreaking": true,
+                    "branchName": "renovate/docker.io-library-redis-8.x"
+                  }
+                ],
+                "versioning": "docker",
+                "warnings": [],
+                "sourceUrl": "https://github.com/redis/docker-library-redis",
+                "registryUrl": "https://index.docker.io",
+                "homepage": "https://hub.docker.com/_/redis",
+                "lookupName": "library/redis",
+                "currentVersion": "7.2.0",
+                "isSingleVersion": true,
+                "fixedVersion": "7.2.0-alpine"
+              }
+            ],
+            "packageFile": "k8s/kustomization.yaml"
+          }
+        ],
+        "regex": [
+          {
+            "deps": [
+              {
+                "depName": "ghcr.io/cloudnative-pg/postgresql",
+                "currentValue": "16.1",
+                "datasource": "docker",
+                "versioning": "docker",
+                "replaceString": "imageName: ghcr.io/cloudnative-pg/postgresql:16.1",
+                "packageName": "ghcr.io/cloudnative-pg/postgresql",
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "16.15",
+                    "newValue": "16.15",
+                    "newMajor": 16,
+                    "newMinor": 15,
+                    "newPatch": null,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "branchName": "renovate/ghcr.io-cloudnative-pg-postgresql-16.x"
+                  },
+                  {
+                    "bucket": "major",
+                    "newVersion": "18.6",
+                    "newValue": "18.6",
+                    "newMajor": 18,
+                    "newMinor": 6,
+                    "newPatch": null,
+                    "updateType": "major",
+                    "isBreaking": true,
+                    "branchName": "renovate/ghcr.io-cloudnative-pg-postgresql-18.x"
+                  }
+                ],
+                "warnings": [],
+                "registryUrl": "https://ghcr.io",
+                "lookupName": "cloudnative-pg/postgresql",
+                "currentVersion": "16.1",
+                "isSingleVersion": true,
+                "fixedVersion": "16.1"
+              }
+            ],
+            "matchStrings": [
+              "imageName:\\s+(?<depName>ghcr\\.io/cloudnative-pg/postgresql):(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"
+            ],
+            "datasourceTemplate": "docker",
+            "versioningTemplate": "docker",
+            "packageFile": "k8s/cluster.yaml"
+          }
+        ]
+      },
+      "libYearsWithStatus": {
+        "libYears": {
+          "managers": {
+            "docker-compose": 0,
+            "dockerfile": 2.874335996829021,
+            "helm-values": 2.8676482000570775,
+            "kubernetes": 2.874335996829021,
+            "kustomize": 0,
+            "regex": 0
+          },
+          "total": 5.741984196886099
+        },
+        "dependencyStatus": {
+          "outdated": 7,
+          "total": 11
+        }
+      },
+      "status": "activated"
+    }
+  }
+}

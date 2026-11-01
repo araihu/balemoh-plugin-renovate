@@ -1,0 +1,235 @@
+{
+  "apiBff": "4a6b6492183015eed717be0c0104b6951ca10fed",
+  "fixture": true,
+  "manifestDigest": "5378c75cd25bd9cc1c5d925319c6a7f771f5079a5bedb067071585f9ca67e929",
+  "packageDigest": "aae4063227f750e9e581fc63e37e51879803bf7f75c9088e430a2c7901a2ae12",
+  "page": "http://127.0.0.1:14081/plugins/araihu.image-upgrades/connections/216ff8e1-c73e-4e55-8889-614ace94c2c7/pages/current",
+  "pageCoverageWidget": true,
+  "queryReadsAddSourceCalls": false,
+  "sdk": "v0.0.1-alpha.3",
+  "sourceCalls": 2,
+  "hostSource": "git archive 4a6b6492183015eed717be0c0104b6951ca10fed",
+  "hostSDK": "v0.0.1-alpha.3; local SDK substitutions removed in archived build inputs",
+  "hostGoshtoso": "v0.4.6-0.20261027195056-cea8387a3c88",
+  "imageIndex": "sha256:428779870d7cd8e229925f959298b7372c71488eaf9a9822d3036fe41283314b",
+  "nativeArm64PackageParity": true,
+  "nativeArm64EngineVersion": "44.197.0",
+  "productionDeployment": false,
+  "dedicatedGitHubCredentialValidated": false,
+  "imagePublished": false,
+  "mappedDependencyID": "c157cd947ade2779513e76f9b8dff1251ae04d3883d78fcd45c3355b417fb381",
+  "mappedServicePresentation": true,
+  "serviceID": "25f23deeabd0b9093d18123ecbb7cfaeea0c174fe5e33297a422b02ee65111d0",
+  "mappedServiceVisualMatrix": {
+    "routes": [
+      "list",
+      "detail"
+    ],
+    "themes": [
+      "goshtoso",
+      "minimal"
+    ],
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "widths": [
+      390,
+      1440
+    ],
+    "pageOverflow": false,
+    "historicalBeforeCorrectionPass": true
+  },
+  "mappedServiceWidget": true,
+  "realHostIconKind": "bundled Goshtoso sprite",
+  "realHostSelfhstCacheValidated": false,
+  "syntheticSecurityNotification": true,
+  "adapterVersion": "0.0.3",
+  "pinnedEngineSecurityReportSerialization": true,
+  "securityNotificationStartupBaselineSilent": true,
+  "securityNotificationFromNormalPoll": true,
+  "securityNotificationSeverity": "warning",
+  "productionNotificationDelivery": false,
+  "securityFlagIsCVEProof": false,
+  "securityFlagVisualMatrix": {
+    "routes": [
+      "list",
+      "detail"
+    ],
+    "themes": [
+      "goshtoso",
+      "minimal"
+    ],
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "widths": [
+      390,
+      1440
+    ],
+    "pageOverflow": false,
+    "historicalBeforeCorrectionPass": true
+  },
+  "securityNotificationRepeatedPollCount": 1,
+  "correctionPass": {
+    "date": "2026-10-30",
+    "nativeIdentityAssociationRegression": true,
+    "resourceExhaustedFrozenRetryRegression": true,
+    "canonicalFilterNavigationRegression": true,
+    "mobileMeasuredMainOverflow": false,
+    "mobileMeasuredComparisonOverflow": false,
+    "mobileWidth": 390,
+    "fullAccessibilityCertification": false,
+    "projectedTupleHasUniqueNativeOwner": true,
+    "branchProjectionTestUsesRunBranchSummary": true,
+    "sourceFailurePreservesFrozenRetry": true,
+    "invalidCursorPreservesFilters": true,
+    "finalCodeIdentity": "46cef33af7ca7ca327d7ea814d037ff0dafa6ad728bafcb316a4f1754d7958e5",
+    "nativePolicyContainerCases": 8,
+    "independentCodeReview": "accepted; no P0-P2 in correction scope",
+    "resetLabel": "Reset to defaults",
+    "mobileAlignment": "start",
+    "finalMobileMainClientScroll": [
+      375,
+      375
+    ],
+    "finalMobileComparisonClientScroll": [
+      303,
+      303
+    ],
+    "keyboardSelectionThreeFilters": true,
+    "nielsenScore": 32,
+    "nielsenMaximum": 40,
+    "confirmedP1Visual": 0,
+    "remainingPresentationP2": 2,
+    "detectorMarkupFindings": 0,
+    "historicalBeforeFilterLayoutFollowup": true
+  },
+  "filterLayoutFollowup": {
+    "date": "2026-10-30",
+    "fieldsColumns": 1,
+    "firstDirectFields": [
+      "search",
+      "assessment"
+    ],
+    "pairedFields": [
+      "updateType",
+      "workflow"
+    ],
+    "pairColumns": 2,
+    "widths": [
+      390,
+      825,
+      1440
+    ],
+    "mainOverflow": false,
+    "uiTests": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  },
+  "coveragePresentationFollowup": {
+    "date": "2026-10-30",
+    "introParagraphsRemoved": true,
+    "partialAlertShortened": true,
+    "summaryReconcilesRecordsAndGroups": true,
+    "technicalDetailsClosedByDefault": true,
+    "accordionKeyboardVerified": true,
+    "widths": [
+      390,
+      760,
+      1440
+    ],
+    "mainOverflow": false,
+    "uiTests": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  },
+  "sourceIconsFollowup": {
+    "date": "2026-10-30",
+    "classification": "normalized Renovate manager only",
+    "knownFamilies": [
+      "Dockerfile",
+      "Docker Compose",
+      "Kubernetes",
+      "Helm values",
+      "Kustomize"
+    ],
+    "unknownManagerOmitsIcon": true,
+    "hostSprite": "/ui/icons/sprite.svg",
+    "accessibleLabels": true,
+    "keyboardFocusTooltip": true,
+    "escapeDismissal": true,
+    "minTargetPixels": 44,
+    "uniqueResponsiveIDs": true,
+    "widths": [
+      390,
+      760,
+      1440
+    ],
+    "removedListCopyVerified": true,
+    "uiTests": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  },
+  "detailSourceIconFollowup": {
+    "date": "2026-10-30",
+    "sharedSourceComponent": true,
+    "pageHeaderTitleSuffix": true,
+    "controlOutsideHeading": true,
+    "keyboardTooltip": true,
+    "minTargetPixels": 44,
+    "widths": [
+      390,
+      760,
+      1440
+    ],
+    "mainOverflow": false,
+    "uniqueIDs": true,
+    "uiTests": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  },
+  "detailSourceRowFollowup": {
+    "date": "2026-10-30",
+    "iconBeforeFilename": true,
+    "sameSourceRowAsList": true,
+    "titleIconRemoved": true,
+    "keyboardTooltip": true,
+    "widths": [
+      390,
+      655,
+      1440
+    ],
+    "mainOverflow": false,
+    "uiTests": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  },
+  "uiReviewCorrections": {
+    "date": "2026-10-31",
+    "priorityIssuesClosed": 2,
+    "minorIssuesClosed": 1,
+    "candidateComparisonMobileY": 637,
+    "candidateComparisonMobileBottom": 715.375,
+    "mobileViewportHeight": 844,
+    "headerStickyAfterHostScrollPixels": 908,
+    "headerViewportY": 88,
+    "unknownWorkflowFontPixels": 14,
+    "specificWorkflowFontWeight": 700,
+    "widths": [
+      390,
+      655,
+      825,
+      1024,
+      1440
+    ],
+    "mainOverflow": false,
+    "tooltipFocusEscape": true,
+    "accordionKeyboard": true,
+    "uiTests": true,
+    "nativeArm64PackageParity": true,
+    "independentReviewRepeated": false,
+    "productionDeployment": false
+  }
+}

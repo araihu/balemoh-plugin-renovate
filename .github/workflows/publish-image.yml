@@ -1,0 +1,90 @@
+name: Publish image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-image-upgrades
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    if: github.repository == 'araihu/balemoh-plugin-renovate' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+  publish:
+    needs: checks
+    if: github.repository == 'araihu/balemoh-plugin-renovate' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    env:
+      GOWORK: 'off'
+      IMAGE_NAME: ghcr.io/araihu/balemoh-plugin-renovate
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - name: Build and identify the package
+        run: |
+          make package
+          mkdir -p .local
+          go run ./cmd/package-info dist/package > .local/package-pins.json
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Publish amd64 and arm64
+        id: image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/araihu/balemoh-plugin-renovate:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/araihu/balemoh-plugin-renovate
+            org.opencontainers.image.revision=${{ github.sha }}
+          provenance: mode=max
+          sbom: true
+      - name: Verify package identity in both published platforms
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          receipt="$RUNNER_TEMP/image-receipt"
+          mkdir -p "$receipt"
+          container_id=''
+          trap 'if [[ -n "$container_id" ]]; then docker rm "$container_id" >/dev/null; fi' EXIT
+          for architecture in amd64 arm64; do
+            container_id=$(docker create --platform "linux/$architecture" "$IMAGE_NAME@$DIGEST" /bin/true)
+            docker cp "$container_id:/opt/image-upgrades/package" "$receipt/package-$architecture"
+            docker rm "$container_id" >/dev/null
+            container_id=''
+            go run ./cmd/package-info "$receipt/package-$architecture" > "$receipt/pins-$architecture.json"
+            cmp .local/package-pins.json "$receipt/pins-$architecture.json"
+          done
+          jq -n --arg image "$IMAGE_NAME@$DIGEST" --arg commit "$GITHUB_SHA" \
+            --arg version "$(jq -r .version plugin.json)" --slurpfile pins .local/package-pins.json \
+            '{image:$image,sourceCommit:$commit,version:$version,manifestDigest:$pins[0].manifestDigest,packageDigest:$pins[0].packageDigest}' > "$receipt/image-pins.json"
+          cat "$receipt/image-pins.json" >> "$GITHUB_STEP_SUMMARY"
+      - name: Save the verified publication receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: image-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/image-receipt/*.json
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,314 @@
+package view
+
+import (
+ "github.com/araihu/balemoh-plugin-renovate/internal/advisory"
+ "github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
+ "github.com/araihu/goshtoso/components/pageheader"
+ "github.com/araihu/goshtoso/components/toolbar"
+ "github.com/araihu/goshtoso/components/table"
+ "github.com/araihu/goshtoso/components/panel"
+ "github.com/araihu/goshtoso/components/alert"
+ "github.com/araihu/goshtoso/components/emptystate"
+ "github.com/araihu/goshtoso/components/textinput"
+ selectfield "github.com/araihu/goshtoso/components/select"
+ "github.com/araihu/goshtoso/components/button"
+ "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/icon"
+ "github.com/araihu/goshtoso/components/badge"
+ "github.com/araihu/goshtoso/components/accordion"
+ "github.com/araihu/goshtoso/components/tooltip"
+)
+
+templ Current(m Model) {
+ <div class="image-upgrades">
+ @pageheader.PageHeader(pageheader.Config{Title:"Image upgrades",Description:"Renovate candidates from Git. Read-only advisory.",Actions:CoverageLink(m)})
+ <form method="get" action={ templ.SafeURL(m.CurrentURL) }>
+ @toolbar.Toolbar(toolbar.Config{Label:"Upgrade filters",Filters:Filters(m),Actions:Apply(m),RootClass:"image-upgrades-toolbar",FiltersClass:"image-upgrades-filter-fields"})
+ </form>
+ @Results(m)
+ </div>
+}
+templ Search(m Model) {
+ @textinput.TextInput(textinput.Config{ID:m.Request.DOMID("search"),Name:"search",Label:"Image or Git file",Type:textinput.TypeSearch,Value:m.Filter.Search,MaxLength:256,Placeholder:"Search images"})
+}
+templ Filters(m Model) {
+ @Search(m)
+ @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("assessment"),Name:"assessment",Label:"Assessment",Options:options([]string{"updates_found","unknown","excluded","no_candidate"},m.Filter.Assessment,label)})
+ <div class="image-upgrades-filter-pair">
+ @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("update-type"),Name:"updateType",Label:"Update type",Options:options([]string{"major","minor","patch","digest","pinDigest","pin"},m.Filter.UpdateType,label)})
+ @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("workflow"),Name:"workflow",Label:"Workflow",Options:options([]string{"pr_open","unknown"},m.Filter.Workflow,workflowOptionLabel)})
+ </div>
+ if m.Filter.Repository!="" {
+ <input type="hidden" name="repository" value={ m.Filter.Repository }/>
+ }
+}
+templ Apply(m Model) {
+ @button.Button(button.WithType("submit")){ Apply filters }
+ @Reset(m)
+}
+templ Reset(m Model) {
+ @link.Link(m.ResetURL,link.WithRootClass("image-upgrades-action")){ Reset to defaults }
+}
+templ CoverageLink(m Model) {
+ @link.Link(m.CoverageURL,link.WithRootClass("image-upgrades-action")){ Collection coverage }
+}
+templ Results(m Model) {
+ <section id={ m.Request.DOMID("results") } class="image-upgrades-results" aria-label="Upgrade results" aria-live="polite">
+ @Observation(m)
+ <p>{ m.ResultCount() }</p>
+ if m.List.Total==0 {
+ @emptystate.EmptyState(emptystate.Config{Title:"No matching image groups",Description:"Try another search or reset to defaults. Empty results do not establish that every image is up to date.",Action:Reset(m)})
+ } else {
+ <div class="image-upgrades-desktop">
+ @table.Table(m.Table())
+ </div>
+ <div class="image-upgrades-mobile" aria-label="Image candidate comparisons">
+ for _,d:=range m.List.Items {
+ @panel.Panel(panel.Config{Header:ImageCell(m,d,"cards"),Body:MobileBody(d),Footer:DetailLink(m.Links[d.ID],d),RootClass:"image-upgrades-item",RootAttrs:templ.Attributes{"role":"article","aria-label":d.PackageName}})
+ }
+ </div>
+ }
+ if m.List.NextCursor!="" {
+ @link.Link(m.NextURL,link.WithRootClass("image-upgrades-action")){ Next page }
+ }
+ </section>
+}
+templ Observation(m Model) {
+ @ObservationWarnings(m)
+ @ObservationFacts(m)
+}
+templ ObservationWarnings(m Model) {
+ if m.Result.State=="stale" {
+ @alert.Alert(alert.Config{Title:"Observation is stale",Description:"Previous findings remain visible. Collection failed or the observation exceeded its age limit.",Tone:alert.ToneWarning})
+ }
+ if m.Meta.Coverage.Status=="partial" {
+ @alert.Alert(alert.Config{Title:"Partial coverage",Description:count(m.Meta.Coverage.Unknown)+" image/file groups are unassessed.",Tone:alert.ToneWarning})
+ }
+}
+templ ObservationFacts(m Model) {
+ <dl class="image-upgrades-observation">
+ <div><dt>Repository</dt><dd class="image-upgrades-exact">{ m.Meta.Repository.Name }</dd></div>
+ <div><dt>Observed at</dt><dd>{ m.Meta.CompletedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</dd></div>
+ <div><dt>Collection</dt><dd>{ m.Freshness() }</dd></div>
+ <div><dt>Coverage</dt><dd>{ label(m.Meta.Coverage.Status) }</dd></div>
+ </dl>
+}
+templ ImageCell(m Model,d advisory.Item,layout string) {
+ <div class="image-upgrades-cell">
+ @ServiceIdentity(m,d)
+ <strong class="image-upgrades-exact">{ d.PackageName }</strong>
+ @SourceFile(m,d,layout)
+ </div>
+}
+templ SourceFile(m Model,d advisory.Item,layout string) {
+ <div class="image-upgrades-source">
+ @SourceType(m,d,layout)
+ <code class="image-upgrades-exact">{ d.PackageFile }</code>
+ </div>
+}
+templ SourceType(m Model,d advisory.Item,layout string) {
+ if symbol:=managerSymbol(d.Manager);symbol!="" {
+ @tooltip.Tooltip(m.Request.DOMID("source-"+layout+"-"+d.ID),managerLabel(d.Manager),tooltip.WithPortal(true),tooltip.WithTrigger(SourceIcon(d.Manager,symbol)))
+ }
+}
+templ SourceIcon(manager string,symbol string) {
+ @button.Button(button.WithType("button"),button.WithAppearance(button.AppearancePlain),button.WithRootClass("image-upgrades-source-icon"),button.WithAttrs(templ.Attributes{"aria-label":"Image source: "+managerLabel(manager)})) {
+ @icon.Icon(icon.Config{SpriteURL:"/ui/icons/sprite.svg",Symbol:icon.Symbol(symbol),Size:icon.SizeLG,Decorative:true})
+ }
+}
+templ ServiceIdentity(m Model,d advisory.Item) {
+ if service,ok:=m.Services[d.ServiceID];ok {
+ <div class="image-upgrades-service">
+ if service.IconSymbol!="" {
+ @icon.Icon(icon.Config{SpriteURL:service.IconSpriteURL,Symbol:icon.Symbol(service.IconSymbol),Size:icon.SizeLG,Decorative:true})
+ } else if service.IconURL!="" {
+ <img src={ service.IconURL } alt="" width="24" height="24" loading="lazy"/>
+ }
+ <strong>{ service.Name }</strong>
+ </div>
+ }
+}
+templ Reference(d advisory.Item) {
+ @ReferenceValue(d.CurrentValue,d.CurrentDigest)
+}
+templ ReferenceValue(value *string,digest *string) {
+ <div class="image-upgrades-cell">
+ <span class="image-upgrades-exact">{ text(value) }</span>
+ if digest!=nil {
+ <code class="image-upgrades-exact">{ shortDigest(digest) }</code>
+ } else {
+ <small>Digest not reported</small>
+ }
+ </div>
+}
+templ Proposals(d advisory.Item) {
+ <ul class="image-upgrades-proposals">
+ for _,u:=range d.Candidates {
+ <li class="image-upgrades-cell">
+ <span class="image-upgrades-exact">{ candidateLabel(u) }</span>
+ if u.IsVulnerabilityAlert {
+ @SecurityTag()
+ <small>Renovate flag only; CVE and severity are not established.</small>
+ }
+ if u.NewDigest!=nil {
+ <code class="image-upgrades-exact">{ shortDigest(u.NewDigest) }</code>
+ }
+ </li>
+ }
+ </ul>
+}
+templ Assessment(d advisory.Item) {
+ <div class="image-upgrades-cell"><span>{ label(d.Assessment) }</span>
+ for _,value:=range workflowLabels(d) {
+ if value=="Policy/workflow not established" {
+ <span>{ value }</span>
+ } else {
+ <strong>{ value }</strong>
+ }
+ }
+ </div>
+}
+templ DetailLink(destination string,d advisory.Item) {
+ @link.Link(destination,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":"Details for "+d.PackageName+" in "+d.PackageFile})){ Details }
+}
+templ MobileBody(d advisory.Item) {
+ <div class="image-upgrades-cell">
+ <p>{ label(d.Assessment) }</p>
+ <div class="image-upgrades-reference-pair">
+ <div class="image-upgrades-cell"><strong>Git reference</strong>@Reference(d)</div>
+ <div class="image-upgrades-cell"><strong>Candidates</strong>@Proposals(d)</div>
+ </div>
+ for _,reason:=range d.Reasons {
+ <p>{ reasonLabel(reason) }</p>
+ }
+ </div>
+}
+templ CandidateSummary(d advisory.Item,u snapshot.Candidate) {
+ <section class="image-upgrades-candidate">
+ <h3 class="text-base font-semibold">{ label(u.UpdateType)+" candidate" }</h3>
+ if u.IsVulnerabilityAlert {
+ @SecurityTag()
+ <p>Renovate flag only; CVE and severity are not established.</p>
+ }
+ <div class="image-upgrades-reference-pair">
+ <dl class="image-upgrades-reference"><div><dt>Git reference</dt><dd>@ReferenceValue(d.CurrentValue,d.CurrentDigest)</dd></div></dl>
+ <dl class="image-upgrades-reference"><div><dt>Candidate</dt><dd>@ReferenceValue(u.NewValue,u.NewDigest)</dd></div></dl>
+ </div>
+ <dl class="image-upgrades-status">
+ <div><dt>Policy</dt><dd>{ policyLabel(u.Policy) }</dd></div>
+ <div><dt>Workflow</dt><dd>{ workflowLabel(u.Workflow) }</dd></div>
+ </dl>
+ </section>
+}
+templ Detail(m Model) {
+ <div class="image-upgrades">
+ <div class="image-upgrades-detail-heading border-b border-outline dark:border-outline-dark">
+ @pageheader.PageHeader(pageheader.Config{Title:m.Detail.Dependency.PackageName,TitleClass:"image-upgrades-exact",HideSeparator:true,RootClass:"image-upgrades-detail-title",Actions:Back(m)})
+ @SourceFile(m,m.Detail.Dependency,"detail")
+ </div>
+ @ObservationWarnings(m)
+ @panel.Panel(panel.Config{Header:SectionTitle("Git reference and candidates"),Body:DetailBody(m)})
+ @ObservationFacts(m)
+ @panel.Panel(panel.Config{Header:SectionTitle("Exact image references"),Body:ExactReferences(m.Detail.Dependency)})
+ @Evidence(m)
+ </div>
+}
+templ DetailBody(m Model) {
+ {{ d:=m.Detail.Dependency }}
+ @ServiceIdentity(m,d)
+ for _,u:=range d.Candidates {
+ @CandidateSummary(d,u)
+ if u.BranchName!="" {
+ <p>Reported branch: <code class="image-upgrades-exact">{ u.BranchName }</code></p>
+ }
+ if u.BranchResult!="" {
+ <p>Reported branch result: { branchResultLabel(u.BranchResult) }</p>
+ }
+ if u.PR!=nil {
+ @link.Link(u.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open reported pull request }
+ }
+ }
+ if len(d.Candidates)==0 {
+ <p>No candidate is proven for this group. The report does not establish that the image is up to date.</p>
+ }
+ for _,reason:=range d.Reasons {
+ <p>{ reasonLabel(reason) }</p>
+ }
+ <dl class="image-upgrades-evidence">
+ <div><dt>Assessment</dt><dd>{ label(d.Assessment) }</dd></div>
+ <div><dt>Manager</dt><dd>{ managerLabel(d.Manager) }</dd></div>
+ <div><dt>Matching source records</dt><dd>{ count(d.SourceOccurrences) }</dd></div>
+ </dl>
+}
+templ ExactReferences(d advisory.Item) {
+ <dl class="image-upgrades-evidence">
+ <div><dt>Git tag</dt><dd class="image-upgrades-exact">{ text(d.CurrentValue) }</dd></div>
+ <div><dt>Git digest</dt><dd><code class="image-upgrades-exact">{ text(d.CurrentDigest) }</code></dd></div>
+ for _,u:=range d.Candidates {
+ <div><dt>{ label(u.UpdateType)+" candidate tag" }</dt><dd class="image-upgrades-exact">{ text(u.NewValue) }</dd></div>
+ <div><dt>{ label(u.UpdateType)+" candidate digest" }</dt><dd><code class="image-upgrades-exact">{ text(u.NewDigest) }</code></dd></div>
+ }
+ </dl>
+}
+templ Back(m Model) {
+ @link.Link(m.BackURL,link.WithRootClass("image-upgrades-action")){ Back to images }
+}
+templ Coverage(m Model) {
+ <div class="image-upgrades">
+ @pageheader.PageHeader(pageheader.Config{Title:"Collection coverage",Actions:Back(m)})
+ @Observation(m)
+ @Evidence(m)
+ </div>
+}
+templ Evidence(m Model) {
+ @panel.Panel(panel.Config{Header:SectionTitle("Collection summary"),Body:CoverageSummary(m)})
+ @accordion.Accordion(accordion.AccordionConfig{ID:m.Request.DOMID("technical-evidence"),Items:[]accordion.AccordionItem{{ID:m.Request.DOMID("technical-details"),Title:"Technical details",Content:TechnicalEvidence(m)}}})
+}
+templ CoverageSummary(m Model) {
+ <p>{ count(m.Meta.Coverage.SourceRecords)+" source image records form "+count(m.Meta.Coverage.Extracted)+" image groups." }</p>
+ <dl class="image-upgrades-observation">
+ <div><dt>Assessed</dt><dd>{ count(m.Meta.Coverage.Assessed) }</dd></div>
+ <div><dt>Unassessed</dt><dd>{ count(m.Meta.Coverage.Unknown) }</dd></div>
+ <div><dt>Excluded</dt><dd>{ count(m.Meta.Coverage.Excluded) }</dd></div>
+ </dl>
+ for _,reason:=range m.Meta.Coverage.Reasons {
+ <p>{ reasonLabel(reason) }</p>
+ }
+}
+templ TechnicalEvidence(m Model) {
+ <dl class="image-upgrades-evidence">
+ <div><dt>Repository commit</dt><dd><code class="image-upgrades-exact">{ m.Meta.Repository.Commit }</code></dd></div>
+ <div><dt>Base branch</dt><dd class="image-upgrades-exact">{ m.Meta.Repository.BaseBranch }</dd></div>
+ <div><dt>Policy fingerprint</dt><dd><code class="image-upgrades-exact">{ m.Meta.Producer.PolicyHash }</code></dd></div>
+ <div><dt>Renovate</dt><dd>{ m.Meta.Producer.RenovateVersion }</dd></div>
+ <div><dt>Renovate image</dt><dd><code class="image-upgrades-exact">{ m.Meta.Producer.RenovateImage }</code></dd></div>
+ <div><dt>Scope</dt><dd>{ m.Meta.Coverage.Scope }</dd></div>
+ </dl>
+}
+templ Widget(m Model) {
+ <div class="image-upgrades">
+ @Observation(m)
+ <p>{ count(m.List.Total) } image groups have Renovate candidates.</p>
+ for _,d:=range m.List.Items {
+ <div class="image-upgrades-cell">
+ @ServiceIdentity(m,d)
+ if hasSecurity(d) {
+ @SecurityTag()
+ }
+ <div>@link.Link(m.Links[d.ID]){ { d.PackageName } }<span> · { count(len(d.Candidates)) } candidates</span></div>
+ </div>
+ }
+ @link.Link(m.BackURL,link.WithRootClass("image-upgrades-action")){ View image upgrades }
+ </div>
+}
+templ Recovery(m Model,code string) {
+ <section id={ m.Request.DOMID("results") } class="image-upgrades" aria-live="polite">
+ @emptystate.EmptyState(emptystate.Config{Title:"Upgrade data unavailable",Description:recovery(code),Action:Back(m)})
+ </section>
+}
+templ SectionTitle(title string) {
+ <h2 class="text-lg font-semibold">{ title }</h2>
+}
+templ SecurityTag() {
+ @badge.Badge(badge.Config{Label:"Renovate security flag",Tone:badge.ToneWarning,Appearance:badge.AppearanceSoft})
+}

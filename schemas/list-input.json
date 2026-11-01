@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "search": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 256
+    },
+    "assessment": {
+      "enum": [
+        "",
+        "updates_found",
+        "no_candidate",
+        "excluded",
+        "unknown"
+      ]
+    },
+    "updateType": {
+      "enum": [
+        "",
+        "major",
+        "minor",
+        "patch",
+        "digest",
+        "pinDigest",
+        "pin",
+        "unknown"
+      ]
+    },
+    "workflow": {
+      "enum": [
+        "",
+        "pr_open",
+        "branch_only",
+        "none_observed",
+        "unknown"
+      ]
+    },
+    "cursor": {
+      "type": "string",
+      "maxLength": 1024
+    },
+    "revision": {
+      "type": "string",
+      "maxLength": 24
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    }
+  },
+  "required": []
+}
