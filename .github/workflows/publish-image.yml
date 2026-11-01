@@ -67,10 +67,14 @@ jobs:
           [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
           receipt="$RUNNER_TEMP/image-receipt"
           mkdir -p "$receipt"
+          docker buildx imagetools inspect --raw "$IMAGE_NAME@$DIGEST" > "$receipt/index.json"
           container_id=''
           trap 'if [[ -n "$container_id" ]]; then docker rm "$container_id" >/dev/null; fi' EXIT
           for architecture in amd64 arm64; do
-            container_id=$(docker create --platform "linux/$architecture" "$IMAGE_NAME@$DIGEST" /bin/true)
+            carrier_digest=$(jq -er --arg architecture "$architecture" \
+              '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == $architecture) | .digest] | select(length == 1) | .[0]' "$receipt/index.json")
+            [[ "$carrier_digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            container_id=$(docker create --platform "linux/$architecture" "$IMAGE_NAME@$carrier_digest" /bin/true)
             docker cp "$container_id:/opt/image-upgrades/package" "$receipt/package-$architecture"
             docker rm "$container_id" >/dev/null
             container_id=''
