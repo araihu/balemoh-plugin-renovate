@@ -145,7 +145,8 @@ func Run(ctx context.Context, c Config) (result error) {
 	return nil
 }
 func runtimeVersion(ctx context.Context, environment []string) string {
-	command := exec.CommandContext(ctx, "renovate", "--version")
+	// The containerbase wrapper writes tool initialization logs on a cold /tmp.
+	command := exec.CommandContext(ctx, "/usr/local/renovate/node", "--use-openssl-ca", "/usr/local/renovate/dist/renovate.js", "--version")
 	command.Env = environment
 	out, e := command.Output()
 	if e != nil {
