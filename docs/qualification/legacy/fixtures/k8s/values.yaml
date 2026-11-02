@@ -1,0 +1,3 @@
+image:
+  repository: docker.io/library/busybox
+  tag: "1.38.0"

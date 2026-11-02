@@ -1,0 +1,4 @@
+resources: []
+images:
+  - name: docker.io/library/redis
+    newTag: 7.4.12-alpine

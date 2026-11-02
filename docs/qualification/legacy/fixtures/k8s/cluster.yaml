@@ -1,0 +1,6 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: poc
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.1

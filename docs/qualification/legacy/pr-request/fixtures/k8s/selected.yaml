@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selected-proxy
+spec:
+  selector:
+    matchLabels:
+      app: selected-proxy
+  template:
+    metadata:
+      labels:
+        app: selected-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: docker.io/library/nginx:1.25.3
+        - name: unselected-sidecar
+          image: docker.io/library/alpine:3.19.0

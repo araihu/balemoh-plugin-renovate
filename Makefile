@@ -1,7 +1,7 @@
 .PHONY: generate package test image
 generate:
 	go run github.com/a-h/templ/cmd/templ@v0.3.1070 generate
-	go generate ./internal/runner ./internal/requests ./cmd/snapshot-server
+	go generate ./internal/runner ./internal/requests ./internal/tracking ./internal/requestbackup ./cmd/snapshot-server
 	python3 scripts/schemas.py
 	gofmt -w cmd internal
 
@@ -15,6 +15,8 @@ package: generate
 	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -o dist/collector-$$arch ./cmd/collector || exit 1; \
 	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -o dist/snapshot-server-$$arch ./cmd/snapshot-server || exit 1; \
 	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -o dist/request-controller-$$arch ./cmd/request-controller || exit 1; \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -o dist/app-token-$$arch ./cmd/app-token || exit 1; \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build -trimpath -o dist/request-backup-$$arch ./cmd/request-backup || exit 1; \
 	done
 	cp plugin.json dist/package/
 	cp schemas/*.json dist/package/schemas/
