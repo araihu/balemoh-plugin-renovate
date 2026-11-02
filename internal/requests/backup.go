@@ -304,8 +304,13 @@ func RestoreRequestBackup(archive, destination, repository string) (BackupManife
 	if e = os.Mkdir(target, 0700); e != nil {
 		return BackupManifest{}, e
 	}
+	root, e := os.OpenRoot(target)
+	if e != nil {
+		return BackupManifest{}, e
+	}
+	defer root.Close()
 	for name, data := range files {
-		file, e := os.OpenFile(filepath.Join(target, name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		file, e := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 		if e != nil {
 			return BackupManifest{}, e
 		}
@@ -318,7 +323,7 @@ func RestoreRequestBackup(archive, destination, repository string) (BackupManife
 			return BackupManifest{}, e
 		}
 	}
-	dir, e := os.Open(target)
+	dir, e := root.Open(".")
 	if e != nil {
 		return BackupManifest{}, e
 	}

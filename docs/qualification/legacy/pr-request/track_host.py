@@ -60,6 +60,7 @@ def main():
     os.chmod(state / "key.pem", 0o600)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Source)
     tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    tls.minimum_version = ssl.TLSVersion.TLSv1_2
     tls.load_cert_chain(state / "cert.pem", state / "key.pem")
     server.socket = tls.wrap_socket(server.socket, server_side=True)
     threading.Thread(target=server.serve_forever, daemon=True).start()

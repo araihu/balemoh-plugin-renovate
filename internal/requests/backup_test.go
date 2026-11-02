@@ -41,7 +41,7 @@ func archiveFixture(t *testing.T, entries []struct {
 	tw := tar.NewWriter(f)
 	for _, entry := range entries {
 		h := &tar.Header{Name: entry.name, Size: int64(len(entry.data)), Mode: 0600, Typeflag: entry.kind}
-		if entry.kind == tar.TypeSymlink {
+		if entry.kind == tar.TypeSymlink || entry.kind == tar.TypeLink {
 			h.Linkname = "/tmp/escape"
 			h.Size = 0
 		}
@@ -126,8 +126,13 @@ func TestBackupArchiveCorruptionTraversalLinksAndUnknownFields(t *testing.T) {
 	}
 	manifest, _ := json.Marshal(m)
 	record := files[r.ID+".json"]
-	for _, mode := range []string{"corruption", "traversal", "symlink", "duplicate", "unknown", "wrong repo"} {
+	for _, mode := range []string{"corruption", "traversal", "absolute", "nested", "symlink", "hardlink", "duplicate", "unknown", "wrong repo"} {
 		t.Run(mode, func(t *testing.T) {
+			dest := t.TempDir()
+			outside := filepath.Join(t.TempDir(), "sentinel.json")
+			if err := os.WriteFile(outside, []byte("retained"), 0600); err != nil {
+				t.Fatal(err)
+			}
 			entries := []struct {
 				name string
 				data []byte
@@ -139,8 +144,14 @@ func TestBackupArchiveCorruptionTraversalLinksAndUnknownFields(t *testing.T) {
 				entries[0].data = append(bytes.Clone(record), ' ')
 			case "traversal":
 				entries[0].name = "state/../escape.json"
+			case "absolute":
+				entries[0].name = outside
+			case "nested":
+				entries[0].name = "state/nested/" + r.ID + ".json"
 			case "symlink":
 				entries[0].kind = tar.TypeSymlink
+			case "hardlink":
+				entries[0].kind = tar.TypeLink
 			case "duplicate":
 				entries = append(entries, entries[0])
 			case "unknown":
@@ -152,13 +163,15 @@ func TestBackupArchiveCorruptionTraversalLinksAndUnknownFields(t *testing.T) {
 			case "wrong repo":
 				repo = "other/repo"
 			}
-			dest := t.TempDir()
 			if _, e := RestoreRequestBackup(archiveFixture(t, entries), dest, repo); e == nil {
 				t.Fatal("invalid archive accepted")
 			}
 			left, _ := os.ReadDir(dest)
 			if len(left) != 0 {
 				t.Fatal("invalid archive wrote partial state")
+			}
+			if data, err := os.ReadFile(outside); err != nil || string(data) != "retained" {
+				t.Fatal("invalid archive changed retained external file", err)
 			}
 		})
 	}
