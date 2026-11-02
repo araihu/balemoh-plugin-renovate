@@ -1,0 +1,284 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: renovate-requests-proof-source-20261101
+  namespace: balemoh
+  labels:
+    app.kubernetes.io/part-of: balemoh-renovate
+    recovery.balemoh.io/run: requests-20261101
+    recovery.balemoh.io/role: source
+  annotations:
+    k8up.io/backup: 'false'
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  storageClassName: linstor-nvme-local
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: renovate-requests-proof-source-20261101
+  namespace: balemoh
+  labels:
+    app.kubernetes.io/part-of: balemoh-renovate
+    recovery.balemoh.io/run: requests-20261101
+    recovery.balemoh.io/role: source
+  annotations:
+    recovery.balemoh.io/scope: Synthetic request records only; writer disabled; claims
+      retained
+spec:
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  restartPolicy: Never
+  activeDeadlineSeconds: 10800
+  nodeSelector:
+    homelab: 'true'
+    kubernetes.io/arch: amd64
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 12021
+    runAsGroup: 12021
+    fsGroup: 12021
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  initContainers:
+  - name: restic
+    image: restic/restic@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+    command:
+    - sh
+    - "-ceu"
+    - cp /usr/bin/restic /tools/restic; chmod 0555 /tools/restic
+    volumeMounts:
+    - name: tools
+      mountPath: "/tools"
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi
+  containers:
+  - name: proof
+    image: ghcr.io/araihu/balemoh-plugin-renovate@sha256:41140feb89582d7397ef12fbbb0fa7ac29b38132db17ba9f4b706d8e456aa3cc
+    command:
+    - sh
+    - "-ceu"
+    - mkdir -p /work/tmp; command -v python3; /tools/restic version; sleep 10800
+    env:
+    - name: HOME
+      value: "/work"
+    - name: TMPDIR
+      value: "/work/tmp"
+    - name: RESTIC_REPOSITORY
+      value: s3:https://s3.us-east-005.backblazeb2.com/homelab-k8up-backup/balemoh-renovate-requests
+    - name: RESTIC_PASSWORD_FILE
+      value: "/credentials/backup/repo_password"
+    - name: AWS_DEFAULT_REGION
+      value: us-east-005
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: k8up-secret
+          key: aws_access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: k8up-secret
+          key: aws_secret_access_key
+    volumeMounts:
+    - name: data
+      mountPath: "/data"
+    - name: work
+      mountPath: "/work"
+    - name: tools
+      mountPath: "/tools"
+      readOnly: true
+    - name: backup
+      mountPath: "/credentials/backup"
+      readOnly: true
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: renovate-requests-proof-source-20261101
+  - name: work
+    emptyDir:
+      sizeLimit: 256Mi
+  - name: tools
+    emptyDir:
+      sizeLimit: 64Mi
+  - name: backup
+    secret:
+      secretName: renovate-plugin-backup
+      defaultMode: 288
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: renovate-requests-proof-restored-20261101
+  namespace: balemoh
+  labels:
+    app.kubernetes.io/part-of: balemoh-renovate
+    recovery.balemoh.io/run: requests-20261101
+    recovery.balemoh.io/role: restored
+  annotations:
+    k8up.io/backup: 'false'
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  storageClassName: linstor-nvme-local
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: renovate-requests-proof-restored-20261101
+  namespace: balemoh
+  labels:
+    app.kubernetes.io/part-of: balemoh-renovate
+    recovery.balemoh.io/run: requests-20261101
+    recovery.balemoh.io/role: restored
+  annotations:
+    recovery.balemoh.io/scope: Synthetic request records only; writer disabled; claims
+      retained
+spec:
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  restartPolicy: Never
+  activeDeadlineSeconds: 10800
+  nodeSelector:
+    homelab: 'true'
+    kubernetes.io/arch: amd64
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 12021
+    runAsGroup: 12021
+    fsGroup: 12021
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  initContainers:
+  - name: restic
+    image: restic/restic@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+    command:
+    - sh
+    - "-ceu"
+    - cp /usr/bin/restic /tools/restic; chmod 0555 /tools/restic
+    volumeMounts:
+    - name: tools
+      mountPath: "/tools"
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 250m
+        memory: 128Mi
+  containers:
+  - name: proof
+    image: ghcr.io/araihu/balemoh-plugin-renovate@sha256:41140feb89582d7397ef12fbbb0fa7ac29b38132db17ba9f4b706d8e456aa3cc
+    command:
+    - sh
+    - "-ceu"
+    - mkdir -p /work/tmp; command -v python3; /tools/restic version; sleep 10800
+    env:
+    - name: HOME
+      value: "/work"
+    - name: TMPDIR
+      value: "/work/tmp"
+    - name: RESTIC_REPOSITORY
+      value: s3:https://s3.us-east-005.backblazeb2.com/homelab-k8up-backup/balemoh-renovate-requests
+    - name: RESTIC_PASSWORD_FILE
+      value: "/credentials/backup/repo_password"
+    - name: AWS_DEFAULT_REGION
+      value: us-east-005
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: k8up-secret
+          key: aws_access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: k8up-secret
+          key: aws_secret_access_key
+    volumeMounts:
+    - name: data
+      mountPath: "/data"
+    - name: work
+      mountPath: "/work"
+    - name: tools
+      mountPath: "/tools"
+      readOnly: true
+    - name: backup
+      mountPath: "/credentials/backup"
+      readOnly: true
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+        - ALL
+    resources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        cpu: '1'
+        memory: 1Gi
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: renovate-requests-proof-restored-20261101
+  - name: work
+    emptyDir:
+      sizeLimit: 256Mi
+  - name: tools
+    emptyDir:
+      sizeLimit: 64Mi
+  - name: backup
+    secret:
+      secretName: renovate-plugin-backup
+      defaultMode: 288
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            recovery.balemoh.io/run: requests-20261101
+            recovery.balemoh.io/role: source
+        topologyKey: kubernetes.io/hostname

@@ -1,0 +1,46 @@
+name: Isolated request controller proof
+on: workflow_dispatch
+concurrency:
+  group: isolated-renovate-engine
+  cancel-in-progress: false
+permissions: {}
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      checks: read
+      statuses: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - name: Build the request controller probe
+        working-directory: proof/plugin
+        run: CGO_ENABLED=0 go build -trimpath -o ../../controller-proof ./cmd/controller-proof
+      - name: Execute only the selected upgrade and track its PR
+        env:
+          RENOVATE_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = guilycst/balemoh-renovate-engine-poc-20261101
+          mkdir -p "$RUNNER_TEMP/controller-output"
+          chmod 777 "$RUNNER_TEMP/controller-output"
+          docker run --rm --env RENOVATE_TOKEN --env GITHUB_REPOSITORY --env GITHUB_SHA \
+            --mount "type=bind,source=$PWD/controller-proof,target=/usr/local/bin/controller-proof,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP/controller-output,target=/out" \
+            --entrypoint /usr/local/bin/controller-proof \
+            ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: controller-receipt
+          path: ${{ runner.temp }}/controller-output
+          retention-days: 7

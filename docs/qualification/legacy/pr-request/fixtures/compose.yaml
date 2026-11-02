@@ -1,0 +1,5 @@
+services:
+  proxy:
+    image: docker.io/library/nginx:1.25.3
+  unselected:
+    image: docker.io/library/alpine:3.19.0

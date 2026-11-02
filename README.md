@@ -1,5 +1,7 @@
 # Balemoh Renovate
 
+
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The prepared alpha.3 tools require a new image publication before GitOps activation.
 Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
 
 Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the production writer until a separate handover. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.

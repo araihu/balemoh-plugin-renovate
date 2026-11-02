@@ -10,7 +10,7 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-//go:generate go tool envdoc -output environment.md -format markdown
+//go:generate go tool envdoc -types Config -files config.go -output environment.md -format markdown
 type Config struct {
 	// Single allowed GitHub owner/repository. No client-supplied repository is accepted.
 	Repository string `env:"UPGRADES_REPOSITORY,required,notEmpty"`

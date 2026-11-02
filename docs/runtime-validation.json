@@ -1,0 +1,44 @@
+{
+  "scope": "Local source qualification only; no publication, cluster deployment or live GitHub operation",
+  "preparedVersion": "0.0.1-alpha.3",
+  "sourceState": "uncommitted refactor/runtime-tools",
+  "validation": {
+    "raceTests": "go test -race ./... passed",
+    "vet": "go vet ./... passed",
+    "environmentDocs": "envdoc generated from typed configuration with explicit Config selectors",
+    "workflowLint": "actionlint passed",
+    "optInProbes": "recoveryproof and refreshproof compiled",
+    "crossBuilds": [
+      "linux/amd64",
+      "linux/arm64"
+    ],
+    "localContainer": "both packaged command help operations passed without network, credentials or writable root"
+  },
+  "legacyCompatibility": {
+    "exporterSource": "guilycst/home-lab@0b0a6ae801053f4c0458cdf66d50ced0fb9f855c:k8s/renovate-requests/backup.py",
+    "archiveSHA256": "283002bc8dc59dcf49c437e0dcb0ad2c72bf922030f8f8f4e49ecfb0d5294614",
+    "archiveBytes": 10240,
+    "fixtureRepository": "test/repo",
+    "recovery": {
+      "admissionStatus": 403,
+      "checksumsVerified": true,
+      "exclusiveLockVerified": true,
+      "executorCalls": 0,
+      "existingPRReconciled": true,
+      "githubEvidence": "local controlled fixture; no production PR interaction",
+      "interruptedState": "needs_attention",
+      "modesVerified": true,
+      "nonGETGitHubCalls": 0,
+      "restoredRecords": 3,
+      "writerEnabled": false
+    },
+    "regressionFixed": "Accept Python tarfile directory header state/ as well as state; validate before target creation"
+  },
+  "localImageID": "sha256:8a45938bfaee8fa7625e658bb06a6badebc0781f2dd7ecf1697ff275cf056d65",
+  "publicationVerified": false,
+  "remainingQualification": [
+    "Publish and verify runtime tools in both architecture images",
+    "Bind immutable runtime publication receipt in homelab",
+    "After deployment approval, repeat live App issuance, normal renewal/restart and encrypted backup/restore checks"
+  ]
+}

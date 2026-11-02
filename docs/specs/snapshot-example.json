@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "runId": "00000000-0000-4000-8000-000000000001",
+  "startedAt": "2026-10-29T12:00:00Z",
+  "completedAt": "2026-10-29T12:02:00Z",
+  "producer": {
+    "renovateVersion": "44.196.1",
+    "renovateImage": "ghcr.io/renovatebot/renovate@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "adapterVersion": "0.0.1-example",
+    "policyHash": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "repository": {
+    "platform": "github",
+    "name": "example/home-lab",
+    "baseBranch": "main",
+    "commit": "1111111111111111111111111111111111111111"
+  },
+  "coverage": {
+    "scope": "Synthetic fixture: Docker dependencies extracted from configured Kubernetes files only; no runtime inventory.",
+    "status": "partial",
+    "extracted": 3,
+    "assessed": 1,
+    "excluded": 1,
+    "unknown": 1,
+    "reasons": [
+      "registry_lookup_failed"
+    ],
+    "sourceRecords": 3
+  },
+  "dependencies": [
+    {
+      "manager": "kubernetes",
+      "packageFile": "k8s/example-api/deployment.yaml",
+      "dependencyKey": "Deployment:example:api/container:api",
+      "packageName": "ghcr.io/example/api",
+      "currentValue": "1.2.3",
+      "currentDigest": null,
+      "assessment": "updates_found",
+      "candidates": [
+        {
+          "newValue": "2.0.0",
+          "newDigest": null,
+          "updateType": "major",
+          "policy": "approval_required",
+          "workflow": "none_observed",
+          "id": "8728479671bec15d2694caf154ac2a73fea3d76e0d5829fc07bd4a036f7464a2"
+        }
+      ],
+      "reasons": [],
+      "id": "dcf25d84465074e016cd5a028f54971ebf9a8812ff165c1017df433044f854bd"
+    },
+    {
+      "manager": "kubernetes",
+      "packageFile": "k8s/private/deployment.yaml",
+      "dependencyKey": "Deployment:example:private/container:api",
+      "packageName": "registry.example/private/api",
+      "currentValue": "1.2.3",
+      "currentDigest": null,
+      "assessment": "excluded",
+      "candidates": [],
+      "reasons": [
+        "package_disabled"
+      ],
+      "id": "8b6a244307b6cf831885609de23002bd4b461cb15ac23a6ecf0ffac830bd1b1d"
+    },
+    {
+      "manager": "kubernetes",
+      "packageFile": "k8s/example-worker/deployment.yaml",
+      "dependencyKey": "Deployment:example:worker/container:worker",
+      "packageName": "ghcr.io/example/worker",
+      "currentValue": "1.2.3",
+      "currentDigest": null,
+      "assessment": "unknown",
+      "candidates": [],
+      "reasons": [
+        "registry_lookup_failed"
+      ],
+      "id": "8dc66165525d3e0194a240604bc86e6da1fee9fa928a5bedb412ce41f101ffa5"
+    }
+  ]
+}

@@ -1,0 +1,193 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "name": "renovate-tracking-refresh-proof-20261101",
+    "namespace": "balemoh",
+    "labels": {
+      "app.kubernetes.io/name": "renovate-tracking-refresh-proof"
+    }
+  },
+  "spec": {
+    "automountServiceAccountToken": false,
+    "containers": [
+      {
+        "command": [
+          "sh",
+          "-ceu",
+          "while test ! -x /work/controller-probe; do sleep 1; done; exec /work/controller-probe -test.run=^TestAppTokenRefreshProof$ -test.v -refresh-proof"
+        ],
+        "env": [],
+        "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:41140feb89582d7397ef12fbbb0fa7ac29b38132db17ba9f4b706d8e456aa3cc",
+        "name": "server",
+        "readinessProbe": {
+          "exec": {
+            "command": [
+              "test",
+              "-f",
+              "/work/consumer.json"
+            ]
+          },
+          "periodSeconds": 5
+        },
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "2Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "512Mi"
+          }
+        },
+        "securityContext": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "readOnlyRootFilesystem": true
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/github-read",
+            "name": "github-read",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/work",
+            "name": "work"
+          }
+        ]
+      }
+    ],
+    "enableServiceLinks": false,
+    "imagePullSecrets": [
+      {
+        "name": "ghcr-araihu"
+      }
+    ],
+    "initContainers": [
+      {
+        "command": [
+          "python3",
+          "/tracking/tracking-token.py",
+          "run",
+          "--refresh-seconds",
+          "30"
+        ],
+        "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:41140feb89582d7397ef12fbbb0fa7ac29b38132db17ba9f4b706d8e456aa3cc",
+        "name": "github-read-token",
+        "readinessProbe": {
+          "exec": {
+            "command": [
+              "python3",
+              "/tracking/tracking-token.py",
+              "ready"
+            ]
+          },
+          "failureThreshold": 1,
+          "periodSeconds": 10,
+          "timeoutSeconds": 3
+        },
+        "resources": {
+          "limits": {
+            "cpu": "250m",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "25m",
+            "memory": "64Mi"
+          }
+        },
+        "restartPolicy": "Always",
+        "securityContext": {
+          "allowPrivilegeEscalation": false,
+          "capabilities": {
+            "drop": [
+              "ALL"
+            ]
+          },
+          "readOnlyRootFilesystem": true
+        },
+        "startupProbe": {
+          "exec": {
+            "command": [
+              "python3",
+              "/tracking/tracking-token.py",
+              "ready"
+            ]
+          },
+          "failureThreshold": 36,
+          "periodSeconds": 5,
+          "timeoutSeconds": 3
+        },
+        "volumeMounts": [
+          {
+            "mountPath": "/credentials/app",
+            "name": "tracking-app",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/tracking",
+            "name": "tracking-code",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/github-read",
+            "name": "github-read"
+          }
+        ]
+      }
+    ],
+    "nodeSelector": {
+      "homelab": "true",
+      "kubernetes.io/arch": "amd64"
+    },
+    "securityContext": {
+      "fsGroup": 12021,
+      "fsGroupChangePolicy": "OnRootMismatch",
+      "runAsGroup": 12021,
+      "runAsNonRoot": true,
+      "runAsUser": 12021,
+      "seccompProfile": {
+        "type": "RuntimeDefault"
+      },
+      "supplementalGroups": [
+        1003
+      ]
+    },
+    "terminationGracePeriodSeconds": 60,
+    "volumes": [
+      {
+        "name": "tracking-app",
+        "secret": {
+          "defaultMode": 288,
+          "secretName": "renovate-plugin-github-tracking-app"
+        }
+      },
+      {
+        "configMap": {
+          "name": "renovate-tracking-proof-code-20261101"
+        },
+        "name": "tracking-code"
+      },
+      {
+        "emptyDir": {
+          "medium": "Memory",
+          "sizeLimit": "1Mi"
+        },
+        "name": "github-read"
+      },
+      {
+        "emptyDir": {
+          "sizeLimit": "128Mi"
+        },
+        "name": "work"
+      }
+    ],
+    "activeDeadlineSeconds": 900,
+    "restartPolicy": "Always"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "enabledManagers": [
+    "argocd",
+    "kubernetes",
+    "helm-values",
+    "kustomize",
+    "dockerfile",
+    "docker-compose",
+    "github-actions",
+    "terraform",
+    "custom.regex"
+  ],
+  "dependencyDashboard": true,
+  "automerge": false,
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "pinDigests": true,
+  "minimumReleaseAge": "3 days",
+  "minimumReleaseAgeBehaviour": "timestamp-optional",
+  "prCreation": "not-pending",
+  "internalChecksFilter": "strict",
+  "ignorePaths": [
+    "k8s/piraeus/manifest.yaml",
+    "k8s/k8up/crds/**"
+  ],
+  "argocd": {
+    "managerFilePatterns": [
+      "/^k8s\\/argocd-apps\\/.+\\.ya?ml$/"
+    ]
+  },
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/^k8s\\/.+\\.ya?ml$/"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track CloudNativePG imageName fields",
+      "managerFilePatterns": [
+        "/^k8s\\/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "imageName:\\s+(?<depName>ghcr\\.io/cloudnative-pg/postgresql):(?<currentValue>[^\\s@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Require dashboard approval for risky version and digest changes",
+      "matchUpdateTypes": [
+        "major",
+        "pinDigest",
+        "digest"
+      ],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "Exclude the private registry until hosted Renovate has scoped credentials",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^code\\.decastro\\.me\\//"
+      ],
+      "enabled": false,
+      "automerge": false
+    },
+    {
+      "description": "Keep Argo CD Redis on the permitted pre-7.4 Alpine line",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ecr-public.aws.com/docker/library/redis"
+      ],
+      "allowedVersions": "/^7\\.[0-3]\\.[0-9]+-alpine$/"
+    },
+    {
+      "description": "Ignore disabled images copied from the Argo CD chart defaults",
+      "matchFileNames": [
+        "k8s/argocd/values.yaml"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/dexidp/dex",
+        "ghcr.io/oliver006/redis_exporter",
+        "quay.io/argoprojlabs/argocd-extension-installer"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Defer the Zitadel backup Alpine update until retention has a safe runbook",
+      "matchFileNames": [
+        "raspi/zitadel/zitadel-backup/Dockerfile"
+      ],
+      "matchPackageNames": [
+        "alpine"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Ignore the historical LinuxServer qBittorrent Ubuntu-base tag",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/qbittorrent"
+      ],
+      "allowedVersions": "!/^(?:14\\.3\\.9|20\\.04\\.1)$/"
+    },
+    {
+      "description": "Ignore the historical LinuxServer Lidarr tag that omits its leading zero",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/lidarr"
+      ],
+      "allowedVersions": "!/^8\\.1\\.2135$/"
+    },
+    {
+      "description": "PoC disabled registry",
+      "matchPackageNames": [
+        "registry.example.invalid/disabled"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "PoC fixed version with no permitted candidate",
+      "matchPackageNames": [
+        "alpine"
+      ],
+      "allowedVersions": "3.19.0",
+      "pinDigests": false
+    },
+    {
+      "description": "PoC grouped nginx proposals",
+      "matchPackageNames": [
+        "nginx",
+        "docker.io/library/nginx"
+      ],
+      "groupName": "poc-nginx"
+    },
+    {
+      "description": "PoC same-tag digest change",
+      "matchFileNames": [
+        "k8s/digest.yaml"
+      ],
+      "allowedVersions": "1.25.3"
+    },
+    {
+      "description": "PoC release-age deferral",
+      "matchFileNames": [
+        "k8s/age.yaml"
+      ],
+      "minimumReleaseAge": "36500 days",
+      "minimumReleaseAgeBehaviour": "timestamp-required",
+      "pinDigests": false
+    }
+  ]
+}
