@@ -1,8 +1,10 @@
 # Balemoh Renovate
 
-Read-only Renovate advisory plugin. Lists image/file groups, Git references, proposed tags/digests, policy/workflow evidence, optional PR links and coverage. Includes a private snapshot endpoint and an hourly collector implementation. No Balemoh core changes are required.
 
-Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the writer.
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The prepared alpha.3 tools require a new image publication before GitOps activation.
+Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
+
+Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the production writer until a separate handover. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
 
 ## Build and test
 
@@ -15,7 +17,24 @@ make package
 make image
 ```
 
-`make package` builds a separate `dist/package/` directory with UI/backend executables for Linux amd64/arm64 and macOS arm64, plus Linux collector/server binaries outside the installed package. It validates the manifest and prints manifest/package digests. Published SDK `v0.0.1-alpha.3` is pinned without a local replacement. Generated SDK schemas and templ output are committed source. Environment docs use the pinned `envdoc` tool, and runtime parsing uses `caarlos0/env/v11`. Stock environment docs omit Go types.
+`make package` builds a separate `dist/package/` directory with UI/backend executables for Linux amd64/arm64 and macOS arm64, plus Linux collector, server and request-controller binaries outside the installed package. It validates the manifest and prints manifest/package digests. The request implementation pins published SDK `v0.0.1-alpha.4` without a module replacement. Release CI checks checksum resolution and builds the compatible host and plugin independently. Generated SDK schemas and templ output are committed source. Environment docs use the pinned `envdoc` tool, and runtime parsing uses `caarlos0/env/v11`. Stock environment docs omit Go types.
+
+For SDK co-development only, point `SDK_SOURCE` at a companion SDK checkout and create an ignored workspace:
+
+```sh
+SDK_SOURCE=/absolute/path/to/balemoh/plugin-sdk
+mkdir -p .local/actions
+cat >.local/actions/go.work <<EOF
+ go 1.27.3
+ use (
+  "$PWD"
+  "$SDK_SOURCE"
+ )
+ replace github.com/araihu/balemoh/plugin-sdk v0.0.1-alpha.4 => "$SDK_SOURCE"
+EOF
+GOWORK="$PWD/.local/actions/go.work" make test
+GOWORK="$PWD/.local/actions/go.work" make package
+```
 
 For a multi-architecture OCI archive, without publishing:
 
@@ -27,7 +46,7 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 
 ## Installation
 
-Install `dist/package/` on both the API and BFF using exact manifest/package digests. Use a compatible alpha.3 host, tested here at Balemoh `4a6b6492183015eed717be0c0104b6951ca10fed`. Source credentials belong only to the backend connection. The UI gets retained query grants and optional explicitly granted service IDs.
+Install `dist/package/` on both the API and BFF using exact manifest/package digests. Read-only releases use an alpha.3-compatible host. This request-capable branch requires the additive alpha.4 action host contract. Source credentials belong only to the backend connection. The UI gets retained query grants and optional explicitly granted service IDs.
 
 ```json
 {
@@ -92,3 +111,39 @@ See [initial public delivery](docs/release.md) for the prepared CI/publication s
 Home-lab owns `k8s/renovate-advisory`, the optional `k8s/balemoh-image-upgrades` overlay and `scripts/prepare-image-upgrades.py`. The overlay preserves the existing Alertmanager installation. It is not connected to Argo, the CronJob is suspended and the endpoint has zero replicas. Publish the exact OCI archive, provision sealed dedicated credentials and CA trust, then authorize activation separately. No settings for the existing Renovate app are changed.
 
 The optional `-notifications` fixture mode starts with one candidate withheld, then publishes a synthetic native-shaped security flag on the next normal collector poll. It verifies one warning in the real host inbox, exact service reference and zero baseline notifications. This uses an isolated SQLite database and separate local operator credential. It is not a real CVE finding or a production scan.
+
+## Selected upgrade requests
+
+The optional `upgrades.request` action needs both an explicit named grant and
+`data.action/v1`. Configure `controllerURL` with a private HTTPS origin and the
+API-only secrets `controller-read-token`, `controller-action-token` and optional
+`controller-ca`, base64 DER. Read/action bearers must differ. Neither GitHub nor
+controller credentials reach the BFF.
+
+The UI shows a confirmation page for supported tag upgrades, submits immutable
+selection IDs and the retained snapshot digest, then redirects to the durable
+request status. Repeat submissions return the existing receipt. It displays
+queued/running/open/draft/closed/merged and uncertain states with last checked
+time. Checks remain unknown when evidence is missing, incomplete or stale.
+No merge/approval action exists.
+
+The separate `image-upgrades-controller` mounts normalized snapshots read-only,
+a private durable request directory and disposable engine workspace. See
+[controller environment](internal/requests/environment.md). Writer defaults
+false. Enabling it requires a dedicated repository-scoped engine credential,
+read-only PR/checks/status credential and exact expected PR author. The reader
+and writer credentials are reread from files to support refreshed tokens.
+
+One worker performs full-dry-run preflight, verifies the exact file/package/tag
+and approved base, then invokes pinned Renovate with the same scope. Dashboard,
+automerge, platform automerge and pruning are disabled. Existing repository
+policy remains required. No hosted bot dashboard edit is involved.
+
+Initial requests support unpinned tag major/minor/patch upgrades in Kubernetes,
+Docker Compose and Dockerfiles. Digest/pin/custom/Helm upgrades remain advisory.
+A base change during the external write can create an ambiguous branch; the
+controller reports needs_attention and never automatically repeats that write.
+
+Before rollout, qualify flock/fsync/rename on the chosen persistent volume and
+prove retained-state restore. Keep the current hosted bot unchanged until the
+separate single-writer cutover. Release builds must resolve the published SDK without a workspace replacement.

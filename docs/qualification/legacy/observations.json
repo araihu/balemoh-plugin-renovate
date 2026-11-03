@@ -1,0 +1,522 @@
+{
+  "observedAtUTC": "2026-10-29T18:57:06.284004+00:00",
+  "version": "44.197.0",
+  "imageIndexDigest": "sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f",
+  "executedPlatform": "linux/arm64",
+  "arm64ManifestDigest": "sha256:befae814c54eda7c948bdf3c950862e817cc6e022aeca4c667aa0afa4f756bdf",
+  "sourceRefBefore": "f847e1d9c6ad64523324c9617461f1b17fcc6e7f",
+  "sourceRefAfter": "f847e1d9c6ad64523324c9617461f1b17fcc6e7f",
+  "sourceRefStable": true,
+  "scannedCommitConfirmedByReport": false,
+  "policyInputsSha256": "afe7171eb08552d846d25474d3329dece9cc8ba834c92cfcf9c38ac00d04a3c8",
+  "transportProof": {
+    "forwardedRequests": 82,
+    "forwardedKinds": {
+      "graphql_query": 10,
+      "rest_read": 45,
+      "git_upload_pack": 27
+    },
+    "forwardedWrites": 0,
+    "blockedRESTMutationSelfTests": 1,
+    "blockedGraphQLMutationSelfTests": 1,
+    "realGitHubCredentialInReportsOrLogs": false,
+    "productionBotConfigurationChanged": false,
+    "clusterResourcesCreated": false,
+    "gatewayStoppedAtUTC": "2026-10-29T18:57:23.291678+00:00"
+  },
+  "runs": {
+    "controlled-extract": {
+      "execution": {
+        "startedAt": "2026-10-29T18:45:48.212744+00:00",
+        "completedAt": "2026-10-29T18:45:54.089134+00:00",
+        "exitCode": 0,
+        "durationSeconds": 5.88,
+        "reportExists": true,
+        "label": "controlled-extract",
+        "image": "ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f"
+      },
+      "inspection": {
+        "reportSha256": "fe83dc16af17e51a06fcb8fed21482cadafb30420b7b52864e06c5a40022442b",
+        "reportBytes": 5004,
+        "topLevelKeys": [
+          "problems",
+          "repositories"
+        ],
+        "globalProblemCount": 0,
+        "repositories": {
+          "local": {
+            "recordKeys": [
+              "branches",
+              "packageFiles",
+              "problems"
+            ],
+            "status": null,
+            "problemCount": 0,
+            "dockerDependencies": 13,
+            "otherDependencies": 4,
+            "dockerManagerCounts": {
+              "docker-compose": 1,
+              "dockerfile": 1,
+              "helm-values": 1,
+              "kubernetes": 8,
+              "kustomize": 1,
+              "regex": 1
+            },
+            "observations": {
+              "empty_updates_observed": 13
+            },
+            "updateTypes": {},
+            "candidateEntries": 0,
+            "pendingCheckEntries": 0,
+            "ociChartRecords": 0,
+            "dependencyFields": [
+              "autoReplaceStringTemplate",
+              "currentDigest",
+              "currentValue",
+              "datasource",
+              "depName",
+              "depType",
+              "packageName",
+              "replaceString",
+              "versioning"
+            ],
+            "updateFields": [],
+            "branches": 0,
+            "branchesWithPR": 0,
+            "branchFields": [],
+            "branchResults": {},
+            "ambiguousIdentityGroups": 1,
+            "hasSourceCommitField": false
+          }
+        }
+      }
+    },
+    "controlled-lookup": {
+      "execution": {
+        "startedAt": "2026-10-29T18:45:47.105993+00:00",
+        "completedAt": "2026-10-29T18:45:59.033256+00:00",
+        "exitCode": 0,
+        "durationSeconds": 11.93,
+        "reportExists": true,
+        "label": "controlled-lookup",
+        "image": "ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f"
+      },
+      "inspection": {
+        "reportSha256": "306df76b8ee8c0177431343d3eefbfd2faf673b7e22f5a670097184f094f5bb3",
+        "reportBytes": 13719,
+        "topLevelKeys": [
+          "problems",
+          "repositories"
+        ],
+        "globalProblemCount": 0,
+        "repositories": {
+          "local": {
+            "recordKeys": [
+              "branches",
+              "libYearsWithStatus",
+              "packageFiles",
+              "problems"
+            ],
+            "status": null,
+            "problemCount": 2,
+            "dockerDependencies": 13,
+            "otherDependencies": 4,
+            "dockerManagerCounts": {
+              "docker-compose": 1,
+              "dockerfile": 1,
+              "helm-values": 1,
+              "kubernetes": 8,
+              "kustomize": 1,
+              "regex": 1
+            },
+            "observations": {
+              "empty_updates_observed": 1,
+              "excluded": 1,
+              "unknown_or_warned": 1,
+              "updates_observed": 10
+            },
+            "updateTypes": {
+              "digest": 1,
+              "major": 2,
+              "minor": 8,
+              "patch": 1,
+              "pinDigest": 5
+            },
+            "candidateEntries": 17,
+            "pendingCheckEntries": 1,
+            "ociChartRecords": 0,
+            "dependencyFields": [
+              "autoReplaceStringTemplate",
+              "currentDigest",
+              "currentValue",
+              "currentVersion",
+              "currentVersionAgeInDays",
+              "currentVersionTimestamp",
+              "datasource",
+              "depName",
+              "depType",
+              "fixedVersion",
+              "homepage",
+              "isSingleVersion",
+              "lookupName",
+              "packageName",
+              "registryUrl",
+              "replaceString",
+              "skipReason",
+              "sourceUrl",
+              "updates",
+              "versioning",
+              "warnings"
+            ],
+            "updateFields": [
+              "branchName",
+              "bucket",
+              "isBreaking",
+              "isPinDigest",
+              "libYears",
+              "newDigest",
+              "newMajor",
+              "newMinor",
+              "newPatch",
+              "newValue",
+              "newVersion",
+              "newVersionAgeInDays",
+              "pendingChecks",
+              "pendingVersions",
+              "releaseTimestamp",
+              "updateType"
+            ],
+            "branches": 0,
+            "branchesWithPR": 0,
+            "branchFields": [],
+            "branchResults": {},
+            "ambiguousIdentityGroups": 1,
+            "hasSourceCommitField": false,
+            "controlledCases": {
+              "disabled": {
+                "skipReason": "disabled",
+                "updates": 0
+              },
+              "lookupFailure": {
+                "skipReason": null,
+                "warnings": 1,
+                "updates": 0,
+                "hasCurrentVersion": false
+              },
+              "fixedVersion": {
+                "warnings": 0,
+                "updates": 0,
+                "currentVersion": "3.19.0",
+                "fixedVersion": "3.19.0"
+              },
+              "digestChange": [
+                {
+                  "updateType": "digest",
+                  "newValue": "1.25.3",
+                  "newDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2"
+                }
+              ],
+              "releaseAge": {
+                "dependencyKeys": [
+                  "autoReplaceStringTemplate",
+                  "currentValue",
+                  "currentVersion",
+                  "currentVersionAgeInDays",
+                  "currentVersionTimestamp",
+                  "datasource",
+                  "depName",
+                  "fixedVersion",
+                  "homepage",
+                  "isSingleVersion",
+                  "lookupName",
+                  "packageName",
+                  "registryUrl",
+                  "replaceString",
+                  "sourceUrl",
+                  "updates",
+                  "versioning",
+                  "warnings"
+                ],
+                "updates": [
+                  {
+                    "bucket": "non-major",
+                    "newVersion": "3.24.3",
+                    "newValue": "3.24.3",
+                    "releaseTimestamp": "2026-10-23T05:24:43.473Z",
+                    "newVersionAgeInDays": 6,
+                    "newMajor": 3,
+                    "newMinor": 24,
+                    "newPatch": 3,
+                    "updateType": "minor",
+                    "isBreaking": false,
+                    "pendingChecks": true,
+                    "libYears": 2.874335996829021,
+                    "branchName": "renovate/docker.io-library-alpine-3.x"
+                  }
+                ]
+              },
+              "groupedBranches": [
+                "renovate/poc-nginx"
+              ],
+              "localPlatformBranchRecords": 0,
+              "duplicateDeclarations": {
+                "records": 2,
+                "distinctCurrentValues": 2,
+                "resourceLocatorPresent": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "github-full-all-managers": {
+      "execution": {
+        "startedAt": "2026-10-29T18:50:01.093951+00:00",
+        "completedAt": "2026-10-29T18:51:06.737591+00:00",
+        "exitCode": 1,
+        "durationSeconds": 65.64,
+        "reportExists": true,
+        "label": "github-full",
+        "image": "ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f"
+      },
+      "inspection": {
+        "reportSha256": "59475170f8313d8c04e3e4e37e8eb14220ee140a03b3e99b565a73402e9da8c0",
+        "reportBytes": 437780,
+        "topLevelKeys": [
+          "problems",
+          "repositories"
+        ],
+        "globalProblemCount": 0,
+        "repositories": {
+          "guilycst/home-lab": {
+            "recordKeys": [
+              "branches",
+              "configFileName",
+              "defaultBranch",
+              "dependencyDashboardIssue",
+              "libYearsWithStatus",
+              "onboardingPrNumber",
+              "packageFiles",
+              "platform",
+              "problems",
+              "status"
+            ],
+            "status": "activated",
+            "problemCount": 86,
+            "dockerDependencies": 199,
+            "otherDependencies": 315,
+            "dockerManagerCounts": {
+              "argocd": 9,
+              "docker-compose": 6,
+              "dockerfile": 7,
+              "helm-values": 28,
+              "kubernetes": 138,
+              "regex": 11
+            },
+            "observations": {
+              "empty_updates_observed": 85,
+              "excluded": 12,
+              "unknown_or_warned": 21,
+              "updates_observed": 81
+            },
+            "updateTypes": {
+              "digest": 44,
+              "major": 3,
+              "minor": 12,
+              "patch": 15,
+              "pinDigest": 9
+            },
+            "candidateEntries": 83,
+            "pendingCheckEntries": 17,
+            "ociChartRecords": 9,
+            "dependencyFields": [
+              "autoReplaceStringTemplate",
+              "currentDigest",
+              "currentValue",
+              "currentVersion",
+              "currentVersionAgeInDays",
+              "currentVersionTimestamp",
+              "datasource",
+              "depName",
+              "depType",
+              "fixedVersion",
+              "homepage",
+              "isSingleVersion",
+              "lookupName",
+              "mostRecentTimestamp",
+              "packageName",
+              "pinDigests",
+              "registryUrl",
+              "replaceString",
+              "skipReason",
+              "sourceDirectory",
+              "sourceUrl",
+              "updates",
+              "versioning",
+              "warnings"
+            ],
+            "updateFields": [
+              "branchName",
+              "bucket",
+              "isBreaking",
+              "isPinDigest",
+              "libYears",
+              "newDigest",
+              "newMajor",
+              "newMinor",
+              "newPatch",
+              "newValue",
+              "newVersion",
+              "newVersionAgeInDays",
+              "pendingChecks",
+              "pendingVersions",
+              "releaseTimestamp",
+              "updateType"
+            ],
+            "branches": 43,
+            "branchesWithPR": 3,
+            "branchFields": [
+              "baseBranch",
+              "branchName",
+              "prNo",
+              "prTitle",
+              "result",
+              "upgrades"
+            ],
+            "branchResults": {
+              "branch-limit-reached": 14,
+              "needs-approval": 16,
+              "pending": 10,
+              "pr-edited": 3
+            },
+            "ambiguousIdentityGroups": 24,
+            "hasSourceCommitField": false
+          }
+        }
+      }
+    },
+    "github-full": {
+      "execution": {
+        "startedAt": "2026-10-29T18:52:07.237986+00:00",
+        "completedAt": "2026-10-29T18:53:08.837090+00:00",
+        "exitCode": 0,
+        "durationSeconds": 61.6,
+        "reportExists": true,
+        "label": "github-full",
+        "image": "ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f"
+      },
+      "inspection": {
+        "reportSha256": "eb8e79ec640211b31105d212597ed15e88a64031b195e20c9229f0d2b97faa8a",
+        "reportBytes": 236070,
+        "topLevelKeys": [
+          "problems",
+          "repositories"
+        ],
+        "globalProblemCount": 1,
+        "repositories": {
+          "guilycst/home-lab": {
+            "recordKeys": [
+              "branches",
+              "configFileName",
+              "defaultBranch",
+              "dependencyDashboardIssue",
+              "libYearsWithStatus",
+              "onboardingPrNumber",
+              "packageFiles",
+              "platform",
+              "problems",
+              "status"
+            ],
+            "status": "activated",
+            "problemCount": 14,
+            "dockerDependencies": 190,
+            "otherDependencies": 194,
+            "dockerManagerCounts": {
+              "docker-compose": 6,
+              "dockerfile": 7,
+              "helm-values": 28,
+              "kubernetes": 138,
+              "regex": 11
+            },
+            "observations": {
+              "empty_updates_observed": 77,
+              "excluded": 12,
+              "unknown_or_warned": 21,
+              "updates_observed": 80
+            },
+            "updateTypes": {
+              "digest": 44,
+              "major": 3,
+              "minor": 12,
+              "patch": 14,
+              "pinDigest": 9
+            },
+            "candidateEntries": 82,
+            "pendingCheckEntries": 17,
+            "ociChartRecords": 0,
+            "dependencyFields": [
+              "autoReplaceStringTemplate",
+              "currentDigest",
+              "currentValue",
+              "currentVersion",
+              "currentVersionAgeInDays",
+              "currentVersionTimestamp",
+              "datasource",
+              "depName",
+              "depType",
+              "fixedVersion",
+              "homepage",
+              "isSingleVersion",
+              "lookupName",
+              "mostRecentTimestamp",
+              "packageName",
+              "registryUrl",
+              "replaceString",
+              "skipReason",
+              "sourceUrl",
+              "updates",
+              "versioning",
+              "warnings"
+            ],
+            "updateFields": [
+              "branchName",
+              "bucket",
+              "isBreaking",
+              "isPinDigest",
+              "libYears",
+              "newDigest",
+              "newMajor",
+              "newMinor",
+              "newPatch",
+              "newValue",
+              "newVersion",
+              "newVersionAgeInDays",
+              "pendingChecks",
+              "pendingVersions",
+              "releaseTimestamp",
+              "updateType"
+            ],
+            "branches": 34,
+            "branchesWithPR": 2,
+            "branchFields": [
+              "baseBranch",
+              "branchName",
+              "prNo",
+              "prTitle",
+              "result",
+              "upgrades"
+            ],
+            "branchResults": {
+              "needs-approval": 15,
+              "no-work": 11,
+              "pending": 6,
+              "pr-edited": 2
+            },
+            "ambiguousIdentityGroups": 24,
+            "hasSourceCommitField": false
+          }
+        }
+      }
+    }
+  }
+}

@@ -18,6 +18,9 @@ import (
 type Handler struct{ Manifest manifest.Manifest }
 
 func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices) (ui.Response, error) {
+	if r.ContributionID == "request" {
+		return h.request(ctx, r, host)
+	}
 	if r.Method != "GET" {
 		return ui.Response{}, ui.ErrUnavailable
 	}
@@ -76,6 +79,13 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 			model.Meta = data.Meta
 			model.Result = result
 			resolve(ctx, host, &model, []advisory.Item{data.Dependency})
+			detailURL, _ := r.PageURL(h.Manifest, "detail", map[string]string{"dependency-id": data.Dependency.ID})
+			model.StatusURL = appendQuery(detailURL, q)
+			model.RequestLinks = map[string]string{}
+			for _, u := range data.Dependency.Candidates {
+				href, _ := r.PageURL(h.Manifest, "request", map[string]string{"dependency-id": data.Dependency.ID, "candidate-id": u.ID})
+				model.RequestLinks[u.ID] = appendQuery(href, q)
+			}
 			component = view.Detail(model)
 		}
 	} else if r.ContributionID == "coverage" {
@@ -121,17 +131,7 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	status := 200
 	if err != nil {
 		code := backend.Code(err)
-		status = 503
-		switch code {
-		case "not_found":
-			status = 404
-		case "conflict":
-			status = 409
-		case "invalid_argument":
-			status = 400
-		case "permission_denied":
-			status = 403
-		}
+		status = errorStatus(err)
 		if code == "conflict" || code == "not_found" {
 			model.BackURL = model.RestartURL
 		}
@@ -204,5 +204,20 @@ func resolve(ctx context.Context, host ui.HostServices, m *view.Model, items []a
 	}
 	for _, identity := range identities {
 		m.Services[identity.ID] = identity
+	}
+}
+
+func errorStatus(err error) int {
+	switch backend.Code(err) {
+	case "not_found":
+		return 404
+	case "conflict":
+		return 409
+	case "invalid_argument":
+		return 400
+	case "permission_denied":
+		return 403
+	default:
+		return 503
 	}
 }

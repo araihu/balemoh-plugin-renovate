@@ -19,6 +19,9 @@ type Model struct {
 	CurrentURL, BackURL, RestartURL, ResetURL, CoverageURL, NextURL string
 	Links                                                           map[string]string
 	Services                                                        map[string]ui.ServiceIdentity
+	RequestLinks                                                    map[string]string
+	ActionURL, ActionError, StatusURL                               string
+	Selected                                                        snapshot.Candidate
 }
 
 func text(p *string) string {

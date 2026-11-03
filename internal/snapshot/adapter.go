@@ -85,7 +85,8 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 		return nil, ErrInvalid
 	}
 	r, ok := raw.Repositories[m.Repository.Name]
-	if !ok || r.Status != "activated" || r.Files == nil {
+	// Activated additionally means a PR has been merged; onboarded can produce valid candidates and PRs too.
+	if !ok || (r.Status != "activated" && r.Status != "onboarded") || r.Files == nil {
 		return nil, ErrInvalid
 	}
 	s := &Snapshot{SchemaVersion: 1, RunID: m.RunID, StartedAt: m.StartedAt, CompletedAt: m.CompletedAt, Producer: m.Producer, Repository: m.Repository, Dependencies: []Dependency{}, Coverage: Coverage{Scope: "Explicit image managers; repository ignore paths and implicit chart images remain outside scope", Status: "complete", Reasons: []string{}}}

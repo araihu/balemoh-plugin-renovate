@@ -1,0 +1,71 @@
+name: Isolated Renovate engine proof
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        type: choice
+        options: [discover, write, observe]
+        required: true
+      scope:
+        type: choice
+        options: [kubernetes, compose]
+        required: true
+concurrency:
+  group: isolated-renovate-engine
+  cancel-in-progress: false
+permissions: {}
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run the pinned engine against synthetic fixtures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RENOVATE_TOKEN: ${{ github.token }}
+          PHASE: ${{ inputs.phase }}
+          SCOPE: ${{ inputs.scope }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = guilycst/balemoh-renovate-engine-poc-20261101
+          mkdir -p "$RUNNER_TEMP/poc-output"
+          chmod 777 "$RUNNER_TEMP/poc-output"
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha' > "$RUNNER_TEMP/poc-output/base-before.txt"
+          date -u +%FT%TZ > "$RUNNER_TEMP/poc-output/started-at.txt"
+          engine() {
+            docker run --rm --env RENOVATE_TOKEN --env LOG_LEVEL=debug \
+              --env RENOVATE_CONFIG_FILE=/poc-config.json \
+              --mount "type=bind,source=$RUNNER_TEMP/poc-config.json,target=/poc-config.json,readonly" \
+              --mount "type=bind,source=$RUNNER_TEMP/poc-output,target=/out" \
+              ghcr.io/renovatebot/renovate@sha256:d3aa7ee1726eb31bf0b8b006f07bcde28747a820e450cf7f4010c45913f5257f
+          }
+          if [ "$PHASE" = write ]; then
+            python3 profile.py observe "$SCOPE" "$RUNNER_TEMP/poc-config.json"
+            engine > "$RUNNER_TEMP/poc-output/preflight.log" 2>&1
+            mv "$RUNNER_TEMP/poc-output/report.json" "$RUNNER_TEMP/poc-output/preflight-report.json"
+            python3 verify_report.py "$RUNNER_TEMP/poc-output/preflight-report.json" "$SCOPE"
+            gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha' > "$RUNNER_TEMP/poc-output/base-preflight.txt"
+            cmp "$RUNNER_TEMP/poc-output/base-before.txt" "$RUNNER_TEMP/poc-output/base-preflight.txt"
+          fi
+          python3 profile.py "$PHASE" "$SCOPE" "$RUNNER_TEMP/poc-config.json"
+          engine > "$RUNNER_TEMP/poc-output/renovate.log" 2>&1
+          date -u +%FT%TZ > "$RUNNER_TEMP/poc-output/completed-at.txt"
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha' > "$RUNNER_TEMP/poc-output/base-after.txt"
+          cmp "$RUNNER_TEMP/poc-output/base-before.txt" "$RUNNER_TEMP/poc-output/base-after.txt"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=all&per_page=100" --slurp > "$RUNNER_TEMP/poc-output/pulls.json"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" --slurp > "$RUNNER_TEMP/poc-output/issues.json"
+          cp "$RUNNER_TEMP/poc-config.json" "$RUNNER_TEMP/poc-output/profile.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: renovate-${{ inputs.phase }}-${{ inputs.scope }}
+          path: ${{ runner.temp }}/poc-output
+          retention-days: 7

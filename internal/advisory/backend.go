@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/araihu/balemoh-plugin-renovate/internal/requests"
 	"github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
 	"github.com/araihu/balemoh/plugin-sdk/backend"
 	"github.com/araihu/balemoh/plugin-sdk/notifications"
@@ -23,27 +24,30 @@ type Backend struct {
 	connections map[string]*connection
 }
 type connection struct {
-	mu               sync.Mutex
-	id, revision     string
-	fingerprint      [32]byte
-	config           Config
-	client           *http.Client
-	token            string
-	cancel           context.CancelFunc
-	done             chan struct{}
-	snapshot         *snapshot.Snapshot
-	runs             map[string][32]byte
-	digest           [32]byte
-	etag             string
-	observation      uint64
-	state            string
-	attempt, success *time.Time
-	sourceError      *backend.Error
-	publisher        notifications.Publisher
-	baseline         bool
-	seen             map[string]bool
-	securitySeen     map[string]bool
-	pending          []notifications.Message
+	controller                                 requests.Catalog
+	controllerAvailable                        bool
+	controllerReadToken, controllerActionToken string
+	mu                                         sync.Mutex
+	id, revision                               string
+	fingerprint                                [32]byte
+	config                                     Config
+	client                                     *http.Client
+	token                                      string
+	cancel                                     context.CancelFunc
+	done                                       chan struct{}
+	snapshot                                   *snapshot.Snapshot
+	runs                                       map[string][32]byte
+	digest                                     [32]byte
+	etag                                       string
+	observation                                uint64
+	state                                      string
+	attempt, success                           *time.Time
+	sourceError                                *backend.Error
+	publisher                                  notifications.Publisher
+	baseline                                   bool
+	seen                                       map[string]bool
+	securitySeen                               map[string]bool
+	pending                                    []notifications.Message
 }
 
 func New(ctx context.Context) *Backend {
@@ -89,7 +93,7 @@ func (b *Backend) Configure(ctx context.Context, r backend.Config) (backend.Stat
 		return backend.Status{}, backend.Fail("unavailable")
 	}
 	lifetime, cancel := context.WithCancel(b.ctx)
-	c := &connection{id: r.ConnectionID, revision: r.Revision, config: cfg, fingerprint: fingerprint, client: client, token: r.Secrets["snapshot-token"], cancel: cancel, done: make(chan struct{}), state: "unavailable", observation: (binary.BigEndian.Uint64(seed[:]) & ((1 << 62) - 1)) + 1, publisher: r.Notifications, seen: map[string]bool{}}
+	c := &connection{id: r.ConnectionID, revision: r.Revision, config: cfg, fingerprint: fingerprint, client: client, token: r.Secrets["snapshot-token"], controllerReadToken: r.Secrets["controller-read-token"], controllerActionToken: r.Secrets["controller-action-token"], cancel: cancel, done: make(chan struct{}), state: "unavailable", observation: (binary.BigEndian.Uint64(seed[:]) & ((1 << 62) - 1)) + 1, publisher: r.Notifications, seen: map[string]bool{}}
 	if ctx.Err() != nil {
 		cancel()
 		return backend.Status{}, ctx.Err()
@@ -188,6 +192,7 @@ func (c *connection) collect(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
+		c.observeRequests(ctx)
 		c.deliver(ctx)
 		var jitter [1]byte
 		_, _ = rand.Read(jitter[:])

@@ -109,6 +109,33 @@
     "completedAt": {
       "$ref": "#/$defs/timestamp"
     },
+    "snapshotDigest": {
+      "$ref": "#/$defs/id"
+    },
+    "controllerAvailable": {
+      "type": "boolean"
+    },
+    "controller": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "requests": {
+          "type": "array",
+          "maxItems": 512,
+          "items": {
+            "$ref": "#/$defs/request"
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "requests"
+      ]
+    },
     "dependency": {
       "$ref": "#/$defs/dependency"
     }
@@ -118,6 +145,9 @@
     "producer",
     "coverage",
     "completedAt",
+    "snapshotDigest",
+    "controllerAvailable",
+    "controller",
     "dependency"
   ],
   "$defs": {
@@ -410,6 +440,143 @@
             }
           }
         }
+      ]
+    },
+    "request": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshotDigest": {
+          "$ref": "#/$defs/id"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "repository": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "platform",
+            "name",
+            "baseBranch",
+            "commit"
+          ],
+          "properties": {
+            "platform": {
+              "const": "github"
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "baseBranch": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "commit": {
+              "$ref": "#/$defs/commit"
+            }
+          }
+        },
+        "dependency": {
+          "$ref": "#/$defs/dependency"
+        },
+        "candidate": {
+          "$ref": "#/$defs/candidate"
+        },
+        "branch": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "running",
+            "awaiting_pr",
+            "open",
+            "draft",
+            "closed",
+            "merged",
+            "blocked",
+            "needs_attention"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trackedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trackingError": {
+          "type": "boolean"
+        },
+        "pr": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "number": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "url": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "headSha": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{40}$"
+            },
+            "state": {
+              "enum": [
+                "open",
+                "draft",
+                "closed",
+                "merged"
+              ]
+            },
+            "checks": {
+              "enum": [
+                "passing",
+                "pending",
+                "failing",
+                "unknown"
+              ]
+            }
+          },
+          "required": [
+            "number",
+            "url",
+            "headSha",
+            "state",
+            "checks"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "snapshotDigest",
+        "repository",
+        "dependency",
+        "candidate",
+        "branch",
+        "state",
+        "createdAt",
+        "updatedAt",
+        "trackingError"
       ]
     }
   }

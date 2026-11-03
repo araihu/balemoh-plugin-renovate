@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: duplicates-poc
+spec:
+  template:
+    spec:
+      containers:
+        - name: first
+          image: nginx:1.25.3
+        - name: second
+          image: nginx:1.24.0

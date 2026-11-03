@@ -1,0 +1,257 @@
+package requests
+
+import (
+	"bytes"
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"github.com/araihu/balemoh/plugin-sdk/credential"
+	"io"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+)
+
+type github struct {
+	client                  *http.Client
+	endpoint, token, author string
+	tokenFile               string
+}
+
+var sha = regexp.MustCompile(`^[a-f0-9]{40}$`)
+
+func (g github) get(ctx context.Context, path string, out any) error {
+	r, e := http.NewRequestWithContext(ctx, "GET", g.endpoint+path, nil)
+	if e != nil {
+		return errors.New("GitHub unavailable")
+	}
+	token := g.token
+	if g.tokenFile != "" {
+		value, err := credential.ReadBearerFile(g.tokenFile)
+		if err != nil {
+			return errors.New("GitHub credential unavailable")
+		}
+		token = value
+	}
+	r.Header.Set("Authorization", "Bearer "+token)
+	r.Header.Set("Accept", "application/vnd.github+json")
+	r.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	response, e := g.client.Do(r)
+	if e != nil {
+		return errors.New("GitHub unavailable")
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return errors.New("GitHub unavailable")
+	}
+	d := json.NewDecoder(io.LimitReader(response.Body, 2<<20))
+	if d.Decode(out) != nil || d.Decode(new(any)) != io.EOF {
+		return errors.New("invalid GitHub response")
+	}
+	return nil
+}
+func (g github) base(ctx context.Context, repository, branch string) (string, error) {
+	var r struct {
+		Object struct {
+			SHA string `json:"sha"`
+		} `json:"object"`
+	}
+	e := g.get(ctx, "/repos/"+repository+"/git/ref/heads/"+url.PathEscape(branch), &r)
+	if e != nil || !sha.MatchString(r.Object.SHA) {
+		return "", errors.New("base unavailable")
+	}
+	return r.Object.SHA, nil
+}
+
+func (g github) branchExists(ctx context.Context, r Record) (bool, error) {
+	var refs []struct {
+		Ref string `json:"ref"`
+	}
+	if err := g.get(ctx, "/repos/"+r.Repository.Name+"/git/matching-refs/heads/"+url.PathEscape(r.Branch), &refs); err != nil {
+		return false, err
+	}
+	for _, ref := range refs {
+		if ref.Ref == "refs/heads/"+r.Branch {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type nativePR struct {
+	Number   int        `json:"number"`
+	URL      string     `json:"html_url"`
+	State    string     `json:"state"`
+	Draft    bool       `json:"draft"`
+	MergedAt *time.Time `json:"merged_at"`
+	User     struct {
+		Login string `json:"login"`
+	} `json:"user"`
+	Head struct {
+		Ref  string `json:"ref"`
+		SHA  string `json:"sha"`
+		Repo struct {
+			FullName string `json:"full_name"`
+		} `json:"repo"`
+	} `json:"head"`
+	Base struct {
+		Ref  string `json:"ref"`
+		Repo struct {
+			FullName string `json:"full_name"`
+		} `json:"repo"`
+	} `json:"base"`
+	AutoMerge json.RawMessage `json:"auto_merge"`
+}
+
+func (g github) pull(ctx context.Context, r Record) (*PullRequest, error) {
+	query := url.Values{"head": {strings.SplitN(r.Repository.Name, "/", 2)[0] + ":" + r.Branch}, "base": {r.Repository.BaseBranch}, "state": {"all"}, "per_page": {"100"}}
+	var prs []nativePR
+	if e := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls?"+query.Encode(), &prs); e != nil {
+		return nil, e
+	}
+	if len(prs) == 0 {
+		return nil, nil
+	}
+	if len(prs) != 1 {
+		return nil, errors.New("ambiguous PR association")
+	}
+	p := prs[0]
+	if p.Number < 1 || p.User.Login != g.author || p.Head.Ref != r.Branch || p.Head.Repo.FullName != r.Repository.Name || p.Base.Repo.FullName != r.Repository.Name || p.Base.Ref != r.Repository.BaseBranch || !sha.MatchString(p.Head.SHA) || p.URL != "https://github.com/"+r.Repository.Name+"/pull/"+strconv.Itoa(p.Number) || len(p.AutoMerge) > 0 && string(p.AutoMerge) != "null" {
+		return nil, errors.New("unexpected PR ownership or automerge")
+	}
+	state := "open"
+	if p.Draft {
+		state = "draft"
+	}
+	if p.State == "closed" {
+		state = "closed"
+	}
+	if p.MergedAt != nil {
+		state = "merged"
+	}
+	if p.State != "open" && p.State != "closed" {
+		return nil, errors.New("unknown PR state")
+	}
+	if err := g.verifyDiff(ctx, r, p.Number, p.Head.SHA); err != nil {
+		return nil, err
+	}
+	checks, checksErr := g.checks(ctx, r.Repository.Name, p.Head.SHA)
+	if checksErr != nil {
+		checks = "unknown"
+	}
+	// A status belongs to one exact head. Rebase races never inherit a passing result.
+	var latest nativePR
+	if e := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls/"+strconv.Itoa(p.Number), &latest); e != nil {
+		return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: "unknown"}, e
+	}
+	if latest.Head.SHA != p.Head.SHA {
+		checks = "unknown"
+	}
+	return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: checks}, checksErr
+}
+
+func (g github) verifyDiff(ctx context.Context, r Record, number int, head string) error {
+	var files []struct {
+		Name string `json:"filename"`
+	}
+	if err := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls/"+strconv.Itoa(number)+"/files?per_page=100", &files); err != nil {
+		return err
+	}
+	if len(files) != 1 || files[0].Name != r.Dependency.PackageFile {
+		return errors.New("PR contains unexpected files")
+	}
+	read := func(ref string) ([]byte, error) {
+		var body struct {
+			Encoding string `json:"encoding"`
+			Content  string `json:"content"`
+		}
+		if err := g.get(ctx, "/repos/"+r.Repository.Name+"/contents/"+url.PathEscape(r.Dependency.PackageFile)+"?ref="+url.QueryEscape(ref), &body); err != nil {
+			return nil, err
+		}
+		if body.Encoding != "base64" {
+			return nil, errors.New("file is not bounded Git content")
+		}
+		data, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(body.Content, "\n", ""))
+		if err != nil || len(data) > 1<<20 {
+			return nil, errors.New("file exceeds bound")
+		}
+		return data, nil
+	}
+	before, err := read(r.Repository.Commit)
+	if err != nil {
+		return err
+	}
+	after, err := read(head)
+	if err != nil {
+		return err
+	}
+	var identity []string
+	if json.Unmarshal([]byte(r.Dependency.DependencyKey), &identity) != nil || len(identity) != 2 || !Supported(r.Dependency, r.Candidate) {
+		return errors.New("invalid approval identity")
+	}
+	old := []byte(identity[0] + ":" + *r.Dependency.CurrentValue)
+	next := []byte(identity[0] + ":" + *r.Candidate.NewValue)
+	if bytes.Count(before, old) != max(r.Dependency.SourceOccurrences, 1) || !bytes.Equal(bytes.ReplaceAll(before, old, next), after) {
+		return errors.New("PR content differs from approval")
+	}
+	return nil
+}
+func (g github) checks(ctx context.Context, repository, head string) (string, error) {
+	var checks struct {
+		Total int `json:"total_count"`
+		Runs  []struct {
+			Status     string  `json:"status"`
+			Conclusion *string `json:"conclusion"`
+		} `json:"check_runs"`
+	}
+	if e := g.get(ctx, "/repos/"+repository+"/commits/"+head+"/check-runs?per_page=100", &checks); e != nil {
+		return "unknown", e
+	}
+	var status struct {
+		State    string            `json:"state"`
+		Total    int               `json:"total_count"`
+		Statuses []json.RawMessage `json:"statuses"`
+	}
+	if e := g.get(ctx, "/repos/"+repository+"/commits/"+head+"/status?per_page=100", &status); e != nil {
+		return "unknown", e
+	}
+	if checks.Total > len(checks.Runs) || status.Total > len(status.Statuses) || checks.Total+status.Total == 0 {
+		return "unknown", nil
+	}
+	value := "passing"
+	if status.Total > 0 {
+		switch status.State {
+		case "failure", "error":
+			return "failing", nil
+		case "pending":
+			value = "pending"
+		case "success":
+		default:
+			value = "unknown"
+		}
+	}
+	for _, c := range checks.Runs {
+		if c.Status != "completed" {
+			if value != "unknown" {
+				value = "pending"
+			}
+			continue
+		}
+		if c.Conclusion == nil {
+			value = "unknown"
+			continue
+		}
+		switch *c.Conclusion {
+		case "failure", "timed_out", "cancelled", "action_required", "startup_failure":
+			return "failing", nil
+		case "success":
+		default:
+			value = "unknown"
+		}
+	}
+	return value, nil
+}

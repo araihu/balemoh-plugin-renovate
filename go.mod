@@ -4,7 +4,7 @@ go 1.27.0
 
 require (
 	github.com/a-h/templ v0.3.1070
-	github.com/araihu/balemoh/plugin-sdk v0.0.1-alpha.3
+	github.com/araihu/balemoh/plugin-sdk v0.0.1-alpha.4
 	github.com/araihu/goshtoso v0.4.4
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2

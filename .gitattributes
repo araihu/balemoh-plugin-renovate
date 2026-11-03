@@ -1,3 +1,7 @@
 # envdoc emits a final blank line in generated environment documentation.
 cmd/snapshot-server/environment.md whitespace=-blank-at-eof
 internal/runner/environment.md whitespace=-blank-at-eof
+internal/requests/environment.md whitespace=-blank-at-eof
+internal/tracking/environment.md whitespace=-blank-at-eof
+internal/requestbackup/environment.md whitespace=-blank-at-eof
+docs/qualification/legacy/request-controller/environment.md whitespace=-blank-at-eof

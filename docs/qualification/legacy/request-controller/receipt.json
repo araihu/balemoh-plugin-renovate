@@ -1,0 +1,20 @@
+{
+  "run": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/41298025288",
+  "requestId": "5af11cd87751c7b69958982d6929a2c70525bb280b63f6f2512dd3cfec7f556b",
+  "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/2",
+  "head": "c91a0eb4a711a6b2321501b449f7402c72d4d4b3",
+  "base": "9efa4f146edf0762c503fc3d08fe059c1fba850d",
+  "files": [
+    {
+      "name": "k8s/controller-selected.yaml",
+      "additions": 1,
+      "deletions": 1
+    }
+  ],
+  "totalPRs": 2,
+  "nonPRIssues": 0,
+  "duplicateReceipt": true,
+  "checks": "unknown",
+  "merged": false,
+  "autoMerge": false
+}

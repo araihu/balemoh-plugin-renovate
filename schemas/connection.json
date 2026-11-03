@@ -3,6 +3,11 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "controllerURL": {
+      "type": "string",
+      "maxLength": 2048,
+      "description": "Optional private HTTPS request controller; submissions require a separate action grant."
+    },
     "snapshotURL": {
       "type": "string",
       "maxLength": 2048

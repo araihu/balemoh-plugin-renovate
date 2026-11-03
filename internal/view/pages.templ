@@ -21,7 +21,7 @@ import (
 
 templ Current(m Model) {
  <div class="image-upgrades">
- @pageheader.PageHeader(pageheader.Config{Title:"Image upgrades",Description:"Renovate candidates from Git. Read-only advisory.",Actions:CoverageLink(m)})
+ @pageheader.PageHeader(pageheader.Config{Title:"Image upgrades",Description:m.CurrentDescription(),Actions:CoverageLink(m)})
  <form method="get" action={ templ.SafeURL(m.CurrentURL) }>
  @toolbar.Toolbar(toolbar.Config{Label:"Upgrade filters",Filters:Filters(m),Actions:Apply(m),RootClass:"image-upgrades-toolbar",FiltersClass:"image-upgrades-filter-fields"})
  </form>
@@ -227,6 +227,7 @@ templ DetailBody(m Model) {
  if u.PR!=nil {
  @link.Link(u.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open reported pull request }
  }
+ @UpgradeAction(m,u)
  }
  if len(d.Candidates)==0 {
  <p>No candidate is proven for this group. The report does not establish that the image is up to date.</p>

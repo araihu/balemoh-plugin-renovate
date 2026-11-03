@@ -58,6 +58,29 @@ func TestProducerProof(t *testing.T) {
 		}
 	}
 }
+
+func TestRepositoryStatusDoesNotRequireAMergedPR(t *testing.T) {
+	for _, status := range []string{"onboarded", "activated", "onboarding", "disabled", "unknown", ""} {
+		t.Run(status, func(t *testing.T) {
+			var report rawReport
+			if err := json.Unmarshal(fixture(t), &report); err != nil {
+				t.Fatal(err)
+			}
+			repo := report.Repositories["example/read-only"]
+			repo.Status = status
+			report.Repositories["example/read-only"] = repo
+			data, err := json.Marshal(report)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Normalize(data, metadata())
+			wantAccepted := status == "onboarded" || status == "activated"
+			if (err == nil) != wantAccepted {
+				t.Fatalf("status=%q accepted=%t want=%t", status, err == nil, wantAccepted)
+			}
+		})
+	}
+}
 func TestValidationRejectsTampering(t *testing.T) {
 	s, e := Normalize(fixture(t), metadata())
 	if e != nil {
