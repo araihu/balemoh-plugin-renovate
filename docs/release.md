@@ -1,8 +1,8 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.4`, using SDK `v0.0.1-alpha.4`. This version includes rooted archive restores, an explicit TLS floor for the legacy fixture, and bounded no-PR outcomes without replay. Alpha.3 remains the deployed read-only runtime. Publication and isolated writer qualification are separate from production writer activation. The existing hosted Renovate bot remains the production writer.
+Plugin version: `0.0.1-alpha.5`, using SDK `v0.0.1-alpha.4`. This version accepts the pinned Renovate engine's `no-work` result during full dry-run preflight when the plan contains the exact approved upgrade. Actual writer execution still requires an owned, diff-verified PR. Missing PRs require review and never replay automatically.
 
-Alpha.4 publication succeeded, but [isolated writer qualification failed before writing](qualification/alpha4-writer/README.md). A valid native full-dry-run plan returned `no-work`, which the preflight result allowlist rejects. Alpha.4 is not approved for writer cutover. The immutable tag and production image remain unchanged; the next writer qualification needs a corrected release.
+Alpha.5 publication and isolated writer qualification are pending. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Alpha.3 remains the deployed read-only runtime. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
 
 ## Prepared source
 
@@ -32,4 +32,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.4 publication requires a new verified receipt and isolated real-GitHub writer proof. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.5 publication requires a new verified receipt and isolated real-GitHub writer proof. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.

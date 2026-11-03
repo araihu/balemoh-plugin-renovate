@@ -44,7 +44,7 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 	}
 }
 
-func verifyPlan(data []byte, r Record) error {
+func verifyFullDryRunPlan(data []byte, r Record) error {
 	var native struct {
 		Problems     []json.RawMessage `json:"problems"`
 		Repositories map[string]struct {
@@ -70,7 +70,8 @@ func verifyPlan(data []byte, r Record) error {
 	if !ok || len(repo.Problems) > 0 || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
 		return errEngine
 	}
-	if result := repo.Branches[0].Result; result != "done" && result != "pr-created" {
+	// Full dry-run creates no commit SHA, so Renovate can report no-work for a selected upgrade.
+	if result := repo.Branches[0].Result; result != "done" && result != "pr-created" && result != "no-work" {
 		return errEngine
 	}
 	upgrades := repo.Branches[0].Upgrades
@@ -167,7 +168,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	}
 	phase = "plan_not_actionable"
 	data, e := readBounded(filepath.Join(work, "report.json"), 64<<20)
-	if e != nil || verifyPlan(data, r) != nil {
+	if e != nil || verifyFullDryRunPlan(data, r) != nil {
 		return errEngine
 	}
 	phase = "selection_changed"
