@@ -1,6 +1,6 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.3`, using SDK `v0.0.1-alpha.4`. This version packages the token and backup runtime. The previous qualified image is `0.0.1-alpha.2`. Publication is verified by the workflow receipt, separately from the local source evidence. Source and publication status are recorded in the repository Actions runs and image receipts. The existing hosted Renovate bot remains the sole writer.
+Plugin version: `0.0.1-alpha.4`, using SDK `v0.0.1-alpha.4`. This version includes rooted archive restores, an explicit TLS floor for the legacy fixture, and bounded no-PR outcomes without replay. Alpha.3 remains the deployed read-only runtime. Publication and isolated writer qualification are separate from production writer activation. The existing hosted Renovate bot remains the production writer.
 
 ## Prepared source
 
@@ -30,4 +30,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Publish alpha.3 and obtain the verified `runtimeTools` receipt before merging a homelab command switch. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.4 publication requires a new verified receipt and isolated real-GitHub writer proof. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
