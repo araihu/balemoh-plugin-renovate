@@ -1,0 +1,45 @@
+name: Isolated selected image PR CI
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  selected-image:
+    if: github.repository == 'guilycst/balemoh-renovate-engine-poc-20261101' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'balemoh-renovate/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the exact selected upgrade diff
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CI_REPOSITORY: ${{ github.repository }}
+        run: python3 qualification/verify-pr-ci.py
+      - name: Publish exact-head commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_REPOSITORY: ${{ github.repository }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          OUTCOME: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          state=failure
+          if [ "$OUTCOME" = success ]; then state=success; fi
+          gh api --method POST "repos/$CI_REPOSITORY/statuses/$PR_HEAD" -f state="$state" -f context=fixture/selected-image -f target_url="$RUN_URL" > /dev/null
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: selected-pr-ci-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+          path: pr-ci-receipt.json
+          retention-days: 30
+          if-no-files-found: error

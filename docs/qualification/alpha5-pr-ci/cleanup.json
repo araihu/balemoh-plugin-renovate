@@ -1,0 +1,13 @@
+{
+  "fixtureActionsSecretRemoved": true,
+  "localPlaintextRemoved": true,
+  "allFixtureWorkflowsDisabled": true,
+  "repositoryActionsPermissionsUnchanged": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  },
+  "tokenExpires": "2026-11-04",
+  "tokenDeleted": false,
+  "productionWriterCredentialUsed": false,
+  "upgradePRMergesPerformed": 0
+}

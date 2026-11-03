@@ -1,0 +1,9 @@
+{
+  "repository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "pr": 4,
+  "base": "36adf7809988a9f912d499d085ad7de782597796",
+  "head": "088e63c6d3e0a5c43432e245aeb347d75877a628",
+  "event": "pull_request",
+  "selectedFile": "k8s/alpha5-ci-selected.yaml",
+  "exactSelectedDiffVerified": true
+}
