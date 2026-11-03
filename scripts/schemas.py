@@ -58,5 +58,9 @@ save("connection", obj({
     "intervalSeconds": {"type": "integer", "minimum": 30, "maximum": 900, "default": 60},
     "maxSnapshotAgeSeconds": {"type": "integer", "minimum": 3600, "maximum": 604800, "default": 43200},
     "notificationsEnabled": {"type": "boolean", "default": False},
+    "notificationUpdateTypes": {"type": "array", "maxItems": 6, "uniqueItems": True,
+                                "items": {"enum": ["major", "minor", "patch", "digest", "pinDigest", "pin"]},
+                                "default": ["major", "minor", "patch"],
+                                "description": "Ordinary notification types. Empty disables ordinary notices. Security flags bypass this filter while notifications are enabled."},
     "serviceMappingsJSON": {"type": "string", "maxLength": 50000, "description": "Optional JSON array of exact dependencyId/serviceId mappings, at most 256."}
 }, ["snapshotURL", "browserRepositoryURL"]))

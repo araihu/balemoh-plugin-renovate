@@ -77,6 +77,17 @@ The detail route parameter is `dependency-id` because SDK route parameters requi
 
 ## Candidate notifications
 
+When notifications are enabled, ordinary notices default to `major`, `minor` and `patch`. Configure `notificationUpdateTypes` on the plugin connection to replace that selection. `digest`, `pinDigest` and `pin` are opt-in. An empty array selects security-flag notices only. Security flags bypass the type filter, but `notificationsEnabled: false` disables all publishing. This setting does not filter the image list or change PR request eligibility.
+
+```json
+{
+  "notificationsEnabled": true,
+  "notificationUpdateTypes": ["major", "minor", "patch", "digest"]
+}
+```
+
+Changing the connection configuration establishes a new silent baseline. Enabling another type does not send a backlog of existing candidates.
+
 The first validated observation and the first observation after a collection failure/age gap establish silent baselines. New candidates in later current observations produce `info` notifications. Partial coverage does not suppress a proven candidate. Unassessed/excluded groups, stale data and failed collection never notify. Repeated polls and reappearing candidates do not notify again during the backend session.
 
 Adapter `0.0.3` preserves `isVulnerabilityAlert=true` only on an explicit dependency update record. The pinned branch-report projection omits the security flag, manager and dependency type. PR/policy evidence joins by the available branch/file/package/name/current/target/update-type tuple only when it identifies exactly one extracted native identity and exactly one branch upgrade. Ambiguous projections remain unknown. Titles, labels, branch names and major versions cannot establish security. The optional flag's absence means unknown. A flagged candidate produces `warning`, a security badge and a separate `image-upgrade-security:<candidateId>` event. A later first security flag for an ordinary known candidate can notify without editing its prior event. The queue holds 64 frozen messages and prioritizes security notices over unaccepted ordinary notices. Delivery is best effort, with a silent baseline after restart and no durable plugin outbox.
