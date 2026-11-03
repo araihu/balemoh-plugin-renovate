@@ -2,6 +2,7 @@ package requests
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -36,23 +37,25 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 	}
 	base := map[string]any{"repositories": map[string]any{r.Repository.Name: map[string]any{"branches": []any{map[string]any{"branchName": r.Branch, "result": "done", "upgrades": []any{map[string]any{"packageFile": r.Dependency.PackageFile, "depName": "nginx", "packageName": "nginx", "currentValue": "1.25.3", "newValue": "1.26.3"}}}}}}}
 	data, _ := json.Marshal(base)
-	if verifyPlan(data, r) != nil {
+	if verifyFullDryRunPlan(data, r) != nil {
 		t.Fatal("selected plan rejected")
 	}
-	if verifyPlan([]byte(strings.ReplaceAll(string(data), `"result":"done"`, `"result":"pr-created"`)), r) != nil {
-		t.Fatal("actionable PR plan rejected")
+	for _, result := range []string{"pr-created", "no-work"} {
+		if verifyFullDryRunPlan([]byte(strings.ReplaceAll(string(data), `"result":"done"`, `"result":"`+result+`"`)), r) != nil {
+			t.Fatal("selected full dry-run plan rejected", result)
+		}
 	}
-	for _, result := range []string{"pr-limit-reached", "branch-limit-reached", "pending", "not-scheduled", "needs-approval", "needs-pr-approval", "commit-hourly-limit-reached", "no-work", "error", "unknown", ""} {
+	for _, result := range []string{"pr-limit-reached", "branch-limit-reached", "pending", "not-scheduled", "needs-approval", "needs-pr-approval", "commit-hourly-limit-reached", "error", "unknown", ""} {
 		t.Run(result, func(t *testing.T) {
 			deferred := strings.ReplaceAll(string(data), `"result":"done"`, `"result":"`+result+`"`)
-			if verifyPlan([]byte(deferred), r) == nil {
+			if verifyFullDryRunPlan([]byte(deferred), r) == nil {
 				t.Fatal("non-actionable selected plan admitted", result)
 			}
 		})
 	}
 	for _, mutation := range []struct{ old, new string }{{"k8s/test.yaml", "k8s/other.yaml"}, {"1.26.3", "1.26.4"}, {`"packageName":"nginx"`, `"packageName":"alpine"`}, {r.Branch, "renovate/other"}} {
 		wrong := strings.ReplaceAll(string(data), mutation.old, mutation.new)
-		if verifyPlan([]byte(wrong), r) == nil {
+		if verifyFullDryRunPlan([]byte(wrong), r) == nil {
 			t.Fatal("unapproved plan accepted", mutation)
 		}
 	}
@@ -64,6 +67,47 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 	r.Dependency.PackageFile = "k8s/*.yaml"
 	if Supported(r.Dependency, r.Candidate) {
 		t.Fatal("wildcard file treated as exact selection")
+	}
+}
+
+func TestNativeFullDryRunNoWorkStillRequiresExactSelection(t *testing.T) {
+	// Controlled projection from the pinned Renovate 44.197.0 alpha.4 diagnostic.
+	data, err := os.ReadFile("../../docs/qualification/alpha4-writer/native-preflight-diagnostic.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, selection := setup(t)
+	r, err := c.Submit(t.Context(), selection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Repository.Name = "guilycst/balemoh-renovate-engine-poc-20261101"
+	r.Branch = "balemoh-renovate/f48204ca4a67aa18325dddfe7118ce362972df078f3ce9d8f04e0d109fc4ff03"
+	r.Dependency.PackageFile = "k8s/alpha4-selected.yaml"
+	r.Dependency.PackageName = "docker.io/library/nginx"
+	if verifyFullDryRunPlan(data, r) != nil {
+		t.Fatal("native selected full dry-run no-work rejected")
+	}
+	for _, mutation := range []struct{ old, new string }{
+		{`"branches": [`, `"problems": [{}], "branches": [`},
+		{`"upgrades": [`, `"upgrades": [], "ignored": [`},
+		{r.Branch, "renovate/other"},
+		{r.Dependency.PackageFile, "k8s/other.yaml"},
+		{r.Dependency.PackageName, "docker.io/library/alpine"},
+		{"1.25.3", "1.25.4"},
+		{"1.26.3", "1.26.4"},
+		{`"newDigest": null`, `"newDigest": "sha256:unapproved"`},
+	} {
+		t.Run(mutation.new, func(t *testing.T) {
+			wrong := strings.ReplaceAll(string(data), mutation.old, mutation.new)
+			if wrong == string(data) || verifyFullDryRunPlan([]byte(wrong), r) == nil {
+				t.Fatal("invalid no-work plan admitted")
+			}
+		})
+	}
+	r.Dependency.SourceOccurrences = 2
+	if verifyFullDryRunPlan(data, r) == nil {
+		t.Fatal("partial source occurrence plan admitted")
 	}
 }
 
