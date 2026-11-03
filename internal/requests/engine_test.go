@@ -34,10 +34,21 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 	if _, ok := write["checkedBranches"]; ok {
 		t.Fatal("approval/check bypass enabled")
 	}
-	base := map[string]any{"repositories": map[string]any{r.Repository.Name: map[string]any{"branches": []any{map[string]any{"branchName": r.Branch, "upgrades": []any{map[string]any{"packageFile": r.Dependency.PackageFile, "depName": "nginx", "packageName": "nginx", "currentValue": "1.25.3", "newValue": "1.26.3"}}}}}}}
+	base := map[string]any{"repositories": map[string]any{r.Repository.Name: map[string]any{"branches": []any{map[string]any{"branchName": r.Branch, "result": "done", "upgrades": []any{map[string]any{"packageFile": r.Dependency.PackageFile, "depName": "nginx", "packageName": "nginx", "currentValue": "1.25.3", "newValue": "1.26.3"}}}}}}}
 	data, _ := json.Marshal(base)
 	if verifyPlan(data, r) != nil {
 		t.Fatal("selected plan rejected")
+	}
+	if verifyPlan([]byte(strings.ReplaceAll(string(data), `"result":"done"`, `"result":"pr-created"`)), r) != nil {
+		t.Fatal("actionable PR plan rejected")
+	}
+	for _, result := range []string{"pr-limit-reached", "branch-limit-reached", "pending", "not-scheduled", "needs-approval", "needs-pr-approval", "commit-hourly-limit-reached", "no-work", "error", "unknown", ""} {
+		t.Run(result, func(t *testing.T) {
+			deferred := strings.ReplaceAll(string(data), `"result":"done"`, `"result":"`+result+`"`)
+			if verifyPlan([]byte(deferred), r) == nil {
+				t.Fatal("non-actionable selected plan admitted", result)
+			}
+		})
 	}
 	for _, mutation := range []struct{ old, new string }{{"k8s/test.yaml", "k8s/other.yaml"}, {"1.26.3", "1.26.4"}, {`"packageName":"nginx"`, `"packageName":"alpine"`}, {r.Branch, "renovate/other"}} {
 		wrong := strings.ReplaceAll(string(data), mutation.old, mutation.new)

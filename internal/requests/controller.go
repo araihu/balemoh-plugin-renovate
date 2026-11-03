@@ -234,6 +234,34 @@ func (c *Controller) Run(ctx context.Context) {
 		}
 	}
 }
+func (c *Controller) observe(ctx context.Context, r Record) Record {
+	pr, err := c.github.pull(ctx, r)
+	now := time.Now().UTC()
+	r.TrackedAt = &now
+	r.UpdatedAt = now
+	r.TrackingError = err != nil
+	if pr != nil {
+		r.PR = pr
+		r.State = pr.State
+		r.Reason = ""
+	} else if r.State == "awaiting_pr" {
+		// A successful process is not proof of PR creation. Never replay an unconfirmed write.
+		r.State = "needs_attention"
+		r.Reason = "pr_observation_unavailable"
+		if err == nil {
+			exists, branchErr := c.github.branchExists(ctx, r)
+			r.TrackingError = branchErr != nil
+			if branchErr == nil {
+				r.Reason = "pr_not_created"
+				if exists {
+					r.Reason = "branch_exists_without_pr"
+				}
+			}
+		}
+	}
+	return r
+}
+
 func (c *Controller) cycle(ctx context.Context) {
 	rows := c.store.list()
 	sort.SliceStable(rows, func(i, j int) bool {
@@ -254,23 +282,14 @@ func (c *Controller) cycle(ctx context.Context) {
 			break
 		}
 		tracked++
-		pr, err := c.github.pull(ctx, r)
-		now := time.Now().UTC()
-		r.TrackedAt = &now
-		r.UpdatedAt = now
-		r.TrackingError = err != nil
-		if pr != nil {
-			r.PR = pr
-			r.State = pr.State
-			r.Reason = ""
-		}
+		r = c.observe(ctx, r)
 		c.store.mu.Lock()
 		e := c.store.save(r)
 		c.store.mu.Unlock()
 		if e != nil {
 			return
 		}
-		if err != nil || pr != nil || r.State != "queued" || !c.config.WriterEnabled {
+		if r.TrackingError || r.PR != nil || r.State != "queued" || !c.config.WriterEnabled {
 			continue
 		}
 		exists, branchErr := c.github.branchExists(ctx, r)
@@ -319,6 +338,7 @@ func (c *Controller) cycle(ctx context.Context) {
 			} else {
 				r.State = "awaiting_pr"
 				r.Reason = ""
+				r = c.observe(ctx, r)
 			}
 		}
 		r.UpdatedAt = time.Now().UTC()

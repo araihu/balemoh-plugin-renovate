@@ -51,6 +51,7 @@ func verifyPlan(data []byte, r Record) error {
 			Problems []json.RawMessage `json:"problems"`
 			Branches []struct {
 				Name     string `json:"branchName"`
+				Result   string `json:"result"`
 				Upgrades []struct {
 					File    string  `json:"packageFile"`
 					Name    string  `json:"depName"`
@@ -67,6 +68,9 @@ func verifyPlan(data []byte, r Record) error {
 	}
 	repo, ok := native.Repositories[r.Repository.Name]
 	if !ok || len(repo.Problems) > 0 || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
+		return errEngine
+	}
+	if result := repo.Branches[0].Result; result != "done" && result != "pr-created" {
 		return errEngine
 	}
 	upgrades := repo.Branches[0].Upgrades
@@ -161,11 +165,12 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 			return errEngine
 		}
 	}
-	phase = "selection_changed"
+	phase = "plan_not_actionable"
 	data, e := readBounded(filepath.Join(work, "report.json"), 64<<20)
 	if e != nil || verifyPlan(data, r) != nil {
 		return errEngine
 	}
+	phase = "selection_changed"
 	// Validate native image identities too. Metadata describes this bounded full dry-run only.
 	var id [16]byte
 	if _, e = rand.Read(id[:]); e != nil {

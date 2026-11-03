@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -216,7 +217,7 @@ func TestWorkerTracksManualPRLifecycleWithoutDuplicateExecution(t *testing.T) {
 	calls := 0
 	c.execute = func(context.Context, Record) error { calls++; *present = true; return nil }
 	c.cycle(t.Context())
-	if calls != 1 || c.store.list()[0].State != "awaiting_pr" {
+	if calls != 1 || c.store.list()[0].State != "open" {
 		t.Fatal("request did not execute once")
 	}
 	c.cycle(t.Context())
@@ -253,6 +254,114 @@ func TestWorkerTracksManualPRLifecycleWithoutDuplicateExecution(t *testing.T) {
 	c.cycle(t.Context())
 	if c.store.list()[0].State != "merged" || calls != 1 {
 		t.Fatal("manual merge reconciliation failed")
+	}
+}
+
+func TestSuccessfulWriterWithoutPRRequiresReviewAndNeverReplays(t *testing.T) {
+	for _, outcome := range []string{"no_branch", "branch_without_pr", "pr_lookup_unavailable", "branch_lookup_unavailable"} {
+		t.Run(outcome, func(t *testing.T) {
+			c, selection := setup(t)
+			r, err := c.Submit(t.Context(), selection)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, present := githubFixture(t, c, r)
+			original := c.github.client.Transport
+			calls, branchReads := 0, 0
+			unavailable := true
+			c.github.client.Transport = responseTransport(func(req *http.Request) (*http.Response, error) {
+				if calls > 0 && unavailable && outcome == "pr_lookup_unavailable" && strings.HasSuffix(req.URL.Path, "/pulls") {
+					return &http.Response{StatusCode: 503, Body: io.NopCloser(strings.NewReader(`{}`)), Header: make(http.Header)}, nil
+				}
+				if strings.Contains(req.URL.Path, "/git/matching-refs/") {
+					branchReads++
+					body, code := `[]`, 200
+					if calls > 0 && outcome == "branch_without_pr" {
+						body = `[{"ref":"refs/heads/` + r.Branch + `"}]`
+					}
+					if calls > 0 && unavailable && outcome == "branch_lookup_unavailable" {
+						code = 503
+					}
+					return &http.Response{StatusCode: code, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+				}
+				return original.RoundTrip(req)
+			})
+			c.execute = func(context.Context, Record) error { calls++; return nil }
+			c.cycle(t.Context())
+			got := c.store.list()[0]
+			want := "pr_not_created"
+			if outcome == "branch_without_pr" {
+				want = "branch_exists_without_pr"
+			}
+			if strings.HasSuffix(outcome, "unavailable") {
+				want = "pr_observation_unavailable"
+			}
+			if calls != 1 || got.State != "needs_attention" || got.PR != nil || got.Reason != want || got.TrackingError != strings.HasSuffix(outcome, "unavailable") {
+				t.Fatalf("successful no-PR outcome: calls=%d state=%s reason=%s trackingError=%t", calls, got.State, got.Reason, got.TrackingError)
+			}
+			if outcome != "pr_lookup_unavailable" && branchReads < 2 {
+				t.Fatal("writer outcome did not inspect branch existence")
+			}
+			for range 2 {
+				if _, err := c.Submit(t.Context(), selection); err != nil {
+					t.Fatal(err)
+				}
+				c.cycle(t.Context())
+			}
+			if calls != 1 || c.store.list()[0].State != "needs_attention" {
+				t.Fatal("ambiguous write replayed or lost review state")
+			}
+			unavailable = false
+			*present = true
+			c.cycle(t.Context())
+			got = c.store.list()[0]
+			if calls != 1 || got.State != "open" || got.PR == nil || got.Reason != "" || got.TrackingError {
+				t.Fatalf("late owned PR: calls=%d state=%s reason=%s trackingError=%t", calls, got.State, got.Reason, got.TrackingError)
+			}
+		})
+	}
+}
+
+func TestRetainedAwaitingPRWithoutPRRequiresReviewWithWriterDisabled(t *testing.T) {
+	for _, branch := range []bool{false, true} {
+		t.Run(fmt.Sprintf("branch=%t", branch), func(t *testing.T) {
+			c, selection := setup(t)
+			r, err := c.Submit(t.Context(), selection)
+			if err != nil {
+				t.Fatal(err)
+			}
+			r.State = "awaiting_pr"
+			c.store.mu.Lock()
+			err = c.store.save(r)
+			c.store.mu.Unlock()
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, present := githubFixture(t, c, r)
+			original := c.github.client.Transport
+			c.github.client.Transport = responseTransport(func(req *http.Request) (*http.Response, error) {
+				if branch && strings.Contains(req.URL.Path, "/git/matching-refs/") {
+					return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`[{"ref":"refs/heads/` + r.Branch + `"}]`)), Header: make(http.Header)}, nil
+				}
+				return original.RoundTrip(req)
+			})
+			c.config.WriterEnabled = false
+			c.execute = func(context.Context, Record) error { t.Fatal("retained request replayed"); return nil }
+			c.cycle(t.Context())
+			got := c.store.list()[0]
+			want := "pr_not_created"
+			if branch {
+				want = "branch_exists_without_pr"
+			}
+			if got.State != "needs_attention" || got.Reason != want || got.TrackingError {
+				t.Fatalf("retained awaiting receipt: state=%s reason=%s trackingError=%t", got.State, got.Reason, got.TrackingError)
+			}
+			*present = true
+			c.cycle(t.Context())
+			if c.store.list()[0].State != "open" {
+				t.Fatal("disabled writer failed read-only reconciliation")
+			}
+		})
 	}
 }
 

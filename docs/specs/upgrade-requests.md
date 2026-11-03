@@ -60,7 +60,7 @@ The canonical request ID includes repository identity, approved base commit, dep
 |---|---|
 | queued | Durable request accepted |
 | running | Durable marker written before starting engine |
-| awaiting_pr | Writer returned; PR not yet observed |
+| awaiting_pr | Legacy/transient receipt awaiting its next read-only outcome check |
 | open / draft | Verified owned PR observed |
 | closed | PR closed without merging |
 | merged | GitHub reports merged |
@@ -69,14 +69,16 @@ The canonical request ID includes repository identity, approved base commit, dep
 
 Records persist as bounded JSON files using fsync, atomic rename and directory fsync. A lifetime advisory flock excludes a second controller. Invalid restored records fail startup. Capacity is at most 512 records, additionally bounded by a 512 KiB admission budget with per-record headroom for PR/status growth; no silent eviction. Each record retains its approved source selection, observation digest, timestamps, PR head and last observed checks. Reconciliation handles at most ten records per cycle, oldest observation first. Merged receipts are retained without further polling.
 
-After restart, a surviving running marker becomes needs_attention. The controller first looks for the exact existing PR and orphan branch; it never blindly repeats an uncertain write. GitHub failures retain prior status with an explicit tracking-unavailable warning.
+After restart, a surviving running marker becomes needs_attention. The controller first looks for the exact existing PR and orphan branch; it never blindly repeats an uncertain write. GitHub failures retain prior PR evidence and show an explicit tracking-unavailable warning.
+
+A writer's zero exit code does not confirm PR creation. The controller immediately verifies the owned PR. If none is observed, it inspects the branch and records `needs_attention` with `pr_not_created`, `branch_exists_without_pr` or `pr_observation_unavailable`. Existing `awaiting_pr` receipts take the same bounded transition on their next poll, even with the writer disabled. No unconfirmed write is automatically replayed. A late verified PR still replaces the review-required status through read-only reconciliation.
 
 ## Execution and association invariants
 
 1. Writer defaults disabled. Read/action bearers differ; GitHub read and dedicated writer credentials remain server-side. The BFF has neither controller nor GitHub credentials.
 2. The initial executable scope is unpinned tag major/minor/patch upgrades from Kubernetes, Docker Compose and Dockerfile managers. Digest, pin, Helm, custom and ambiguous file/image selections remain advisory. Some valid tag declarations may conservatively fail exact-content verification.
 3. Renovate is pinned to 44.197.0 and the collector's immutable base image. It receives a controlled environment, fresh temporary workspace, one repository, one file, one manager, an exact package and fixed target tag. Scripts, plugins, dashboards, automerge, platform automerge and stale-branch pruning are disabled.
-4. A full dry-run must contain exactly the approved branch and matching source occurrences, with no foreign candidate or collection problem. Normalization must reproduce the approved dependency and candidate IDs. The retained checkout and GitHub base must match the approval.
+4. A full dry-run must contain exactly the approved branch and matching source occurrences, with no foreign candidate or collection problem. Its branch result must be `done` or `pr-created`; deferred, failed, missing and unknown results block before the writer under `plan_not_actionable`. Normalization must reproduce the approved dependency and candidate IDs. The retained checkout and GitHub base must match the approval. A blocked request can be reviewed again after a fresh collection; limits, schedules and approval policy are not bypassed.
 5. The writer uses the same profile as preflight with only dry-run disabled. There is no dashboard mutation, checkbox approval or merge command. Existing repository policy remains required.
 6. PR association requires exact repository, base, owned branch, author, URL and one approved file. GitHub Contents must show exactly the approved image/tag replacements against the frozen base. Unexpected diffs are not attributed to the request.
 7. Check results belong to the observed head. Empty, truncated, skipped, neutral or unknown evidence cannot produce passing. A head change during observation removes a passing claim. Passing checks do not establish merge eligibility.
