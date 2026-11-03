@@ -193,8 +193,35 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head strin
 	if json.Unmarshal([]byte(r.Dependency.DependencyKey), &identity) != nil || len(identity) != 2 || !Supported(r.Dependency, r.Candidate) {
 		return errors.New("invalid approval identity")
 	}
-	old := []byte(identity[0] + ":" + *r.Dependency.CurrentValue)
-	next := []byte(identity[0] + ":" + *r.Candidate.NewValue)
+	if !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./:_-]*$`).MatchString(identity[0]) {
+		return errors.New("invalid source image")
+	}
+	reference := func(tag, digest *string) []byte {
+		value := identity[0]
+		if tag != nil {
+			value += ":" + *tag
+		}
+		if digest != nil {
+			value += "@" + *digest
+		}
+		return []byte(value)
+	}
+	old := reference(r.Dependency.CurrentValue, r.Dependency.CurrentDigest)
+	next := reference(r.Candidate.NewValue, r.Candidate.NewDigest)
+	for offset := 0; offset < len(before); {
+		index := bytes.Index(before[offset:], old)
+		if index < 0 {
+			break
+		}
+		start := offset + index
+		end := start + len(old)
+		// Tag/digest prefixes and embedded repository names are not complete references.
+		delimiter := func(b byte) bool { return strings.ContainsRune(" \t\r\n\"'[]=,", rune(b)) }
+		if (start > 0 && !delimiter(before[start-1])) || (end < len(before) && !delimiter(before[end])) {
+			return errors.New("ambiguous image reference boundary")
+		}
+		offset = end
+	}
 	if bytes.Count(before, old) != max(r.Dependency.SourceOccurrences, 1) || !bytes.Equal(bytes.ReplaceAll(before, old, next), after) {
 		return errors.New("PR content differs from approval")
 	}

@@ -129,13 +129,23 @@ templ ServiceIdentity(m Model,d advisory.Item) {
  }
 }
 templ Reference(d advisory.Item) {
- @ReferenceValue(d.CurrentValue,d.CurrentDigest)
+ @ReferenceValue(d.CurrentValue,d.CurrentDigest,false)
 }
-templ ReferenceValue(value *string,digest *string) {
+templ ReferenceValue(value *string,digest *string,exact bool) {
  <div class="image-upgrades-cell">
- <span class="image-upgrades-exact">{ text(value) }</span>
+ if value!=nil {
+ <span class="image-upgrades-exact">{ *value }</span>
+ } else if digest!=nil {
+ <span>Untagged image</span>
+ } else {
+ <span>Not recorded</span>
+ }
  if digest!=nil {
+ if exact {
+ <code class="image-upgrades-exact">{ *digest }</code>
+ } else {
  <code class="image-upgrades-exact">{ shortDigest(digest) }</code>
+ }
  } else {
  <small>Digest not reported</small>
  }
@@ -191,8 +201,8 @@ templ CandidateSummary(d advisory.Item,u snapshot.Candidate) {
  <p>Renovate flag only; CVE and severity are not established.</p>
  }
  <div class="image-upgrades-reference-pair">
- <dl class="image-upgrades-reference"><div><dt>Git reference</dt><dd>@ReferenceValue(d.CurrentValue,d.CurrentDigest)</dd></div></dl>
- <dl class="image-upgrades-reference"><div><dt>Candidate</dt><dd>@ReferenceValue(u.NewValue,u.NewDigest)</dd></div></dl>
+ <dl class="image-upgrades-reference"><div><dt>Git reference</dt><dd>@ReferenceValue(d.CurrentValue,d.CurrentDigest,true)</dd></div></dl>
+ <dl class="image-upgrades-reference"><div><dt>Candidate</dt><dd>@ReferenceValue(u.NewValue,u.NewDigest,true)</dd></div></dl>
  </div>
  <dl class="image-upgrades-status">
  <div><dt>Policy</dt><dd>{ policyLabel(u.Policy) }</dd></div>

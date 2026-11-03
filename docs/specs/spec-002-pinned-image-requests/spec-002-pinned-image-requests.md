@@ -1,6 +1,6 @@
 # Spec 002: Pinned image upgrade requests
 
-Status: proposed, unimplemented. Pre-v0.1.0 extension to alpha.5. This document does not enable production writes or change the current unpinned-tag contract.
+Status: implemented on PR #4, unreleased. Pre-v0.1.0 extension to alpha.5. Native binding qualified on 2026-11-03. Production remains on alpha.5 read-only; this change does not enable writes or replace the current hosted bot.
 
 ## Context and objective
 
@@ -37,7 +37,7 @@ The observed twenty relevant candidates comprise nine tagged Kubernetes digest u
 
 Before implementation, qualify how pinned Renovate 44.197.0 binds an explicitly selected target digest through both full dry-run and writer execution. A fixed `allowedVersions` tag does not itself pin registry content. A native lookup may resolve a different digest if the tag moves between runs.
 
-This engine binding is unresolved. A bounded native-engine PoC must demonstrate an approved digest selection and rejection of a changed target before any external write. If the engine cannot provide that binding through a supported mechanism, the affected case stays advisory; do not replace Renovate with custom Git/PR writes or treat post-write mismatch detection as exact-target prevention. A new SDK or general job framework is not part of this slice.
+The [native-engine PoC](../../qualification/digest-binding/README.md) passed for all three pinned cases. A final scoped `matchJsonata` package rule disables any post-lookup update whose target digest, tag presence/value or update type differs from approval, before native branch generation. The same rule is passed to preflight and writer; tests compare it with the live-qualified expressions. Fresh-cache writer attempts resolved a moved tag to digest B and created no branch, PR or issue; approved digest A created one exact selected PR per case. If a future engine version cannot provide that binding through the qualified native mechanism, the affected case stays advisory; do not replace Renovate with custom Git/PR writes or treat post-write mismatch detection as exact-target prevention. A new SDK or general job framework is not part of this slice.
 
 ## Validation and PR association
 
@@ -69,3 +69,11 @@ Run the published replacement artifact against the retained isolated GitHub repo
 ## Boundaries before cutover
 
 Digest support alone does not replace every hosted-bot manager. Homelab must separately disposition Helm, Kustomize, regex and non-image dependency automation, existing cloud PRs, scheduled backup evidence and the repository-specific cloud handover. Current partial inventory is advisory evidence, not an exhaustive cluster inventory or all-up-to-date guarantee.
+
+## Implementation evidence
+
+The [2026-11-03 isolated run](https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/41653260099) created fixture PRs #7, #8 and #9, all open and unmerged. The unmodified native binary ran inside the immutable alpha.5 carrier; this is not a replacement published-controller qualification. The plugin's GET-only tracker subsequently verified each exact PR/head/reference diff and reported Checks unknown. No downstream PR-triggered CI claim is made.
+
+Regression tests cover admission and duplicate approvals, missing/changed preflight tags and digests, native-rule equivalence, exact full-reference diffs and substring collisions, mixed source digests, extra edits, and copied-store recovery of old tag-only and new pinned receipts without replay. Confirmation, details and retained status show full digests; absent tags are labeled as untagged images.
+
+Published replacement-artifact writer execution, PR-triggered CI and production promotion remain separate release qualifications. Existing no-PR and branch-without-PR outcomes retain needs-attention/no-replay behavior.

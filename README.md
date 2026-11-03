@@ -134,13 +134,16 @@ false. Enabling it requires a dedicated repository-scoped engine credential,
 read-only PR/checks/status credential and exact expected PR author. The reader
 and writer credentials are reread from files to support refreshed tokens.
 
-One worker performs full-dry-run preflight, verifies the exact file/package/tag
+One worker performs full-dry-run preflight, verifies the exact file/package/tag/digest
 and approved base, then invokes pinned Renovate with the same scope. Dashboard,
 automerge, platform automerge and pruning are disabled. Existing repository
 policy remains required. No hosted bot dashboard edit is involved.
 
-Initial requests support unpinned tag major/minor/patch upgrades in Kubernetes,
-Docker Compose and Dockerfiles. Digest/pin/custom/Helm upgrades remain advisory.
+Requests support unpinned tag major/minor/patch upgrades, tagged SHA-256 digest
+updates, pinned tag upgrades and digest-only updates in Kubernetes, Docker Compose
+and Dockerfiles. Native post-lookup rules reject an unapproved target digest
+before branch generation. First-time pinning, digest removal, custom/Helm managers
+and ambiguous declarations remain advisory. See [pinned-image scope and proof](docs/specs/spec-002-pinned-image-requests/spec-002-pinned-image-requests.md).
 A base change during the external write can create an ambiguous branch; the
 controller reports needs_attention and never automatically repeats that write.
 

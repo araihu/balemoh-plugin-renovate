@@ -46,6 +46,9 @@ func options(values []string, current string, describe func(string) string) []se
 }
 func count(n int) string { return fmt.Sprint(n) }
 func candidateLabel(u snapshot.Candidate) string {
+	if u.NewValue == nil && u.NewDigest != nil && u.UpdateType == "digest" {
+		return "Digest update"
+	}
 	return text(u.NewValue) + " · " + label(u.UpdateType)
 }
 func recovery(code string) string {
