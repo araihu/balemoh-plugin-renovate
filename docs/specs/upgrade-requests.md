@@ -102,3 +102,5 @@ The base can change between its last preflight check and Renovate's write. Post-
 | Closed/merged receipt resubmission | Same receipt | Terminal status | No new execution |
 
 Automated tests exercise admission, role separation, concurrent deduplication, storage ownership/restart, scope rejection, SDK POST-only transport, host grants, UI conflict/recovery, lifecycle and conservative checks. Browser acceptance and real-engine receipts are recorded separately; untested rows must not be described as qualified.
+
+Published alpha.5 completed the [isolated Kubernetes writer qualification](../qualification/alpha5-writer/README.md): one selected-file PR, duplicate approval deduplication and retained tracking after restart. Checks remained `unknown`. This receipt does not qualify production CI, other managers or writer cutover.

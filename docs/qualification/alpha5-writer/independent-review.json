@@ -1,0 +1,16 @@
+{
+  "target": "https://github.com/araihu/balemoh-plugin-renovate/pull/3",
+  "baseCommit": "8f4326c1d92abc8cf5f2b27ebe9a78c0e6efefbd",
+  "reviewedCommit": "b35f3558769ce7c45eaef6abc6a16c0e2d653fa1",
+  "releaseStage": "pre-v0.1.0",
+  "rounds": 2,
+  "verdict": "acceptable",
+  "currentBlockers": [],
+  "deferredHardening": [],
+  "boundary": [
+    "transcript_not_read",
+    "no_polling",
+    "git_native"
+  ],
+  "reviewerSnapshot": "fdf17b55cc2d9701fa0100c527528e96de764979a484d549595a23546db4ee55"
+}

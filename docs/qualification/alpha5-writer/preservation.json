@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-11-03T11:38:10Z",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:29f986b3fba358714f4b9eaffe6bda6c03edf3821f974f9b1267f0777be23ac4",
+  "writerEnabled": false,
+  "writerCredentialMounted": false,
+  "collectorSpecUnchanged": true,
+  "collectorCredentialUnchanged": true,
+  "hostApplicationUnchanged": true,
+  "productionPVCUnchanged": true,
+  "upgradePRMergesPerformed": 0,
+  "dashboardMutationsPerformedByThisTask": 0,
+  "productionDeploymentPerformed": false,
+  "hostedBotPolicyUnchanged": true,
+  "fixtureWorkflowState": "disabled_manually",
+  "fixtureActionsPermissionsRestored": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  },
+  "publicationRun": "https://github.com/araihu/balemoh-plugin-renovate/actions/runs/41627868177",
+  "qualificationRun": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/41628851415"
+}

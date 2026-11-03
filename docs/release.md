@@ -2,7 +2,7 @@
 
 Plugin version: `0.0.1-alpha.5`, using SDK `v0.0.1-alpha.4`. This version accepts the pinned Renovate engine's `no-work` result during full dry-run preflight when the plan contains the exact approved upgrade. Actual writer execution still requires an owned, diff-verified PR. Missing PRs require review and never replay automatically.
 
-Alpha.5 publication and isolated writer qualification are pending. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Alpha.3 remains the deployed read-only runtime. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
+Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. Fixture Checks remain `unknown`; production bot-triggered CI is not qualified. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Alpha.3 remains the deployed read-only runtime. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
 
 ## Prepared source
 

@@ -1,0 +1,10 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:8a5fdb21078f1fcb64db4d4b42e9166128750df2b2e214cfeb778e1d0b52f07a",
+  "sourceCommit": "ab45eb7a4647e96abf0173c859ae12ce87075862",
+  "version": "0.0.1-alpha.5",
+  "anonymousManifestPull": true,
+  "platformDigests": {
+    "amd64": "sha256:344f06f8ece6b88be818ba3d90e8de509d466b56bf2381741c862a4115da064b",
+    "arm64": "sha256:4dfecbdea8f7a9bced9bcad79bc642a334895aab21951bbccb37b486894183a0"
+  }
+}
