@@ -143,13 +143,13 @@ func (g github) pull(ctx context.Context, r Record) (*PullRequest, error) {
 	if checksErr != nil {
 		checks = "unknown"
 	}
-	// A status belongs to one exact head. Rebase races never inherit a passing result.
+	// A changed head invalidates both the verified diff and its check evidence.
 	var latest nativePR
 	if e := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls/"+strconv.Itoa(p.Number), &latest); e != nil {
 		return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: "unknown"}, e
 	}
 	if latest.Head.SHA != p.Head.SHA {
-		checks = "unknown"
+		return nil, errors.New("PR head changed during verification")
 	}
 	return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: checks}, checksErr
 }

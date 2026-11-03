@@ -133,13 +133,7 @@ templ Reference(d advisory.Item) {
 }
 templ ReferenceValue(value *string,digest *string,exact bool) {
  <div class="image-upgrades-cell">
- if value!=nil {
- <span class="image-upgrades-exact">{ *value }</span>
- } else if digest!=nil {
- <span>Untagged image</span>
- } else {
- <span>Not recorded</span>
- }
+ <span class="image-upgrades-exact">{ tagLabel(value,digest) }</span>
  if digest!=nil {
  if exact {
  <code class="image-upgrades-exact">{ *digest }</code>
@@ -253,10 +247,10 @@ templ DetailBody(m Model) {
 }
 templ ExactReferences(d advisory.Item) {
  <dl class="image-upgrades-evidence">
- <div><dt>Git tag</dt><dd class="image-upgrades-exact">{ text(d.CurrentValue) }</dd></div>
+ <div><dt>Git tag</dt><dd class="image-upgrades-exact">{ tagLabel(d.CurrentValue,d.CurrentDigest) }</dd></div>
  <div><dt>Git digest</dt><dd><code class="image-upgrades-exact">{ text(d.CurrentDigest) }</code></dd></div>
  for _,u:=range d.Candidates {
- <div><dt>{ label(u.UpdateType)+" candidate tag" }</dt><dd class="image-upgrades-exact">{ text(u.NewValue) }</dd></div>
+ <div><dt>{ label(u.UpdateType)+" candidate tag" }</dt><dd class="image-upgrades-exact">{ tagLabel(u.NewValue,u.NewDigest) }</dd></div>
  <div><dt>{ label(u.UpdateType)+" candidate digest" }</dt><dd><code class="image-upgrades-exact">{ text(u.NewDigest) }</code></dd></div>
  }
  </dl>

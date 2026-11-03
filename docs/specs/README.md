@@ -6,4 +6,4 @@ For current runtime ownership and deployment contracts, see [runtime commands](.
 
 Homelab retains operational receipts, storage/backup policy and deployment configuration. Generic controller, token and archive behavior belongs to this repository.
 
-Proposed next slice: [Spec 002: pinned image upgrade requests](spec-002-pinned-image-requests/spec-002-pinned-image-requests.md). It is unimplemented and does not change alpha.5 admission or authorize writer cutover.
+[Spec 002: pinned image upgrade requests](spec-002-pinned-image-requests/spec-002-pinned-image-requests.md) is implemented on PR #4 and remains unreleased. Production alpha.5 admission is unchanged; this implementation does not authorize writer cutover.

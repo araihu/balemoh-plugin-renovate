@@ -30,6 +30,13 @@ func text(p *string) string {
 	}
 	return *p
 }
+
+func tagLabel(value, digest *string) string {
+	if value == nil && digest != nil {
+		return "Untagged image"
+	}
+	return text(value)
+}
 func (m Model) Table() table.Config {
 	rows := []table.Row{}
 	for _, d := range m.List.Items {
