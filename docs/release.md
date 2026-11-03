@@ -2,6 +2,8 @@
 
 Plugin version: `0.0.1-alpha.4`, using SDK `v0.0.1-alpha.4`. This version includes rooted archive restores, an explicit TLS floor for the legacy fixture, and bounded no-PR outcomes without replay. Alpha.3 remains the deployed read-only runtime. Publication and isolated writer qualification are separate from production writer activation. The existing hosted Renovate bot remains the production writer.
 
+Alpha.4 publication succeeded, but [isolated writer qualification failed before writing](qualification/alpha4-writer/README.md). A valid native full-dry-run plan returned `no-work`, which the preflight result allowlist rejects. Alpha.4 is not approved for writer cutover. The immutable tag and production image remain unchanged; the next writer qualification needs a corrected release.
+
 ## Prepared source
 
 Repository: `araihu/balemoh-plugin-renovate`, public as requested. Local runtime directories, credentials, build outputs and Impeccable review snapshots are excluded by `.gitignore`. Validation receipts describe local fixture evidence and are not production claims.

@@ -1,0 +1,34 @@
+{
+  "status": "not_qualified",
+  "reason": "full_dry_run_no_work_rejected",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:4e0b0165664b7ba9e07e1ebef7bbf701c9b3b6688e5887a216fba1d0ad57fb58",
+  "sourceCommit": "764cb29f8ac02fa8a772cc344b9d807a2b16894c",
+  "version": "0.0.1-alpha.4",
+  "publicationRun": "https://github.com/araihu/balemoh-plugin-renovate/actions/runs/41623330079",
+  "qualificationRun": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/41624451899",
+  "qualificationFixtureCommit": "9e2611a0b95f80ea04e1211821d66599b6ce37d9",
+  "failure": {
+    "qualification": "failed",
+    "reason": "preflight blocked: plan_not_actionable"
+  },
+  "readOnlyDiagnosticRun": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/41625207944",
+  "diagnosticFixtureCommit": "910693c39137aa074ceb04c25ef65872dd7445df",
+  "selectedFile": "k8s/alpha4-selected.yaml",
+  "nativeBranchResult": "no-work",
+  "nativePlanMatchesSelection": true,
+  "newUpgradePRs": 0,
+  "newUpgradeBranches": 0,
+  "existingProofPRsUnchanged": [
+    1,
+    2
+  ],
+  "upgradePRMergesPerformed": 0,
+  "fixtureWorkflowPermissionsRestored": true,
+  "fixtureWorkflowsDisabled": true,
+  "productionWriterEnabled": false,
+  "productionWriterCredentialMounted": false,
+  "productionRuntimeVersion": "0.0.1-alpha.3",
+  "publishedTagRetargeted": false,
+  "restartQualificationCompleted": false,
+  "nextRequirement": "Accept the pinned full-dry-run no-work result for an exact validated plan while retaining policy deferral rejection and post-write PR verification; qualify a new immutable release."
+}

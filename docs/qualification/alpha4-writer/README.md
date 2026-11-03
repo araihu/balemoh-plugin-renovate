@@ -1,0 +1,15 @@
+# Published alpha.4 writer qualification
+
+Status: **not qualified**, 2026-11-03. The shipped controller blocked before any write with `plan_not_actionable`. A separate read-only native run produced the exact approved branch/file/package/tag but returned `no-work`. Pinned Renovate returns that result when full dry-run produces no commit SHA. Alpha.4's preflight allowlist rejects it, so this release cannot complete the writer proof. See [failure receipt](failure-receipt.json) and [controlled native projection](native-preflight-diagnostic.json).
+
+No upgrade branch or PR was created. Existing proof PRs #1/#2 remain open with unchanged heads. Test workflows were disabled and repository Actions PR-creation permissions restored. The production bot and alpha.3 read-only runtime remain unchanged, with writer disabled. The published alpha.4 tag was not moved. This requires a source correction and a new immutable release, not a relaxed test or an overwritten tag.
+
+This manual harness targets only `guilycst/balemoh-renovate-engine-poc-20261101`. It starts `/usr/local/bin/image-upgrades-controller` directly from the verified published carrier image. No controller is compiled, replaced or patched. The Python client submits a controlled public-wire snapshot and approval over verified loopback HTTPS. The shipped controller's mandatory full dry-run validates that selection against actual Git content before writing.
+
+Install `workflow.yaml` as `.github/workflows/alpha4-writer.yaml`, `qualify.py` as `qualification/alpha4.py`, and the successful publication receipt as `qualification/alpha4-pins.json` in the private fixture repository. Add `k8s/alpha4-selected.yaml` with one `docker.io/library/nginx:1.25.3` reference and an unselected sidecar. Existing fixtures and proof PRs remain intact. The repository policy disables every package; the controller's exact forced rule selects this one file/package/tag.
+
+The workflow has no schedule or push trigger. Its only writer credential is the short-lived Actions token scoped to this synthetic repository. Temporarily enable Actions PR creation there, manually dispatch this workflow, then disable the workflow and restore the repository's prior setting. Never pass the production writer credential or modify the homelab bot.
+
+The client verifies one new unmerged PR and branch, exact selected-file content, unchanged base and previous PRs/branches, no dashboard issues, repeated submissions returning the same receipt, and persistence/reconciliation after graceful controller restart. It records the shipped controller's binary hash and the immutable publication identity. Raw private controller/engine logs and ephemeral credentials are not uploaded. Failures retain a controlled diagnostic receipt; do not delete or overwrite proof PRs to hide an attempt.
+
+The selected case is a fixed Kubernetes nginx tag upgrade. The initial snapshot is controlled input, not production inventory. GitHub normally suppresses PR CI triggered by `GITHUB_TOKEN`; this proof does not qualify production App-triggered CI. Nothing is merged, production writer stays disabled, and publication does not authorize cutover.

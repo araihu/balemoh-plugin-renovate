@@ -1,0 +1,46 @@
+{
+  "exitCode": 0,
+  "expectedBranch": "balemoh-renovate/f48204ca4a67aa18325dddfe7118ce362972df078f3ce9d8f04e0d109fc4ff03",
+  "repositories": {
+    "guilycst/balemoh-renovate-engine-poc-20261101": {
+      "status": "onboarded",
+      "problemLevels": [],
+      "branches": [
+        {
+          "branchName": "balemoh-renovate/f48204ca4a67aa18325dddfe7118ce362972df078f3ce9d8f04e0d109fc4ff03",
+          "result": "no-work",
+          "upgrades": [
+            {
+              "packageFile": "k8s/alpha4-selected.yaml",
+              "depName": "docker.io/library/nginx",
+              "packageName": "docker.io/library/nginx",
+              "currentValue": "1.25.3",
+              "newValue": "1.26.3",
+              "newDigest": null
+            }
+          ]
+        }
+      ],
+      "dependencies": [
+        {
+          "depName": "docker.io/library/nginx",
+          "packageName": "docker.io/library/nginx",
+          "depType": null,
+          "currentValue": "1.25.3"
+        },
+        {
+          "depName": "docker.io/library/alpine",
+          "packageName": "docker.io/library/alpine",
+          "depType": null,
+          "currentValue": "3.19.0"
+        },
+        {
+          "depName": "Deployment",
+          "packageName": "Deployment",
+          "depType": null,
+          "currentValue": "apps/v1"
+        }
+      ]
+    }
+  }
+}
