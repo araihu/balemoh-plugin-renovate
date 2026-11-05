@@ -19,6 +19,8 @@
 .image-upgrades-proposals { display: grid; gap: 1.25rem; margin: 0; padding: 0; list-style: none; min-width: 0; }
 .image-upgrades-toolbar { flex-direction: column; align-items: stretch; }
 .image-upgrades-filter-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; min-width: 0; }
+/* shortcut: Combobox has a fixed trigger minimum; allow the two-column mobile filters to shrink. */
+.image-upgrades-filter-pair [role="combobox"] { min-width: 0; }
 .image-upgrades-filter-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; min-width: 0; }
 .image-upgrades-service { display: flex; align-items: center; gap: .5rem; overflow-wrap: break-word; min-width: 0; }
 .image-upgrades-service > strong { min-width: 0; }
@@ -28,12 +30,22 @@
 .image-upgrades-detail-heading { display: grid; gap: .5rem; padding-bottom: 1.5rem; min-width: 0; }
 .image-upgrades-detail-title { padding-bottom: 0; }
 @media (min-width: 64rem) {
- /* shortcut: scoped semantic header styling until Table exposes a sticky-header option. */
- .image-upgrades .image-upgrades-table { overflow: visible; }
- .image-upgrades-table thead { position: sticky; top: 0; z-index: 1; }
  .image-upgrades-observation { grid-template-columns: repeat(4, minmax(0, 1fr)); }
  .image-upgrades-desktop { display: block; }
  .image-upgrades-mobile { display: none; }
 }
 
 .image-upgrades-action { display: inline-flex; align-items: center; min-height: 2.75rem; }
+
+.image-upgrades-coverage-section { display: grid; gap: .75rem; min-width: 0; }
+.image-upgrades-coverage-heading, .image-upgrades-coverage-state { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.image-upgrades-coverage-heading { justify-content: space-between; }
+.image-upgrades-coverage-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.image-upgrades-coverage-facts dt { font-weight: 600; }
+.image-upgrades-coverage-facts dd { margin: .25rem 0 0; }
+.image-upgrades-coverage-label { display: flex; align-items: center; gap: .25rem; }
+.image-upgrades-coverage-hint { min-height: 2.75rem; padding: 0; }
+.image-upgrades-coverage-table td:last-child { font-variant-numeric: tabular-nums; }
+.image-upgrades-coverage-copy { max-width: 72ch; }
+
+.image-upgrades [data-filter-status]:empty { display: none; }

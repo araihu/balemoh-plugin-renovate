@@ -2,26 +2,29 @@ package view
 
 import (
 	"fmt"
+	"github.com/a-h/templ"
 	"github.com/araihu/balemoh-plugin-renovate/internal/advisory"
 	"github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
 	"github.com/araihu/balemoh/plugin-sdk/ui"
-	selectfield "github.com/araihu/goshtoso/components/select"
+	"github.com/araihu/goshtoso/components/combobox"
 	"github.com/araihu/goshtoso/components/table"
+	"slices"
+	"strings"
 )
 
 type Model struct {
-	Request                                                         ui.Request
-	Filter                                                          advisory.Filter
-	Result                                                          ui.QueryResult
-	Meta                                                            advisory.Meta
-	List                                                            advisory.List
-	Detail                                                          advisory.Detail
-	CurrentURL, BackURL, RestartURL, ResetURL, CoverageURL, NextURL string
-	Links                                                           map[string]string
-	Services                                                        map[string]ui.ServiceIdentity
-	RequestLinks                                                    map[string]string
-	ActionURL, ActionError, StatusURL                               string
-	Selected                                                        snapshot.Candidate
+	Request                                                                     ui.Request
+	Filter                                                                      advisory.Filter
+	Result                                                                      ui.QueryResult
+	Meta                                                                        advisory.Meta
+	List                                                                        advisory.List
+	Detail                                                                      advisory.Detail
+	CurrentURL, BackURL, RestartURL, ResetURL, CoverageURL, NextURL, ResultsURL string
+	Links                                                                       map[string]string
+	Services                                                                    map[string]ui.ServiceIdentity
+	RequestLinks                                                                map[string]string
+	ActionURL, ActionError, StatusURL                                           string
+	Selected                                                                    snapshot.Candidate
 }
 
 func text(p *string) string {
@@ -44,12 +47,16 @@ func (m Model) Table() table.Config {
 	}
 	return table.Config{ID: m.Request.DOMID("table"), Caption: "Image and Git file groups.", RootClass: "image-upgrades-table", Columns: []table.Column{{Key: "image", Label: "Image / Git file"}, {Key: "git", Label: "Git reference"}, {Key: "proposed", Label: "Renovate candidates"}, {Key: "assessment", Label: "Assessment"}}, Rows: rows}
 }
-func options(values []string, current string, describe func(string) string) []selectfield.Option {
-	out := []selectfield.Option{{Value: "", Label: "All", Selected: current == ""}}
-	for _, v := range values {
-		out = append(out, selectfield.Option{Value: v, Label: describe(v), Selected: v == current})
+func (m Model) filterCombobox(name, title, current string, values []string, describe func(string) string) combobox.Config {
+	options := make([]combobox.Option, 0, len(values))
+	for _, value := range values {
+		options = append(options, combobox.Option{Value: value, Label: describe(value)})
 	}
-	return out
+	selected := []string{}
+	if current != "" {
+		selected = strings.Split(current, ",")
+	}
+	return combobox.Config{ID: m.Request.DOMID(name), Name: name, Label: title, Placeholder: "All", Mode: combobox.ModeMultiple, Source: combobox.Source{Static: options}, Selected: selected, EnableClearAll: true, DisablePersistence: true, TriggerAttrs: templ.Attributes{"aria-controls": m.Request.DOMID(name) + "-options", "aria-haspopup": "listbox"}}
 }
 func count(n int) string { return fmt.Sprint(n) }
 func candidateLabel(u snapshot.Candidate) string {
@@ -84,7 +91,7 @@ func shortDigest(p *string) string {
 }
 
 func label(value string) string {
-	if text, ok := map[string]string{"updates_found": "Candidates observed", "unknown": "Unassessed", "excluded": "Excluded by policy", "no_candidate": "No candidate in policy", "major": "Major", "minor": "Minor", "patch": "Patch", "digest": "Digest", "pinDigest": "Pin digest", "pin": "Pin version", "pr_open": "PR observed", "pending_checks": "Checks pending", "approval_required": "Approval required", "pr_limit": "PR limit", "fresh": "Current", "partial": "Partial", "complete": "Complete", "stale": "Stale", "eligible": "Eligible under reported policy", "release_age": "Waiting for release age", "scheduled": "Waiting for schedule", "rate_limited": "Rate limit reached", "ignored": "Ignored by policy"}[value]; ok {
+	if text, ok := map[string]string{"updates_found": "Candidates observed", "unknown": "No conclusive result", "excluded": "Outside upgrade scope", "no_candidate": "No candidate in policy", "major": "Major", "minor": "Minor", "patch": "Patch", "digest": "Digest", "pinDigest": "Pin digest", "pin": "Pin version", "pr_open": "PR observed", "pending_checks": "Checks pending", "approval_required": "Approval required", "pr_limit": "PR limit", "fresh": "Current", "partial": "Partial", "complete": "Complete", "stale": "Stale", "eligible": "Eligible under reported policy", "release_age": "Waiting for release age", "scheduled": "Waiting for schedule", "rate_limited": "Rate limit reached", "ignored": "Ignored by policy"}[value]; ok {
 		return text
 	}
 	return value
@@ -162,6 +169,9 @@ func workflowOptionLabel(value string) string {
 	return "PR unknown"
 }
 func reasonLabel(value string) string {
+	if strings.HasPrefix(value, "cause_") {
+		return causeDescription(value)
+	}
 	values := map[string]string{
 		"source_problems":              "Renovate reported collection problems; results may be incomplete.",
 		"unsupported_manager":          "Some image declarations use a manager outside this collector's scope.",
@@ -169,8 +179,9 @@ func reasonLabel(value string) string {
 		"unassessed_dependencies":      "Some image groups could not be assessed.",
 		"ambiguous_declarations":       "Declarations for this image group disagree, so no candidate is attributed to it.",
 		"disabled":                     "Renovate policy excludes this declaration.",
-		"lookup_unconfirmed":           "An image lookup could not be confirmed.",
-		"negative_assessment_unproven": "The report provides no proven candidate or up-to-date conclusion for this group.",
+		"chart_inherited":              "No image tag is set in these Helm values. The chart or parent values must supply it; this declaration is outside the explicit-image scan.",
+		"lookup_unconfirmed":           "Renovate skipped the lookup or reported a warning. Review collection logs for the cause.",
+		"negative_assessment_unproven": "Renovate returned no upgrade candidates. This report does not confirm whether the image is up to date.",
 	}
 	if text, ok := values[value]; ok {
 		return text
@@ -198,4 +209,63 @@ func branchResultLabel(value string) string {
 		return text
 	}
 	return "Other result reported by Renovate"
+}
+
+func assessmentLabel(d advisory.Item) string {
+	if d.Assessment == "excluded" {
+		if slices.Contains(d.Reasons, "chart_inherited") {
+			return "Inherited from chart"
+		}
+		if slices.Contains(d.Reasons, "disabled") {
+			return "Disabled by policy"
+		}
+	}
+	switch advisory.AssessmentKind(d.Dependency) {
+	case "no_candidates_reported":
+		return "No candidates reported"
+	case "lookup_unconfirmed":
+		return "Lookup unconfirmed"
+	case "conflicting_declarations":
+		return "Conflicting declarations"
+	case "unknown":
+		return "Upgrade status unknown"
+	default:
+		return label(d.Assessment)
+	}
+}
+func (m Model) reviewGroups() int {
+	return max(0, m.Meta.Coverage.Unknown-m.Meta.AssessmentBreakdown.NoCandidatesReported)
+}
+func (m Model) hasCollectionIssues() bool {
+	if m.reviewGroups() > 0 || m.Meta.AssessmentBreakdown.UnidentifiedRecords > 0 {
+		return true
+	}
+	return slices.ContainsFunc(m.Meta.Coverage.Reasons, func(r string) bool { return r != "unassessed_dependencies" })
+}
+func (m Model) collectionIssueDescription() string {
+	parts := []string{}
+	if n := m.reviewGroups(); n > 0 {
+		noun := "image/file groups need"
+		if n == 1 {
+			noun = "image/file group needs"
+		}
+		parts = append(parts, fmt.Sprintf("%d %s review.", n, noun))
+	}
+	if n := m.Meta.AssessmentBreakdown.UnidentifiedRecords; n > 0 {
+		noun := "source records could"
+		if n == 1 {
+			noun = "source record could"
+		}
+		parts = append(parts, fmt.Sprintf("%d %s not be identified.", n, noun))
+	}
+	if len(parts) == 0 {
+		parts = append(parts, "Renovate reported collection limitations.")
+	}
+	return strings.Join(parts, " ") + " Counts cover the whole repository."
+}
+func noCandidatesDescription(n int) string {
+	if n == 1 {
+		return "Across this repository, 1 image/file group has no candidates reported."
+	}
+	return fmt.Sprintf("Across this repository, %d image/file groups have no candidates reported.", n)
 }

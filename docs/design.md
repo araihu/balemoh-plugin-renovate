@@ -26,7 +26,7 @@ Primary task: inspect image candidates in repository files, then inspect evidenc
 | --- | --- | --- |
 | Page identity | `pageheader.PageHeader`, title/actions slots | Reuse; host owns shell |
 | Search | `textinput.TextInput`, search type, label, bounded value | Reuse |
-| Fixed filters | `select.Select`, options, trigger, hidden submission field | Compose in `toolbar.Toolbar`; canonical GET form submission |
+| Multiple filter choices | `combobox.Combobox`, `ModeMultiple`, static options and built-in checkbox selection | Reuse in `toolbar.Toolbar`; canonical GET form submission, URL-owned state |
 | Image/file groups | `table.Table`, typed columns/rows/cell components; `panel.Panel` header/actions/body/root attrs | Desktop table plus mobile panel comparison. Table Config/Column exposes no mobile/card mode in v0.4.4; CSS exposes one supported composition at a time. |
 | Detail evidence | `panel.Panel`, header/body slots | Compose with domain definition lists |
 | Coverage/staleness | `alert.Alert`, warning tone | Reuse |
@@ -71,7 +71,7 @@ Recovery validates the remaining filters through the same exported validator use
 
 ## Filter layout follow-up, 2026-10-30
 
-The filter region is a single-column grid at every viewport. Search and Assessment are direct children; Update type and Workflow share one direct child with two equal columns. Apply/reset remain in the toolbar action region. Public Toolbar RootClass/FiltersClass hooks own this composition. Removed fixed field widths and the intermediate side-by-side search arrangement. No query, notification or collector behavior changed.
+The filter region is a single-column grid at every viewport. Search and Assessment are direct children; Update type and Workflow share one direct child with two equal columns. Reset remains in the toolbar action region. Public Toolbar RootClass/FiltersClass hooks own this composition. Removed fixed field widths and the intermediate side-by-side search arrangement. No query, notification or collector behavior changed.
 
 ## Coverage presentation follow-up, 2026-10-30
 
@@ -92,3 +92,67 @@ The detail icon was moved from the title suffix to immediately before the source
 Detail keeps stale/partial warnings before candidate evidence, moves extraction fields after the candidates, and moves repeated observation metadata after the primary panel. DOM reading order follows visual order at all widths. List, coverage and widget retain their existing observation composition.
 
 Desktop Table keeps its public component and adds a RootClass for the scoped sticky-header layout. The public v0.4.4 API has no sticky-header option; the narrowly scoped semantic thead selector and overflow release are recorded in goshtoso-snag-journal.md. No nested scrolling widget or copied table markup is introduced. Known workflow/policy summaries use strong text; the explicit unknown fallback remains visible at the normal text size and regular weight with the same foreground color.
+
+## Multiple filter selections
+
+Assessment, Update type and Workflow use Goshtoso v0.4.4 `combobox.Combobox` in client `ModeMultiple`, with its built-in checkbox options and Clear all control. An empty selection means All. Selections use OR within a field and AND across fields; update type and workflow must match the same candidate. Default assessment stays Candidates observed.
+
+Repeated URL parameters preserve selections across list, details, coverage, pagination and request navigation. An empty hidden field preserves explicit All when no option is selected. Browser persistence is disabled because URL state owns these filters. Existing scalar query inputs remain compatible; the backend accepts bounded, validated comma-separated sets in the same string fields. Widget placement remains single-type.
+
+## Report uncertainty and collection problems
+
+An empty `updates` array stays `unknown` in the snapshot. The query metadata derives a repository-wide assessment breakdown from that same retained snapshot, independently of list filters and pagination. It distinguishes no candidates reported, lookup warnings/skips, conflicting declarations, other unknown statuses, candidates and policy exclusions. Only an exact sole `negative_assessment_unproven` reason receives the neutral no-candidates label; mixed or unfamiliar reasons remain unconfirmed.
+
+The amber notice counts unknown groups other than empty reports. It also reports source records not represented by a reliable group identity, without calling those records distinct images. Other repository-level collection problems retain the warning even when no affected group can be counted. Empty reports alone do not produce an amber warning. Coverage explains every category, states that no candidates reported is not proof of being up to date, and keeps technical evidence available. List, mobile cards and details share the derived assessment labels. The existing unknown filter still matches all source-unknown groups, labelled No conclusive result. No snapshot, PR eligibility, notification admission, writer or bot behavior changes.
+
+HMG validation: retained snapshot `052f6582-76e7-4ed7-adf6-0ff0b281ebb6` produced 31 candidate groups, 123 empty reports, 17 unconfirmed lookups, one conflicting group and ten exclusions. Nine source records were outside identified groups. The Minor filter still returned three groups with the same repository-wide breakdown. List/detail/coverage labels and the explanatory link passed live browser checks; no horizontal document overflow at390/883/1440px. Empty-report-only, mixed/future-reason and repository-problem-only cases passed automated tests. Underlying lookup/identity problems were not repaired by this presentation change.
+
+## Explicit-image classification
+
+Policy-disabled declarations take precedence over differing values only when every record in the group is disabled. Mixed active/disabled groups remain ambiguous, and no candidate is attributed to them. Differing disabled values are not selected as a current version.
+
+Named Helm images with an empty tag, no digest and the native `invalid-value` skip are outside explicit-image assessment. They remain identifiable groups with `chart_inherited` and no candidates; chart or parent-value inheritance is not guessed. Empty unnamed Helm overrides and unresolved Dockerfile build arguments are extraction placeholders outside `sourceRecords` and image-group counts. Their counts are explained in the existing human-readable coverage scope. Other malformed, unsafe-path, warned or partially explicit records retain their identity warning.
+
+Snapshot v1 fields, IDs and reason-code extensibility are retained. Empty update lists remain unknown, never proof of being up to date.
+
+## Automatic filters
+
+Selections and search apply after 350 ms without another edit. Goshtoso's public
+`combobox:change` event drives the plugin's client module. IME composition waits
+until committed. The module uses the existing SDK results fragment route and
+HTMX 4 form lifecycle. Only results are replaced, keeping the combobox open,
+keyboard focus, search caret and scroll position. The canonical GET form remains
+the no-JavaScript fallback. URL history records the applied filters; detail and
+coverage links retain them. Failed requests keep the previous results with a
+retry message. Only the latest HTMX request context may swap results, update navigation, or
+finish loading/error feedback. A URL comparison also rejects responses after
+unsent form edits; returning to an earlier URL does not revive its older request.
+Stale responses are cancelled at `htmx:after:request`, before HTMX 4 processes
+history, with a second guard before swapping results.
+
+Component decision: automatic filtering | public Combobox ClientEvent, Toolbar
+slots, TextInput and SDK FragmentURL | compose | parent owns submission timing.
+No host, SDK or collector changes required.
+
+## Coverage scanability
+
+Coverage keeps repository and collection time, a freshness hint badge and a compact
+review count. Group outcomes and captured lookup causes use Goshtoso Tables with
+right-aligned counts. Cause rows show the next step; click/keyboard help explains
+the term without a paragraph wall. Zero conflict/unknown/exclusion rows are omitted.
+Unidentified declarations remain separate from group totals. Runtime scope and
+producer evidence stay under a closed accordion. Static collection semantics moved
+to README documentation. List and detail warning behavior stays unchanged.
+
+Component decisions: outcome/cause comparison | Table.Config and Cell.Component |
+compose; terminology hints | Tooltip.Help and click Tooltip with Badge trigger |
+reuse; secondary evidence | Accordion | reuse. Existing source components, tokens
+and host shell remain. List headers scroll normally; the sticky override is removed.
+
+## Quiet list presentation
+
+The list omits the subtitle, repeated stale/review banners, repository-wide empty
+report paragraph and idle/success filter copy. Collection time, freshness and
+coverage remain in its metadata. Coverage retains the repository breakdown and
+warning causes; detail/widget warnings are unchanged. The live filter status is
+empty when idle or successful, visible while updating or when a request fails.

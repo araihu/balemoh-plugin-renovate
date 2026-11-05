@@ -10,10 +10,11 @@ import (
  "github.com/araihu/goshtoso/components/alert"
  "github.com/araihu/goshtoso/components/emptystate"
  "github.com/araihu/goshtoso/components/textinput"
- selectfield "github.com/araihu/goshtoso/components/select"
+ "github.com/araihu/goshtoso/components/combobox"
  "github.com/araihu/goshtoso/components/button"
  "github.com/araihu/goshtoso/components/link"
  "github.com/araihu/goshtoso/components/icon"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
  "github.com/araihu/goshtoso/components/badge"
  "github.com/araihu/goshtoso/components/accordion"
  "github.com/araihu/goshtoso/components/tooltip"
@@ -21,10 +22,12 @@ import (
 
 templ Current(m Model) {
  <div class="image-upgrades">
- @pageheader.PageHeader(pageheader.Config{Title:"Image upgrades",Description:m.CurrentDescription(),Actions:CoverageLink(m)})
- <form method="get" action={ templ.SafeURL(m.CurrentURL) }>
- @toolbar.Toolbar(toolbar.Config{Label:"Upgrade filters",Filters:Filters(m),Actions:Apply(m),RootClass:"image-upgrades-toolbar",FiltersClass:"image-upgrades-filter-fields"})
+ @pageheader.PageHeader(pageheader.Config{Title:"Image upgrades",Actions:CoverageLink(m)})
+ <form data-upgrade-filters method="get" action={ templ.SafeURL(m.CurrentURL) } hx-get={ m.ResultsURL } hx-trigger="submit, filters:apply" hx-target={ "#"+m.Request.DOMID("results") } hx-swap="outerHTML" hx-sync="this:replace" hx-push-url="false" hx-status:4xx="swap:none" hx-status:5xx="swap:none" hx-request="timeout:10s">
+ @toolbar.Toolbar(toolbar.Config{Label:"Upgrade filters",Filters:Filters(m),Actions:Reset(m),RootClass:"image-upgrades-toolbar",FiltersClass:"image-upgrades-filter-fields"})
+ <noscript>@button.Button(button.WithType("submit")){ Apply filters }</noscript>
  </form>
+ <p data-filter-status role="status" aria-live="polite"></p>
  @Results(m)
  </div>
 }
@@ -33,18 +36,19 @@ templ Search(m Model) {
 }
 templ Filters(m Model) {
  @Search(m)
- @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("assessment"),Name:"assessment",Label:"Assessment",Options:options([]string{"updates_found","unknown","excluded","no_candidate"},m.Filter.Assessment,label)})
+ @FilterCombobox(m.filterCombobox("assessment","Assessment",m.Filter.Assessment,[]string{"updates_found","unknown","excluded","no_candidate"},label))
  <div class="image-upgrades-filter-pair">
- @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("update-type"),Name:"updateType",Label:"Update type",Options:options([]string{"major","minor","patch","digest","pinDigest","pin"},m.Filter.UpdateType,label)})
- @selectfield.Select(selectfield.Config{ID:m.Request.DOMID("workflow"),Name:"workflow",Label:"Workflow",Options:options([]string{"pr_open","unknown"},m.Filter.Workflow,workflowOptionLabel)})
+ @FilterCombobox(m.filterCombobox("updateType","Update type",m.Filter.UpdateType,[]string{"major","minor","patch","digest","pinDigest","pin"},label))
+ @FilterCombobox(m.filterCombobox("workflow","Workflow",m.Filter.Workflow,[]string{"pr_open","unknown"},workflowOptionLabel))
  </div>
  if m.Filter.Repository!="" {
  <input type="hidden" name="repository" value={ m.Filter.Repository }/>
  }
 }
-templ Apply(m Model) {
- @button.Button(button.WithType("submit")){ Apply filters }
- @Reset(m)
+templ FilterCombobox(cfg combobox.Config) {
+ // Empty selection must submit explicitly, especially for the default assessment.
+ <input type="hidden" name={ cfg.Name } value=""/>
+ @combobox.Combobox(cfg,cfg.InitialState())
 }
 templ Reset(m Model) {
  @link.Link(m.ResetURL,link.WithRootClass("image-upgrades-action")){ Reset to defaults }
@@ -54,7 +58,7 @@ templ CoverageLink(m Model) {
 }
 templ Results(m Model) {
  <section id={ m.Request.DOMID("results") } class="image-upgrades-results" aria-label="Upgrade results" aria-live="polite">
- @Observation(m)
+ @ObservationFacts(m)
  <p>{ m.ResultCount() }</p>
  if m.List.Total==0 {
  @emptystate.EmptyState(emptystate.Config{Title:"No matching image groups",Description:"Try another search or reset to defaults. Empty results do not establish that every image is up to date.",Action:Reset(m)})
@@ -81,8 +85,11 @@ templ ObservationWarnings(m Model) {
  if m.Result.State=="stale" {
  @alert.Alert(alert.Config{Title:"Observation is stale",Description:"Previous findings remain visible. Collection failed or the observation exceeded its age limit.",Tone:alert.ToneWarning})
  }
- if m.Meta.Coverage.Status=="partial" {
- @alert.Alert(alert.Config{Title:"Partial coverage",Description:count(m.Meta.Coverage.Unknown)+" image/file groups are unassessed.",Tone:alert.ToneWarning})
+ if m.hasCollectionIssues() {
+ @alert.Alert(alert.Config{Title:"Collection needs review",Description:m.collectionIssueDescription(),Tone:alert.ToneWarning})
+ }
+ if m.Meta.AssessmentBreakdown.NoCandidatesReported>0 && m.Request.ContributionID!="coverage" {
+ <p>{ noCandidatesDescription(m.Meta.AssessmentBreakdown.NoCandidatesReported) } <span>@link.Link(m.CoverageURL){ What this means }</span></p>
  }
 }
 templ ObservationFacts(m Model) {
@@ -162,7 +169,10 @@ templ Proposals(d advisory.Item) {
  </ul>
 }
 templ Assessment(d advisory.Item) {
- <div class="image-upgrades-cell"><span>{ label(d.Assessment) }</span>
+ <div class="image-upgrades-cell"><span>{ assessmentLabel(d) }</span>
+ if d.Assessment=="unknown" && advisory.AssessmentKind(d.Dependency)=="lookup_unconfirmed" {
+ <span>{ causeTitle(advisory.LookupCause(d.Dependency)) }</span>
+ }
  for _,value:=range workflowLabels(d) {
  if value=="Policy/workflow not established" {
  <span>{ value }</span>
@@ -177,12 +187,12 @@ templ DetailLink(destination string,d advisory.Item) {
 }
 templ MobileBody(d advisory.Item) {
  <div class="image-upgrades-cell">
- <p>{ label(d.Assessment) }</p>
+ <p>{ assessmentLabel(d) }</p>
  <div class="image-upgrades-reference-pair">
  <div class="image-upgrades-cell"><strong>Git reference</strong>@Reference(d)</div>
  <div class="image-upgrades-cell"><strong>Candidates</strong>@Proposals(d)</div>
  </div>
- for _,reason:=range d.Reasons {
+ for _,reason:=range displayReasons(d) {
  <p>{ reasonLabel(reason) }</p>
  }
  </div>
@@ -233,14 +243,14 @@ templ DetailBody(m Model) {
  }
  @UpgradeAction(m,u)
  }
- if len(d.Candidates)==0 {
- <p>No candidate is proven for this group. The report does not establish that the image is up to date.</p>
+ if len(d.Candidates)==0 && len(d.Reasons)==0 {
+ <p>No upgrade candidate was reported for this group.</p>
  }
- for _,reason:=range d.Reasons {
+ for _,reason:=range displayReasons(d) {
  <p>{ reasonLabel(reason) }</p>
  }
  <dl class="image-upgrades-evidence">
- <div><dt>Assessment</dt><dd>{ label(d.Assessment) }</dd></div>
+ <div><dt>Assessment</dt><dd>{ assessmentLabel(d) }</dd></div>
  <div><dt>Manager</dt><dd>{ managerLabel(d.Manager) }</dd></div>
  <div><dt>Matching source records</dt><dd>{ count(d.SourceOccurrences) }</dd></div>
  </dl>
@@ -261,34 +271,79 @@ templ Back(m Model) {
 templ Coverage(m Model) {
  <div class="image-upgrades">
  @pageheader.PageHeader(pageheader.Config{Title:"Collection coverage",Actions:Back(m)})
- @Observation(m)
+ <div class="image-upgrades-coverage-state">
+ @CoverageHint(m,"freshness",m.Freshness(),"The timestamp below is the last completed collection. Stale findings remain visible until a new collection succeeds.",m.coverageTone())
+ if m.hasCollectionIssues() {
+ @badge.Badge(badge.Config{Label:m.coverageReviewLabel(),Tone:badge.ToneWarning,Appearance:badge.AppearanceSoft})
+ }
+ </div>
+ <dl class="image-upgrades-coverage-facts">
+ <div><dt>Repository</dt><dd class="image-upgrades-exact">{ m.Meta.Repository.Name }</dd></div>
+ <div><dt>Observed at</dt><dd>{ m.Meta.CompletedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</dd></div>
+ </dl>
  @Evidence(m)
  </div>
 }
 templ Evidence(m Model) {
- @panel.Panel(panel.Config{Header:SectionTitle("Collection summary"),Body:CoverageSummary(m)})
- @accordion.Accordion(accordion.AccordionConfig{ID:m.Request.DOMID("technical-evidence"),Items:[]accordion.AccordionItem{{ID:m.Request.DOMID("technical-details"),Title:"Technical details",Content:TechnicalEvidence(m)}}})
+ @CoverageSummary(m)
+ @accordion.Accordion(accordion.AccordionConfig{ID:m.Request.DOMID("technical-evidence"),Items:[]accordion.AccordionItem{{ID:m.Request.DOMID("technical-details"),Title:"Scope and technical details",Content:TechnicalEvidence(m)}}})
 }
 templ CoverageSummary(m Model) {
- <p>{ count(m.Meta.Coverage.SourceRecords)+" source image records form "+count(m.Meta.Coverage.Extracted)+" image groups." }</p>
- <dl class="image-upgrades-observation">
- <div><dt>Assessed</dt><dd>{ count(m.Meta.Coverage.Assessed) }</dd></div>
- <div><dt>Unassessed</dt><dd>{ count(m.Meta.Coverage.Unknown) }</dd></div>
- <div><dt>Excluded</dt><dd>{ count(m.Meta.Coverage.Excluded) }</dd></div>
- </dl>
- for _,reason:=range m.Meta.Coverage.Reasons {
- <p>{ reasonLabel(reason) }</p>
+ <section class="image-upgrades-coverage-section" aria-labelledby={m.Request.DOMID("outcomes-title")}>
+ <div class="image-upgrades-coverage-heading">
+ <h2 id={m.Request.DOMID("outcomes-title")} class="text-lg font-semibold">Collection outcomes</h2>
+ @CoverageHint(m,"scope","Whole repository","Counts include all image/file groups, regardless of list filters or pagination.",badge.ToneDefault)
+ </div>
+ <p>{ count(m.Meta.Coverage.Extracted)+" image/file groups · "+count(m.Meta.Coverage.SourceRecords)+" declarations" }</p>
+ @table.Table(m.coverageTable())
+ if m.Meta.AssessmentBreakdown.UnidentifiedRecords>0 {
+ <p>{ count(m.Meta.AssessmentBreakdown.UnidentifiedRecords)+" declarations could not be identified and are outside these group counts." }</p>
+ }
+ </section>
+ if len(m.Meta.LookupCauses)>0 {
+ <section class="image-upgrades-coverage-section" aria-labelledby={m.Request.DOMID("causes-title")}>
+ <h2 id={m.Request.DOMID("causes-title")} class="text-lg font-semibold">Lookup warnings</h2>
+ @table.Table(m.causesTable())
+ </section>
+ }
+}
+templ CoverageLabel(m Model,key,title,description string) {
+ <div class="image-upgrades-coverage-label">
+ <span>{ title }</span>
+ @tooltip.Help(m.Request.DOMID("coverage-hint-"+key),"About "+title,description)
+ </div>
+}
+templ CoverageCause(m Model,code string) {
+ <div class="image-upgrades-cell">
+ @CoverageLabel(m,code,causeTitle(code),causeDescription(code))
+ <span class="text-sm">{ causeNextStep(code) }</span>
+ </div>
+}
+templ CoverageHint(m Model,key,title,description string,tone badge.Tone) {
+ @tooltip.Tooltip(m.Request.DOMID("coverage-badge-"+key),title,tooltip.WithDescription(description),tooltip.WithActivation(tooltip.ActivationClick),tooltip.WithPortal(true),tooltip.WithTrigger(CoverageHintTrigger(title,tone)))
+}
+templ CoverageHintTrigger(title string,tone badge.Tone) {
+ @button.Button(button.WithType("button"),button.WithAppearance(button.AppearancePlain),button.WithRootClass("image-upgrades-coverage-hint"),button.WithAttrs(templ.Attributes{"aria-label":"About "+title})) {
+ @badge.Badge(badge.Config{Label:title,Tone:tone,Appearance:badge.AppearanceSoft,Icon:icon.Icon(icon.Config{SpriteURL:heroicons.SpriteURL,Symbol:heroicons.Icon16SolidInformationCircle,Size:icon.SizeSM,Decorative:true})})
  }
 }
 templ TechnicalEvidence(m Model) {
+ <div class="image-upgrades-coverage-section">
+ <p class="image-upgrades-coverage-copy">{ m.Meta.Coverage.Scope }</p>
+ for _,reason:=range m.Meta.Coverage.Reasons {
+ if reason!="unassessed_dependencies" && reason!="missing_identity" {
+ <p>{ reasonLabel(reason) }</p>
+ }
+ }
+ @link.Link("https://github.com/araihu/balemoh-plugin-renovate/blob/main/README.md",link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Collection documentation }
  <dl class="image-upgrades-evidence">
  <div><dt>Repository commit</dt><dd><code class="image-upgrades-exact">{ m.Meta.Repository.Commit }</code></dd></div>
  <div><dt>Base branch</dt><dd class="image-upgrades-exact">{ m.Meta.Repository.BaseBranch }</dd></div>
  <div><dt>Policy fingerprint</dt><dd><code class="image-upgrades-exact">{ m.Meta.Producer.PolicyHash }</code></dd></div>
  <div><dt>Renovate</dt><dd>{ m.Meta.Producer.RenovateVersion }</dd></div>
  <div><dt>Renovate image</dt><dd><code class="image-upgrades-exact">{ m.Meta.Producer.RenovateImage }</code></dd></div>
- <div><dt>Scope</dt><dd>{ m.Meta.Coverage.Scope }</dd></div>
  </dl>
+ </div>
 }
 templ Widget(m Model) {
  <div class="image-upgrades">

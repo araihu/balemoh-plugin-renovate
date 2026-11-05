@@ -25,6 +25,8 @@ type Filter struct {
 	Limit      int    `json:"limit,omitempty"`
 }
 type Meta struct {
+	LookupCauses        map[string]int      `json:"lookupCauses"`
+	AssessmentBreakdown AssessmentBreakdown `json:"assessmentBreakdown"`
 	SnapshotDigest      string              `json:"snapshotDigest"`
 	Controller          requests.Catalog    `json:"controller"`
 	ControllerAvailable bool                `json:"controllerAvailable"`
@@ -61,7 +63,7 @@ func (c *connection) meta() Meta {
 	if catalog.Requests == nil {
 		catalog.Requests = []requests.Record{}
 	}
-	return Meta{Repository: s.Repository, Producer: s.Producer, Coverage: s.Coverage, CompletedAt: s.CompletedAt, SnapshotDigest: requests.Digest(s), Controller: catalog, ControllerAvailable: c.controllerAvailable}
+	return Meta{LookupCauses: lookupCauseCounts(s), AssessmentBreakdown: assessmentBreakdown(s), Repository: s.Repository, Producer: s.Producer, Coverage: s.Coverage, CompletedAt: s.CompletedAt, SnapshotDigest: requests.Digest(s), Controller: catalog, ControllerAvailable: c.controllerAvailable}
 }
 func (c *connection) item(d snapshot.Dependency) Item {
 	item := Item{Dependency: d}
@@ -141,15 +143,37 @@ func (b *Backend) Query(ctx context.Context, r backend.Request) (backend.Result,
 	return backend.Result{Data: data, State: c.state, ObservationRevision: strconv.FormatUint(c.observation, 10), ObservedAt: &observed, LastSuccessAt: c.success, SourceError: c.sourceError}, nil
 }
 
+// Filter selections retain the scalar wire format; multiple values are comma-separated.
+func validSelection(value string, allowed []string) bool {
+	if value == "" {
+		return true
+	}
+	values := strings.Split(value, ",")
+	if len(values) > len(allowed) {
+		return false
+	}
+	seen := map[string]bool{}
+	for _, v := range values {
+		if !slices.Contains(allowed, v) || seen[v] {
+			return false
+		}
+		seen[v] = true
+	}
+	return true
+}
+func selectionMatches(selection, value string) bool {
+	return selection == "" || slices.Contains(strings.Split(selection, ","), value)
+}
+
 // ValidFilter validates shared list/summary filter syntax, including cursor size.
 func ValidFilter(f Filter) bool {
-	return len(f.Search) <= 256 && len(f.Repository) <= 256 && len(f.Cursor) <= 1024 && (f.Assessment == "" || slices.Contains([]string{"updates_found", "no_candidate", "excluded", "unknown"}, f.Assessment)) && (f.UpdateType == "" || slices.Contains([]string{"major", "minor", "patch", "digest", "pinDigest", "pin", "unknown"}, f.UpdateType)) && (f.Workflow == "" || slices.Contains([]string{"pr_open", "branch_only", "none_observed", "unknown"}, f.Workflow))
+	return len(f.Search) <= 256 && len(f.Repository) <= 256 && len(f.Cursor) <= 1024 && validSelection(f.Assessment, []string{"updates_found", "no_candidate", "excluded", "unknown"}) && validSelection(f.UpdateType, []string{"major", "minor", "patch", "digest", "pinDigest", "pin", "unknown"}) && validSelection(f.Workflow, []string{"pr_open", "branch_only", "none_observed", "unknown"})
 }
 func candidateMatches(u snapshot.Candidate, f Filter) bool {
-	return (f.UpdateType == "" || u.UpdateType == f.UpdateType) && (f.Workflow == "" || u.Workflow == f.Workflow)
+	return selectionMatches(f.UpdateType, u.UpdateType) && selectionMatches(f.Workflow, u.Workflow)
 }
 func (c *connection) matches(d snapshot.Dependency, f Filter) bool {
-	if f.Repository != "" && f.Repository != c.snapshot.Repository.Name || f.Assessment != "" && f.Assessment != d.Assessment {
+	if f.Repository != "" && f.Repository != c.snapshot.Repository.Name || !selectionMatches(f.Assessment, d.Assessment) {
 		return false
 	}
 	if f.UpdateType != "" || f.Workflow != "" {

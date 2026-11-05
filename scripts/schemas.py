@@ -25,6 +25,10 @@ s["$defs"]["dependency"]["properties"]["serviceId"] = {"$ref": "#/$defs/id"}
 save("snapshot", s)
 meta = {key: copy.deepcopy(s["properties"][key]) for key in ("repository", "producer", "coverage", "completedAt")}
 
+breakdown_fields = ["updatesFound", "noCandidatesReported", "lookupUnconfirmed", "conflictingDeclarations", "otherUnknown", "noCandidate", "excluded", "unidentifiedRecords"]
+meta["lookupCauses"] = {"type": "object", "maxProperties": 11, "additionalProperties": {"$ref": "#/$defs/count"}}
+meta["assessmentBreakdown"] = obj({key: {"$ref": "#/$defs/count"} for key in breakdown_fields}, breakdown_fields)
+
 request_pr = obj({"number":{"type":"integer","minimum":1},"url":string(2048),"headSha":{"type":"string","pattern":"^[a-f0-9]{40}$"},"state":{"enum":["open","draft","closed","merged"]},"checks":{"enum":["passing","pending","failing","unknown"]}},["number","url","headSha","state","checks"])
 request_record = obj({"snapshotDigest":{"$ref":"#/$defs/id"},"id":{"$ref":"#/$defs/id"},"repository":copy.deepcopy(meta["repository"]),"dependency":{"$ref":"#/$defs/dependency"},"candidate":{"$ref":"#/$defs/candidate"},"branch":string(256),"state":{"enum":["queued","running","awaiting_pr","open","draft","closed","merged","blocked","needs_attention"]},"reason":string(128),"createdAt":{"type":"string","format":"date-time"},"updatedAt":{"type":"string","format":"date-time"},"trackedAt":{"type":"string","format":"date-time"},"trackingError":{"type":"boolean"},"pr":request_pr},["id","snapshotDigest","repository","dependency","candidate","branch","state","createdAt","updatedAt","trackingError"])
 s["$defs"]["request"] = request_record
@@ -36,6 +40,13 @@ filters = {"search": string(), "repository": string(),
            "assessment": {"enum": ["", "updates_found", "no_candidate", "excluded", "unknown"]},
            "updateType": {"enum": ["", "major", "minor", "patch", "digest", "pinDigest", "pin", "unknown"]},
            "workflow": {"enum": ["", "pr_open", "branch_only", "none_observed", "unknown"]}}
+widget_update_type = copy.deepcopy(filters["updateType"])
+for key in ("assessment", "updateType", "workflow"):
+    values = [v for v in filters[key]["enum"] if v]
+    choice = "(" + "|".join(values) + ")"
+    filters[key] = {"type": "string", "maxLength": 128,
+                    "pattern": "^(" + choice + "(," + choice + "){0," + str(len(values)-1) + "})?$",
+                    "description": "Comma-separated selections, OR within this filter. Empty matches all. Duplicates are rejected."}
 save("summary-input", obj(filters))
 save("list-input", obj(dict(filters, cursor=string(1024), revision=string(24), limit={"type": "integer", "minimum": 1, "maximum": 100})))
 save("get-input", obj({"dependencyId": {"$ref": "snapshot.json#/$defs/id"}}, ["dependencyId"]))
@@ -50,7 +61,7 @@ output("list-output", {"items": {"type": "array", "maxItems": 100, "items": {"$r
 output("get-output", {"dependency": {"$ref": "#/$defs/dependency"}})
 counts = {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 200000}}
 output("summary-output", {"assessments": counts, "updateTypes": counts, "candidates": {"type": "integer", "minimum": 0, "maximum": 200000}})
-save("widget", obj({"repository": string(), "updateType": dict(filters["updateType"], type="string", maxLength=32), "maxRows": {"type": "integer", "minimum": 1, "maximum": 5}}))
+save("widget", obj({"repository": string(), "updateType": dict(widget_update_type, type="string", maxLength=32), "maxRows": {"type": "integer", "minimum": 1, "maximum": 5}}))
 save("connection", obj({
     "controllerURL": {"type":"string","maxLength":2048,"description":"Optional private HTTPS request controller; submissions require a separate action grant."},
     "snapshotURL": {"type": "string", "maxLength": 2048},

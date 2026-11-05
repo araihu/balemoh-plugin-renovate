@@ -38,6 +38,8 @@ func run() error {
 	apiFlag := flag.String("api", ".local/host/balemoh", "Compatible real API executable")
 	uiFlag := flag.String("ui", ".local/host/balemoh-ui", "Compatible real BFF executable")
 	listen := flag.String("listen", "127.0.0.1:14080", "Local BFF address")
+	reportFlag := flag.String("report", "internal/snapshot/testdata/report.json", "Controlled report fixture")
+	diagnosticsFlag := flag.String("diagnostics", "", "Optional controlled native diagnostic fixture")
 	notify := flag.Bool("notifications", false, "Demonstrate one synthetic security candidate notification in the isolated host")
 	flag.Parse()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -56,7 +58,7 @@ func run() error {
 	}
 	secret := func() string { var b [32]byte; _, _ = rand.Read(b[:]); return hex.EncodeToString(b[:]) }
 	sourceToken, serviceToken, operatorToken := secret(), secret(), secret()
-	data, err := os.ReadFile("internal/snapshot/testdata/report.json")
+	data, err := os.ReadFile(*reportFlag)
 	if err != nil {
 		return err
 	}
@@ -76,7 +78,16 @@ func run() error {
 	now := time.Now().UTC()
 	commit := strings.Repeat("a", 40)
 	m := snapshot.Metadata{RunID: "00000000-0000-4000-8000-000000000001", StartedAt: now.Add(-time.Minute), CompletedAt: now, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: snapshot.ID("controlled-fixture")}, Repository: snapshot.Repository{Platform: "github", Name: "example/read-only", BaseBranch: "main", Commit: commit}, DryRun: "full", BeforeCommit: commit, AfterCommit: commit, CheckoutCommit: commit}
-	s, err := snapshot.Normalize(data, m)
+	var diagnosticReaders []io.Reader
+	if *diagnosticsFlag != "" {
+		f, e := os.Open(*diagnosticsFlag)
+		if e != nil {
+			return e
+		}
+		defer f.Close()
+		diagnosticReaders = append(diagnosticReaders, f)
+	}
+	s, err := snapshot.Normalize(data, m, diagnosticReaders...)
 	if err != nil {
 		return err
 	}
@@ -279,7 +290,7 @@ func run() error {
 	// Each responsive composition contains only the explicitly mapped group.
 	// CSS exposes exactly one composition at a time.
 	_, mappedBody := get(uiURL, content+"?search=nginx", "")
-	if strings.Count(string(mappedBody), "Edge proxy") != 2 || !strings.Contains(string(mappedBody), "/assets/icons/heroicons.svg#hi-16-solid-squares-2x2") {
+	if strings.Count(string(mappedBody), "Edge proxy") != 2 || !strings.Contains(string(mappedBody), "squares-2x2") {
 		write("mapped-page.html", mappedBody)
 		return errors.New("exact service catalog presentation failed; inspect private mapped-page.html")
 	}
@@ -322,7 +333,7 @@ func run() error {
 			return errors.New("security notification was not received by the real host")
 		}
 	}
-	receipt, _ := json.MarshalIndent(map[string]any{"fixture": true, "apiBff": "4a6b6492183015eed717be0c0104b6951ca10fed", "apiURL": apiURL, "sdk": "v0.0.1-alpha.3", "page": uiURL + page, "sourceCalls": calls.Load(), "queryReadsAddSourceCalls": false, "pageCoverageWidget": true, "mappedServicePresentation": true, "syntheticSecurityNotification": notified, "serviceID": fixtureServiceID, "mappedDependencyID": dependencyID, "manifestDigest": pkg.Digest, "packageDigest": digest}, "", "  ")
+	receipt, _ := json.MarshalIndent(map[string]any{"fixture": true, "apiExecutable": *apiFlag, "uiExecutable": *uiFlag, "apiURL": apiURL, "sdk": "v0.0.1-alpha.4", "page": uiURL + page, "sourceCalls": calls.Load(), "queryReadsAddSourceCalls": false, "pageCoverageWidget": true, "mappedServicePresentation": true, "syntheticSecurityNotification": notified, "serviceID": fixtureServiceID, "mappedDependencyID": dependencyID, "manifestDigest": pkg.Digest, "packageDigest": digest}, "", "  ")
 	write("receipt.json", receipt)
 	fmt.Printf("Fixture preview: %s%s\nEvidence: %s/receipt.json\n", uiURL, page, root)
 	<-ctx.Done()

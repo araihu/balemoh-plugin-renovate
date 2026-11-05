@@ -109,6 +109,54 @@
     "completedAt": {
       "$ref": "#/$defs/timestamp"
     },
+    "lookupCauses": {
+      "type": "object",
+      "maxProperties": 11,
+      "additionalProperties": {
+        "$ref": "#/$defs/count"
+      }
+    },
+    "assessmentBreakdown": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "updatesFound": {
+          "$ref": "#/$defs/count"
+        },
+        "noCandidatesReported": {
+          "$ref": "#/$defs/count"
+        },
+        "lookupUnconfirmed": {
+          "$ref": "#/$defs/count"
+        },
+        "conflictingDeclarations": {
+          "$ref": "#/$defs/count"
+        },
+        "otherUnknown": {
+          "$ref": "#/$defs/count"
+        },
+        "noCandidate": {
+          "$ref": "#/$defs/count"
+        },
+        "excluded": {
+          "$ref": "#/$defs/count"
+        },
+        "unidentifiedRecords": {
+          "$ref": "#/$defs/count"
+        }
+      },
+      "required": [
+        "updatesFound",
+        "noCandidatesReported",
+        "lookupUnconfirmed",
+        "conflictingDeclarations",
+        "otherUnknown",
+        "noCandidate",
+        "excluded",
+        "unidentifiedRecords"
+      ]
+    },
     "snapshotDigest": {
       "$ref": "#/$defs/id"
     },
@@ -145,6 +193,8 @@
     "producer",
     "coverage",
     "completedAt",
+    "lookupCauses",
+    "assessmentBreakdown",
     "snapshotDigest",
     "controllerAvailable",
     "controller",

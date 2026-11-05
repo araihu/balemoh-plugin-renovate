@@ -37,12 +37,6 @@ func (m Model) CanReviewAgain(c snapshot.Candidate) bool {
 	return m.CanRequest(c) && (r == nil || r.State == "blocked" && r.SnapshotDigest != m.Meta.SnapshotDigest)
 }
 
-func (m Model) CurrentDescription() string {
-	if m.Meta.ControllerAvailable && m.Meta.Controller.Enabled && slices.Contains(m.Request.ActionGrants, "upgrades.request") {
-		return "Renovate candidates from Git. Review PR requests here; merge manually in GitHub."
-	}
-	return "Renovate candidates from Git. Read-only advisory."
-}
 func requestState(value string) string {
 	switch value {
 	case "queued":

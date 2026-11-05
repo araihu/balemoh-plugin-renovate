@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"regexp"
 	"slices"
@@ -76,7 +77,10 @@ var branchResult = regexp.MustCompile(`^[a-z][a-z0-9-]{0,79}$`)
 
 // Normalize accepts only completed full dry-runs with a verified checkout.
 // Empty updates stay unknown: this report version has no universal success bit.
-func Normalize(data []byte, m Metadata) (*Snapshot, error) {
+func Normalize(data []byte, m Metadata, diagnostics ...io.Reader) (*Snapshot, error) {
+	if len(diagnostics) > 1 {
+		return nil, ErrInvalid
+	}
 	if len(data) > 64<<20 || m.ExitCode != 0 || m.DryRun != "full" || m.CheckoutCommit == "" || m.CheckoutCommit != m.Repository.Commit || m.BeforeCommit != m.CheckoutCommit || m.AfterCommit != m.CheckoutCommit {
 		return nil, ErrInvalid
 	}
@@ -89,12 +93,22 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 	if !ok || (r.Status != "activated" && r.Status != "onboarded") || r.Files == nil {
 		return nil, ErrInvalid
 	}
+	var diagnosticReader io.Reader
+	if len(diagnostics) == 1 {
+		diagnosticReader = diagnostics[0]
+	}
+	problems := append(append([]json.RawMessage{}, raw.Problems...), r.Problems...)
+	facts, err := diagnosticFacts(diagnosticReader, problems)
+	if err != nil {
+		return nil, err
+	}
 	s := &Snapshot{SchemaVersion: 1, RunID: m.RunID, StartedAt: m.StartedAt, CompletedAt: m.CompletedAt, Producer: m.Producer, Repository: m.Repository, Dependencies: []Dependency{}, Coverage: Coverage{Scope: "Explicit image managers; repository ignore paths and implicit chart images remain outside scope", Status: "complete", Reasons: []string{}}}
 	if len(raw.Problems)+len(r.Problems) > 0 {
 		s.Coverage.Reasons = append(s.Coverage.Reasons, "source_problems")
 	}
 	groups := map[string][]rawDependency{}
 	templates := map[string]Dependency{}
+	chartDefaults, buildTemplates := 0, 0
 	// Branch projections omit manager/depType, so include even out-of-scope
 	// Docker declarations when rejecting tuples shared by native identities.
 	owners := map[string]string{}
@@ -125,6 +139,18 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 					}
 					continue
 				}
+				scopeKind := ""
+				if safePath(f.File) {
+					scopeKind = outsideImageScope(manager, d)
+				}
+				switch scopeKind {
+				case "chart_defaults":
+					chartDefaults++
+					continue
+				case "build_template":
+					buildTemplates++
+					continue
+				}
 				s.Coverage.SourceRecords++
 				if !safePackage(name) || !safePath(f.File) {
 					if !slices.Contains(s.Coverage.Reasons, "missing_identity") {
@@ -153,18 +179,26 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 				ambiguous = true
 			}
 		}
+		allDisabled := !slices.ContainsFunc(rows, func(row rawDependency) bool { return row.Skip != "disabled" })
+		allInherited := d.Manager == "helm-values" && !slices.ContainsFunc(rows, func(row rawDependency) bool { return !inheritedTag(row) })
 		switch {
+		case allDisabled:
+			d.Assessment = "excluded"
+			d.Reasons = append(d.Reasons, "disabled")
+			if ambiguous {
+				d.CurrentValue, d.CurrentDigest = nil, nil
+			}
+		case allInherited:
+			d.Assessment = "excluded"
+			d.Reasons = append(d.Reasons, "chart_inherited")
 		case ambiguous:
 			d.Assessment = "unknown"
 			d.CurrentValue = nil
 			d.CurrentDigest = nil
 			d.Reasons = append(d.Reasons, "ambiguous_declarations")
-		case base.Skip == "disabled":
-			d.Assessment = "excluded"
-			d.Reasons = append(d.Reasons, "disabled")
 		case base.Skip != "" || len(base.Warnings) > 0:
 			d.Assessment = "unknown"
-			d.Reasons = append(d.Reasons, "lookup_unconfirmed")
+			d.Reasons = append(d.Reasons, "lookup_unconfirmed", warningCause(base, d.Manager, d.PackageName, facts))
 		case len(base.Updates) == 0:
 			d.Assessment = "unknown"
 			d.Reasons = append(d.Reasons, "negative_assessment_unproven")
@@ -234,6 +268,12 @@ func Normalize(data []byte, m Metadata) (*Snapshot, error) {
 		default:
 			s.Coverage.Unknown++
 		}
+	}
+	if chartDefaults > 0 {
+		s.Coverage.Scope += fmt.Sprintf(" Empty Helm override records outside these counts: %d; their image references require chart inheritance.", chartDefaults)
+	}
+	if buildTemplates > 0 {
+		s.Coverage.Scope += fmt.Sprintf(" Unresolved Dockerfile build-argument records outside these counts: %d.", buildTemplates)
 	}
 	slices.SortFunc(s.Dependencies, func(a, b Dependency) int { return strings.Compare(a.ID, b.ID) })
 	s.Coverage.Extracted = len(s.Dependencies)
