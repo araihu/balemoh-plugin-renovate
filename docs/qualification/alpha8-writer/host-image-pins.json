@@ -1,0 +1,22 @@
+{
+  "image": "ghcr.io/araihu/balemoh@sha256:582e0a85816c528abcb6027df8dcfc1a521a50e6fa970621745b3091cadecfcb",
+  "sourceCommit": "01b8caa591d06044e2d4a6674a0f20a4a334dbf7",
+  "sdkVersion": "v0.0.1-alpha.4",
+  "version": "v0.0.10-alpha.8",
+  "reviewedCommit": "38345867e990fbde05cd3fe1636824c5ffcad306",
+  "reviewedTree": "ad94af52e5f949ad5b477733f5bb6ca458d82b5b",
+  "workflowID": 42242854821,
+  "workflowURL": "https://github.com/araihu/balemoh/actions/runs/42242854821",
+  "releaseURL": "https://github.com/araihu/balemoh/releases/tag/v0.0.10-alpha.8",
+  "platformDigests": {
+    "amd64": "sha256:51caa3afd9434e01d7cbc6e76800a67e7585201becb39ff9a0b6a9625c5a15de",
+    "arm64": "sha256:7171a6699c9c6d5fd8a95f8f1c73a255b478ffa34e75d052bfcd2027898f20e6"
+  },
+  "anonymousManifestPull": true,
+  "versionAliasVerified": true,
+  "binarySHA256": {
+    "balemoh": "0be2346500fbb4ca0425e0b74ccc8920a739253af7dfdee8d5a922d5e742f7e0",
+    "balemoh-ui": "0b8ed8f340d614247d661721566e3d18d6799ecfe02a7d9625943003ae0753a2"
+  },
+  "qualificationPlatform": "linux/arm64"
+}

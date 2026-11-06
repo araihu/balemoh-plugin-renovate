@@ -1,0 +1,11 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:65d40560f049bca883cb26dbf8d482ab6769d62ed82b2ab9d9ee044e2be87772",
+  "sourceCommit": "9bf2fa8832b129bfc51787a4c4eb23d97c080531",
+  "version": "0.0.1-alpha.8",
+  "manifestDigest": "87756393aeeeab024d1ab4df1fb293436d2d445e5fe55486c7940ad715f7b085",
+  "packageDigest": "7297b74aef2e90c3d98fea6156cfce08330c2f5bab3f153be5fc030979d0fcc0",
+  "runtimeTools": [
+    "app-token",
+    "request-backup"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "qualification": "passed",
+  "qualifiedAt": "2026-11-06T15:58:26.378965+00:00",
+  "host": {
+    "image": "ghcr.io/araihu/balemoh@sha256:582e0a85816c528abcb6027df8dcfc1a521a50e6fa970621745b3091cadecfcb",
+    "sourceCommit": "01b8caa591d06044e2d4a6674a0f20a4a334dbf7",
+    "sdkVersion": "v0.0.1-alpha.4",
+    "version": "v0.0.10-alpha.8",
+    "reviewedCommit": "38345867e990fbde05cd3fe1636824c5ffcad306",
+    "reviewedTree": "ad94af52e5f949ad5b477733f5bb6ca458d82b5b",
+    "workflowID": 42242854821,
+    "workflowURL": "https://github.com/araihu/balemoh/actions/runs/42242854821",
+    "releaseURL": "https://github.com/araihu/balemoh/releases/tag/v0.0.10-alpha.8",
+    "platformDigests": {
+      "amd64": "sha256:51caa3afd9434e01d7cbc6e76800a67e7585201becb39ff9a0b6a9625c5a15de",
+      "arm64": "sha256:7171a6699c9c6d5fd8a95f8f1c73a255b478ffa34e75d052bfcd2027898f20e6"
+    },
+    "anonymousManifestPull": true,
+    "versionAliasVerified": true,
+    "binarySHA256": {
+      "balemoh": "0be2346500fbb4ca0425e0b74ccc8920a739253af7dfdee8d5a922d5e742f7e0",
+      "balemoh-ui": "0b8ed8f340d614247d661721566e3d18d6799ecfe02a7d9625943003ae0753a2"
+    },
+    "qualificationPlatform": "linux/arm64"
+  },
+  "plugin": {
+    "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:65d40560f049bca883cb26dbf8d482ab6769d62ed82b2ab9d9ee044e2be87772",
+    "sourceCommit": "9bf2fa8832b129bfc51787a4c4eb23d97c080531",
+    "version": "0.0.1-alpha.8",
+    "manifestDigest": "87756393aeeeab024d1ab4df1fb293436d2d445e5fe55486c7940ad715f7b085",
+    "packageDigest": "7297b74aef2e90c3d98fea6156cfce08330c2f5bab3f153be5fc030979d0fcc0",
+    "runtimeTools": [
+      "app-token",
+      "request-backup"
+    ]
+  },
+  "repository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "fixtureBase": "e5e4062b2a23132515929d3e5f8fbf16ee5dc88f",
+  "cases": [
+    {
+      "case": "wrong-digest",
+      "newPRs": 0,
+      "newBranches": 0,
+      "inventoryUnchanged": true
+    },
+    {
+      "case": "pinned-tag",
+      "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/16",
+      "headSHA": "0df0e4bc2a03623435981e13b9a4d4e9c2584e30",
+      "checks": "passing",
+      "exactSelectedDiff": true,
+      "restartAndRestore": true,
+      "merged": false
+    },
+    {
+      "case": "dockerfile-digest",
+      "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/17",
+      "headSHA": "972a70f237ba5d018ae297ad74be16e7a00a969a",
+      "checks": "passing",
+      "exactSelectedDiff": true,
+      "restartAndRestore": true,
+      "merged": false
+    },
+    {
+      "case": "compose-untagged",
+      "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/18",
+      "headSHA": "d9c049715f71627c6bf9091a884c2a6a5d60dc45",
+      "checks": "passing",
+      "exactSelectedDiff": true,
+      "restartAndRestore": true,
+      "merged": false
+    },
+    {
+      "case": "host-action",
+      "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/19",
+      "headSHA": "9c77d374a8b386d68d0ba7916d4d43190974a5c1",
+      "checks": "passing",
+      "exactSelectedDiff": true,
+      "restartAndRestore": true,
+      "merged": false
+    }
+  ],
+  "upgradePRsMerged": 0,
+  "productionBoundaryUnchanged": true,
+  "productionWriterEnabled": false,
+  "productionWriterCredentialMounted": false,
+  "credentials": {
+    "writerLogin": "guilycst",
+    "fixtureRepository": "guilycst/balemoh-renovate-engine-poc-20261101",
+    "fixtureReadStatus": 200,
+    "productionPrivateRepositoryStatus": 404,
+    "expiresOn": "2026-11-07",
+    "tokenStoredMode": "0600",
+    "tokenValueRecorded": false,
+    "localPlaintextCopyRemoved": true
+  },
+  "archiveSHA256": {
+    "requests-compose-untagged.tar": "801b5903fd408dd05e44a2dbc1f87bc175d3f23c7c04a22028b21b8f3d809059",
+    "requests-dockerfile-digest.tar": "314dc3a4972dceeb78c662063245c257b017fba024924d9fef93dd071ce38124",
+    "requests-host-action.tar": "9e29489bb6f2c63335bccc2478504749e611fbca448455e5e2559f713baecb12",
+    "requests-pinned-tag.tar": "4400553975d8a18f3364a89524b5845eb69b77bf3c3a7eac8f9446f65870d3a0"
+  }
+}
