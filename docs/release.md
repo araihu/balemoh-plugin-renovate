@@ -1,8 +1,30 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.5`, using SDK `v0.0.1-alpha.4`. This version accepts the pinned Renovate engine's `no-work` result during full dry-run preflight when the plan contains the exact approved upgrade. Actual writer execution still requires an owned, diff-verified PR. Missing PRs require review and never replay automatically.
+Plugin version: `0.0.1-alpha.8`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. The initial GITHUB_TOKEN fixture had `unknown` checks; a [separate fixture-only PAT proof](qualification/alpha5-pr-ci/README.md) now qualifies automatic PR-triggered CI and exact-head passing tracking after restart. Homelab production workflows remain a separate rollout gate. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Alpha.3 remains the deployed read-only runtime. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
+Status: prepared source, not published. [Alpha.8 release notes](releases/v0.0.1-alpha.8.md)
+describe the read-only controller credential fix. No alpha.8 publication receipt
+or deployment pin exists yet.
+
+Alpha.8 allows PR tracking with only the controller read token. Request
+submission still requires a distinct action token, host grant and enabled
+controller. The host must accept SDK alpha.4 action declarations even when the
+connection has no action grant.
+
+Alpha.7 introduced the overview card, list PR states and candidate-review links.
+Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence
+for those unchanged interfaces. Alpha.8 requires its own publication receipt.
+
+Alpha.6 introduced pinned-image requests, notification type selection,
+collection diagnostics, coverage tables and automatic checkbox filters. Its
+[source qualification](qualification/alpha6-ui/README.md) remains historical
+release evidence.
+
+The controller defaults to writer disabled. Writes require an owned, diff-verified PR; missing PRs require review and never replay automatically. Snapshot v1 and the pinned native engine remain unchanged. Empty update lists still do not prove that images are up to date.
+
+Alpha.6 [published-artifact writer qualification passed](qualification/alpha6-writer/README.md) for pinned Kubernetes tag+digest, Dockerfile digest and untagged Compose updates. Each case verified an exact selected-file PR, real PR-triggered CI, duplicate admission, restart and backup/restore. The wrong-digest selection created no branch or PR. HMG enables writes only through a separate private-fixture connection; the real homelab connection remains read-only.
+
+Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. The initial GITHUB_TOKEN fixture had `unknown` checks; a [separate fixture-only PAT proof](qualification/alpha5-pr-ci/README.md) now qualifies automatic PR-triggered CI and exact-head passing tracking after restart. Homelab production workflows remain a separate rollout gate. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Production currently runs the alpha.5 image read-only. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
 
 ## Prepared source
 
@@ -12,7 +34,7 @@ The CI workflow runs generation, race tests, vet, generated-source drift checks,
 
 ## Publication
 
-1. Create the public repository and push the reviewed source as its initial commit. Do not modify or push the existing home-lab checkout in this stage.
+1. Commit and push the release source to the existing plugin PR. Keep PR merges manual. Do not modify or push the home-lab checkout in this stage.
 2. Require the new repository's actual CI run to pass. Local command execution and actionlint do not prove GitHub-hosted workflow execution.
 3. Dispatch Publish image for the accepted main commit or immutable prerelease version tag. A prerelease can reference an unmerged reviewed feature commit; merges stay manual. The workflow builds Linux amd64/arm64 and macOS arm64 package executables, and publishes an OCI image carrying Linux collector/server/request-controller binaries plus the App token and request backup commands. Tags identify source commit, workflow run and attempt; no latest tag is moved.
 4. The workflow resolves exactly one child manifest per Linux architecture, extracts its installed plugin package and compares its SDK digests with the built package. Using child digests avoids the Docker classic image store's collision when pulling two platforms under one index digest. It also extracts both runtime tools from both architectures, checks executability and compares their bytes with the corresponding cross-built files. Only then does it record `runtimeTools` in image-pins.json. It saves a verified image-pins.json containing source commit, plugin version, image digest and package/manifest digests. Extraction verifies package bytes, not native arm64 execution on the amd64 runner.
@@ -22,7 +44,7 @@ The publication workflow requests SBOM and provenance from BuildKit. It does not
 
 ## GitOps activation, separate stage
 
-The home-lab runbook at `k8s/renovate-advisory/README.md` owns activation and rollback. The existing read-only collector and snapshot endpoint remain active. Request migration overlays stay inactive, with controller replicas zero and writer disabled, while artifacts and dedicated writer credentials are prepared.
+The home-lab runbooks at `k8s/renovate-requests-readonly/README.md` and `k8s/balemoh-renovate-requests/README.md` own activation and rollback. The existing collector, snapshot endpoint and request-tracking controller remain read-only on their current pins. This publication changes none of their deployments. The production writer stays disabled and its dedicated credential stays unmounted.
 
 Dedicated read-only GitHub credential, reader token and CA trust must exist before a real collection. Provision secrets as sealed manifests. Do not reuse or change the current bot token. First validate storage ownership/locking, TLS authorization, one full dry-run collection and actual checkout provenance. Then verify retained snapshot, actual query size, list/detail/coverage/widget and notification baseline before scheduling collection. Real inventory can expose the deferred dense-query byte-budget limit; a failed query is not an empty or up-to-date inventory.
 
@@ -32,4 +54,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.5 publication requires a new verified receipt and isolated real-GitHub writer proof. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.

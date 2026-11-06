@@ -54,13 +54,25 @@ func Digest(s *snapshot.Snapshot) string {
 }
 
 func Supported(d snapshot.Dependency, c snapshot.Candidate) bool {
-	return (d.Manager == "kubernetes" || d.Manager == "docker-compose" || d.Manager == "dockerfile") &&
-		!strings.ContainsAny(d.PackageFile, "*?[]{}!\\") && regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./:_-]*$`).MatchString(d.PackageName) &&
-		d.Assessment == "updates_found" && d.CurrentValue != nil && c.NewValue != nil &&
-		regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`).MatchString(*d.CurrentValue) && regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`).MatchString(*c.NewValue) &&
-		c.NewDigest == nil && d.CurrentDigest == nil &&
-		(c.UpdateType == "major" || c.UpdateType == "minor" || c.UpdateType == "patch") &&
-		c.Policy != "excluded" && c.Policy != "ignored"
+	if (d.Manager != "kubernetes" && d.Manager != "docker-compose" && d.Manager != "dockerfile") ||
+		strings.ContainsAny(d.PackageFile, "*?[]{}!\\") || !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./:_-]*$`).MatchString(d.PackageName) ||
+		d.Assessment != "updates_found" || c.Policy == "excluded" || c.Policy == "ignored" {
+		return false
+	}
+	tag := regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$`)
+	tagged := d.CurrentValue != nil && c.NewValue != nil && tag.MatchString(*d.CurrentValue) && tag.MatchString(*c.NewValue)
+	tagUpgrade := c.UpdateType == "major" || c.UpdateType == "minor" || c.UpdateType == "patch"
+	if d.CurrentDigest == nil && c.NewDigest == nil {
+		return tagged && tagUpgrade
+	}
+	digest := regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)
+	if d.CurrentDigest == nil || c.NewDigest == nil || !digest.MatchString(*d.CurrentDigest) || !digest.MatchString(*c.NewDigest) {
+		return false
+	}
+	if c.UpdateType == "digest" {
+		return *d.CurrentDigest != *c.NewDigest && ((tagged && *d.CurrentValue == *c.NewValue) || (d.CurrentValue == nil && c.NewValue == nil))
+	}
+	return tagged && tagUpgrade && *d.CurrentValue != *c.NewValue
 }
 
 func (r Record) Validate() error {

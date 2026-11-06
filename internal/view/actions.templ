@@ -24,7 +24,7 @@ templ UpgradeAction(m Model,u snapshot.Candidate) {
  } else if u.PR==nil && m.Meta.ControllerAvailable && !m.Meta.Controller.Enabled {
  <p>PR requests are disabled pending writer migration.</p>
  } else if u.PR==nil && m.Meta.ControllerAvailable && m.Meta.Controller.Enabled {
- <p>This candidate is currently advisory only. Requests support unpinned tag upgrades in Kubernetes, Docker Compose and Dockerfile declarations.</p>
+ <p>This candidate is currently advisory only. Requests support tag upgrades and SHA-256 digest updates in Kubernetes, Docker Compose and Dockerfile declarations. First-time pinning and ambiguous references remain advisory.</p>
  }
 }
 
@@ -34,15 +34,20 @@ templ RequestStatus(m Model,r requests.Record) {
  if !m.Meta.ControllerAvailable || r.TrackingError {
  @alert.Alert(alert.Config{Title:"Request tracking unavailable",Description:"Showing the last retained status. Check GitHub before taking any action.",Tone:alert.ToneWarning})
  }
- <p>Approved Git reference: { *r.Dependency.CurrentValue }. Requested candidate: { *r.Candidate.NewValue }.</p>
+ <div class="image-upgrades-reference-pair">
+ <dl class="image-upgrades-reference"><div><dt>Approved Git reference</dt><dd>@ReferenceValue(r.Dependency.CurrentValue,r.Dependency.CurrentDigest,true)</dd></div></dl>
+ <dl class="image-upgrades-reference"><div><dt>Requested candidate</dt><dd>@ReferenceValue(r.Candidate.NewValue,r.Candidate.NewDigest,true)</dd></div></dl>
+ </div>
  if r.PR!=nil {
- @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open upgrade pull request }
- <p>{ checksLabel(r.PR.Checks) }</p>
+ @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ { "View PR #"+count(r.PR.Number) } }
+ <p>{ m.requestChecks(r,false) }</p>
  }
  if r.TrackedAt!=nil {
  <p>Last checked: <time datetime={ r.TrackedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ r.TrackedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</time></p>
  }
- <p>Review and merge the PR manually in GitHub.</p>
+ if guidance:=requestGuidance(r.State);guidance!="" {
+ <p>{ guidance }</p>
+ }
  @link.Link(m.StatusURL){ Refresh request status }
  </section>
 }

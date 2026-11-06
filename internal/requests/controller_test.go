@@ -464,6 +464,12 @@ func TestCheckEvidenceAndHeadRace(t *testing.T) {
 				return response, nil
 			})
 			pr, err := c.github.pull(t.Context(), r)
+			if kind == "head_race" {
+				if pr != nil || err == nil {
+					t.Fatal("changed head received a fresh PR association")
+				}
+				return
+			}
 			if pr == nil {
 				t.Fatal("basic PR state lost", err)
 			}

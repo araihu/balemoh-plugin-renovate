@@ -1,0 +1,42 @@
+name: Native digest binding proof
+on: workflow_dispatch
+permissions: {}
+concurrency:
+  group: isolated-renovate-engine
+  cancel-in-progress: false
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      checks: read
+      statuses: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Run unmodified pinned Renovate against the mutable fixture registry
+        env:
+          RENOVATE_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = guilycst/balemoh-renovate-engine-poc-20261101
+          mkdir -p "$RUNNER_TEMP/digest-output"
+          chmod 0777 "$RUNNER_TEMP/digest-output"
+          docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,uid=12021,gid=12021,mode=1770,size=2g \
+            --env RENOVATE_TOKEN --env GITHUB_REPOSITORY --env GITHUB_SHA \
+            --mount "type=bind,source=$PWD/qualification/digest-binding.py,target=/qualify.py,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP/digest-output,target=/out" \
+            --entrypoint python3 \
+            ghcr.io/araihu/balemoh-plugin-renovate@sha256:8a5fdb21078f1fcb64db4d4b42e9166128750df2b2e214cfeb778e1d0b52f07a /qualify.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: native-digest-binding
+          path: ${{ runner.temp }}/digest-output/*.json
+          retention-days: 30
+          if-no-files-found: error

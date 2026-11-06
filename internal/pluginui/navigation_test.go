@@ -65,8 +65,10 @@ func TestCanonicalNavigationPreservesFiltersAndPosition(t *testing.T) {
 	if !coverage || !detail || !reset {
 		t.Fatal("missing contextual navigation")
 	}
-	if strings.Contains(string(response.HTML), "hx-get=") || !strings.Contains(string(response.HTML), `method="get"`) {
-		t.Fatal("filters do not use canonical GET navigation")
+	for _, want := range []string{`method="get"`, `data-upgrade-filters`, `/fragments/current/results`, `hx-sync="this:replace"`, `hx-push-url="false"`} {
+		if !strings.Contains(string(response.HTML), want) {
+			t.Fatalf("missing auto-filter contract %s", want)
+		}
 	}
 	for _, page := range []string{"detail", "coverage"} {
 		request.ContributionID = page
@@ -149,5 +151,25 @@ func TestInvalidFilterWithoutPositionResetsQuery(t *testing.T) {
 		if u.Query().Has("search") || u.Query().Get("assessment") != "updates_found" {
 			t.Fatal("invalid filters retained", u)
 		}
+	}
+}
+
+func TestResultsFragmentKeepsStableTargetAndAutoFilterAsset(t *testing.T) {
+	request := ui.Request{Method: "GET", Mode: "page", ContributionType: "page", ContributionID: "current", DOMNamespace: "same", ConnectionID: "00000000-0000-4000-8000-000000000001", Query: url.Values{"assessment": {"updates_found"}}}
+	page, err := testHandler(t).Handle(t.Context(), request, &host{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Mode, request.Region = "fragment", "results"
+	fragment, err := testHandler(t).Handle(t.Context(), request, &host{})
+	if err != nil || fragment.Kind != "fragment" || fragment.Status != 200 {
+		t.Fatal(err, fragment.Kind, fragment.Status)
+	}
+	target := `id="` + request.DOMID("results") + `"`
+	if !strings.Contains(string(page.HTML), target) || !strings.Contains(string(fragment.HTML), target) || strings.Contains(string(fragment.HTML), "<form") {
+		t.Fatal("fragment must replace only the stable results region")
+	}
+	if strings.Join(page.AssetIDs, ",") != "layout,filters" {
+		t.Fatal("missing packaged auto-filter module")
 	}
 }

@@ -32,6 +32,27 @@
       "type": "boolean",
       "default": false
     },
+    "notificationUpdateTypes": {
+      "type": "array",
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "major",
+          "minor",
+          "patch",
+          "digest",
+          "pinDigest",
+          "pin"
+        ]
+      },
+      "default": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "description": "Ordinary notification types. Empty disables ordinary notices. Security flags bypass this filter while notifications are enabled."
+    },
     "serviceMappingsJSON": {
       "type": "string",
       "maxLength": 50000,

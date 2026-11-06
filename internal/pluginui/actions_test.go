@@ -3,8 +3,10 @@ package pluginui
 import (
 	"context"
 	"encoding/json"
+	"html"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -56,7 +58,7 @@ func TestRequestPageAdmissionRecoveryAndPRG(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			h := &actionHost{failure: tc.failure, detail: advisory.Detail{Meta: advisory.Meta{SnapshotDigest: strings.Repeat("c", 64), ControllerAvailable: true, Controller: requests.Catalog{Enabled: true, Requests: []requests.Record{}}}, Dependency: advisory.Item{Dependency: d}}}
-			r := ui.Request{Method: "POST", Mode: "page", ContributionType: "page", ContributionID: "request", ConnectionID: "00000000-0000-4000-8000-000000000001", ActionGrants: []string{"upgrades.request"}, PathParams: map[string]string{"dependency-id": d.ID, "candidate-id": d.Candidates[0].ID}, Query: url.Values{"search": {"nginx"}, "assessment": {"updates_found"}}, Form: url.Values{"approved": {"true"}, "snapshotDigest": {h.detail.Meta.SnapshotDigest}}}
+			r := ui.Request{Method: "POST", Mode: "page", ContributionType: "page", ContributionID: "request", ConnectionID: "00000000-0000-4000-8000-000000000001", ActionGrants: []string{"upgrades.request"}, PathParams: map[string]string{"dependency-id": d.ID, "candidate-id": d.Candidates[0].ID}, Query: url.Values{"search": {"nginx"}, "repository": {"example/repo"}, "assessment": {"updates_found"}}, Form: url.Values{"approved": {"true"}, "snapshotDigest": {h.detail.Meta.SnapshotDigest}}}
 			switch tc.name {
 			case "get":
 				r.Method = "GET"
@@ -81,8 +83,26 @@ func TestRequestPageAdmissionRecoveryAndPRG(t *testing.T) {
 				t.Fatalf("action calls=%d want=%d", h.actions, tc.calls)
 			}
 			if tc.want == 303 {
-				if response.Redirect == nil || response.Redirect.Query.Get("search") != "nginx" || response.Redirect.Query.Get("request") != strings.Repeat("d", 64) {
+				if response.Redirect == nil || response.Redirect.Query.Get("search") != "nginx" || response.Redirect.Query.Get("repository") != "example/repo" || response.Redirect.Query.Get("request") != strings.Repeat("d", 64) {
 					t.Fatal("receipt/filter identity lost")
+				}
+			}
+			if tc.name == "get" {
+				body := string(response.HTML)
+				for _, attr := range []string{"href", "action"} {
+					matches := regexp.MustCompile(`<[^>]+ `+attr+`="([^"]+)"`).FindAllStringSubmatch(body, -1)
+					if len(matches) == 0 {
+						t.Fatalf("missing %s navigation", attr)
+					}
+					for _, match := range matches {
+						u, err := url.Parse(html.UnescapeString(match[1]))
+						if err == nil && !strings.Contains(u.Path, "/plugins/") {
+							continue
+						}
+						if err != nil || u.Query().Get("repository") != "example/repo" || u.Query().Get("search") != "nginx" {
+							t.Fatalf("lost request navigation context: %s", match[1])
+						}
+					}
 				}
 			}
 			if tc.want >= 400 && (!strings.Contains(string(response.HTML), `role="alert"`) || !strings.Contains(string(response.HTML), "search=nginx")) {

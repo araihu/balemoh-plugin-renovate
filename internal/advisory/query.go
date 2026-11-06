@@ -25,6 +25,8 @@ type Filter struct {
 	Limit      int    `json:"limit,omitempty"`
 }
 type Meta struct {
+	LookupCauses        map[string]int      `json:"lookupCauses"`
+	AssessmentBreakdown AssessmentBreakdown `json:"assessmentBreakdown"`
 	SnapshotDigest      string              `json:"snapshotDigest"`
 	Controller          requests.Catalog    `json:"controller"`
 	ControllerAvailable bool                `json:"controllerAvailable"`
@@ -46,9 +48,12 @@ type List struct {
 }
 type Summary struct {
 	Meta
-	Assessments map[string]int `json:"assessments"`
-	UpdateTypes map[string]int `json:"updateTypes"`
-	Candidates  int            `json:"candidates"`
+	Assessments         map[string]int `json:"assessments"`
+	UpdateTypes         map[string]int `json:"updateTypes"`
+	Candidates          int            `json:"candidates"`
+	SecurityCandidates  int            `json:"securityCandidates"`
+	RequestStates       map[string]int `json:"requestStates"`
+	UnconfirmedRequests int            `json:"unconfirmedRequests"`
 }
 type Detail struct {
 	Meta
@@ -61,7 +66,7 @@ func (c *connection) meta() Meta {
 	if catalog.Requests == nil {
 		catalog.Requests = []requests.Record{}
 	}
-	return Meta{Repository: s.Repository, Producer: s.Producer, Coverage: s.Coverage, CompletedAt: s.CompletedAt, SnapshotDigest: requests.Digest(s), Controller: catalog, ControllerAvailable: c.controllerAvailable}
+	return Meta{LookupCauses: lookupCauseCounts(s), AssessmentBreakdown: assessmentBreakdown(s), Repository: s.Repository, Producer: s.Producer, Coverage: s.Coverage, CompletedAt: s.CompletedAt, SnapshotDigest: requests.Digest(s), Controller: catalog, ControllerAvailable: c.controllerAvailable}
 }
 func (c *connection) item(d snapshot.Dependency) Item {
 	item := Item{Dependency: d}
@@ -98,20 +103,7 @@ func (b *Backend) Query(ctx context.Context, r backend.Request) (backend.Result,
 		if decode(r.Input, &f) != nil || f.Cursor != "" || f.Revision != "" || f.Limit != 0 || !ValidFilter(f) {
 			return backend.Result{}, backend.Fail("invalid_argument")
 		}
-		s := Summary{Meta: c.meta(), Assessments: map[string]int{}, UpdateTypes: map[string]int{}}
-		for _, d := range c.snapshot.Dependencies {
-			if !c.matches(d, f) {
-				continue
-			}
-			s.Assessments[d.Assessment]++
-			for _, u := range d.Candidates {
-				if candidateMatches(u, f) {
-					s.UpdateTypes[u.UpdateType]++
-					s.Candidates++
-				}
-			}
-		}
-		value = s
+		value = c.summary(f)
 	case "upgrades.get":
 		var input struct {
 			ID string `json:"dependencyId"`
@@ -141,15 +133,37 @@ func (b *Backend) Query(ctx context.Context, r backend.Request) (backend.Result,
 	return backend.Result{Data: data, State: c.state, ObservationRevision: strconv.FormatUint(c.observation, 10), ObservedAt: &observed, LastSuccessAt: c.success, SourceError: c.sourceError}, nil
 }
 
+// Filter selections retain the scalar wire format; multiple values are comma-separated.
+func validSelection(value string, allowed []string) bool {
+	if value == "" {
+		return true
+	}
+	values := strings.Split(value, ",")
+	if len(values) > len(allowed) {
+		return false
+	}
+	seen := map[string]bool{}
+	for _, v := range values {
+		if !slices.Contains(allowed, v) || seen[v] {
+			return false
+		}
+		seen[v] = true
+	}
+	return true
+}
+func selectionMatches(selection, value string) bool {
+	return selection == "" || slices.Contains(strings.Split(selection, ","), value)
+}
+
 // ValidFilter validates shared list/summary filter syntax, including cursor size.
 func ValidFilter(f Filter) bool {
-	return len(f.Search) <= 256 && len(f.Repository) <= 256 && len(f.Cursor) <= 1024 && (f.Assessment == "" || slices.Contains([]string{"updates_found", "no_candidate", "excluded", "unknown"}, f.Assessment)) && (f.UpdateType == "" || slices.Contains([]string{"major", "minor", "patch", "digest", "pinDigest", "pin", "unknown"}, f.UpdateType)) && (f.Workflow == "" || slices.Contains([]string{"pr_open", "branch_only", "none_observed", "unknown"}, f.Workflow))
+	return len(f.Search) <= 256 && len(f.Repository) <= 256 && len(f.Cursor) <= 1024 && validSelection(f.Assessment, []string{"updates_found", "no_candidate", "excluded", "unknown"}) && validSelection(f.UpdateType, []string{"major", "minor", "patch", "digest", "pinDigest", "pin", "unknown"}) && validSelection(f.Workflow, []string{"pr_open", "branch_only", "none_observed", "unknown"})
 }
 func candidateMatches(u snapshot.Candidate, f Filter) bool {
-	return (f.UpdateType == "" || u.UpdateType == f.UpdateType) && (f.Workflow == "" || u.Workflow == f.Workflow)
+	return selectionMatches(f.UpdateType, u.UpdateType) && selectionMatches(f.Workflow, u.Workflow)
 }
 func (c *connection) matches(d snapshot.Dependency, f Filter) bool {
-	if f.Repository != "" && f.Repository != c.snapshot.Repository.Name || f.Assessment != "" && f.Assessment != d.Assessment {
+	if f.Repository != "" && f.Repository != c.snapshot.Repository.Name || !selectionMatches(f.Assessment, d.Assessment) {
 		return false
 	}
 	if f.UpdateType != "" || f.Workflow != "" {
@@ -225,4 +239,85 @@ func (c *connection) list(data []byte) (List, error) {
 		next = base64.RawURLEncoding.EncodeToString(raw)
 	}
 	return List{c.meta(), items[offset:end], len(items), revision, next}, nil
+}
+
+func (c *connection) summary(f Filter) Summary {
+	s := Summary{Meta: c.meta(), Assessments: map[string]int{}, UpdateTypes: map[string]int{}, RequestStates: map[string]int{}}
+	selected := map[string]bool{}
+	for _, d := range c.snapshot.Dependencies {
+		if !c.matches(d, f) {
+			continue
+		}
+		s.Assessments[d.Assessment]++
+		for _, u := range d.Candidates {
+			if !candidateMatches(u, f) {
+				continue
+			}
+			s.UpdateTypes[u.UpdateType]++
+			s.Candidates++
+			if u.IsVulnerabilityAlert {
+				s.SecurityCandidates++
+			}
+			selected[d.ID+"/"+u.ID] = true
+		}
+	}
+	latest := map[string]requests.Record{}
+	for _, r := range c.controller.Requests {
+		key := r.Dependency.ID + "/" + r.Candidate.ID
+		if !selected[key] {
+			continue
+		}
+		prior, ok := latest[key]
+		if !ok || r.CreatedAt.After(prior.CreatedAt) {
+			latest[key] = r
+		} else if r.CreatedAt.Equal(prior.CreatedAt) {
+			latest[key] = summaryRecord(r, prior)
+		}
+	}
+	deduplicated := map[string]requests.Record{}
+	for key, r := range latest {
+		if r.PR != nil {
+			key = "pr/" + r.PR.URL
+		} else {
+			key = "request/" + key
+		}
+		if prior, ok := deduplicated[key]; ok {
+			r = summaryRecord(r, prior)
+		}
+		deduplicated[key] = r
+	}
+	for _, r := range deduplicated {
+		if r.TrackingError {
+			s.UnconfirmedRequests++
+		} else {
+			s.RequestStates[r.State]++
+		}
+	}
+
+	return s
+}
+
+// Equal-time contradictory evidence stays unconfirmed rather than choosing a state.
+func summaryRecord(a, b requests.Record) requests.Record {
+	evidenceTime := func(r requests.Record) time.Time {
+		stamp := r.UpdatedAt
+		if r.TrackedAt != nil && r.TrackedAt.After(stamp) {
+			stamp = *r.TrackedAt
+		}
+		if r.CreatedAt.After(stamp) {
+			stamp = r.CreatedAt
+		}
+		return stamp
+	}
+	at, bt := evidenceTime(a), evidenceTime(b)
+	if at.After(bt) {
+		return a
+	}
+	if bt.After(at) {
+		return b
+	}
+	if a.State != b.State || a.TrackingError || b.TrackingError {
+		a.TrackingError = true
+	}
+	return a
 }

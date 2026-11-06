@@ -1,0 +1,91 @@
+{
+  "qualification": "passed",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:8a5fdb21078f1fcb64db4d4b42e9166128750df2b2e214cfeb778e1d0b52f07a",
+  "renovateVersion": "44.197.0",
+  "repository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "approvedBase": "2925d0a0ff1fcb1c1057bb15788b2073f66b9fc8",
+  "approvedDigest": "sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444",
+  "changedDigest": "sha256:9df160a82c2a37d4aec653a20d6cfd7950c04abb9b766a8c3b70bedb3f772ddd",
+  "oldDigest": "sha256:e71ec6c9cd7cd6b0153919196759a53aaa9b0ea307e16f1939278d269bd7c216",
+  "mechanism": "native post-lookup matchJsonata package rule disables mismatched updates",
+  "registry": "controlled loopback-only OCI registry, mutable tag, fresh native cache each invocation",
+  "internalHostAccess": "allow only inside isolated PoC; production block setting unchanged",
+  "nativeBinaryPatched": false,
+  "dashboard": false,
+  "automerge": false,
+  "newPRs": 3,
+  "newBranches": 3,
+  "upgradePRMerges": 0,
+  "previousPRsAndBranchesUnchanged": true,
+  "cases": [
+    {
+      "case": "tagged",
+      "manager": "dockerfile",
+      "file": "digest-binding/Dockerfile",
+      "branch": "balemoh-digest-binding/tagged-2925d0a0ff1f",
+      "pr": 7,
+      "url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/7",
+      "head": "b288672c74e92686cc06fc49fa651353bee31257",
+      "preflight": {
+        "packageFile": "digest-binding/Dockerfile",
+        "packageName": "127.0.0.1:5500/fixture/image",
+        "currentValue": "1.0.0",
+        "currentDigest": "sha256:e71ec6c9cd7cd6b0153919196759a53aaa9b0ea307e16f1939278d269bd7c216",
+        "newValue": "1.0.0",
+        "newDigest": "sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444",
+        "updateType": "digest"
+      },
+      "nativeMismatchRule": "$exists(updateType) and ($not($exists(newDigest)) or newDigest != 'sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444' or updateType != 'digest' or $not($exists(newValue)) or newValue != '1.0.0')",
+      "changedDigestResolvedAndRejectedBeforeWrite": true,
+      "negativeInventoryUnchanged": true,
+      "approvedExactDiffVerified": true,
+      "merged": false
+    },
+    {
+      "case": "pinned-tag",
+      "manager": "kubernetes",
+      "file": "digest-binding/deployment.yaml",
+      "branch": "balemoh-digest-binding/pinned-tag-2925d0a0ff1f",
+      "pr": 8,
+      "url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/8",
+      "head": "c7a24e6f3b62b7d42193af67ed5d43faaa2122fc",
+      "preflight": {
+        "packageFile": "digest-binding/deployment.yaml",
+        "packageName": "127.0.0.1:5500/fixture/image",
+        "currentValue": "1.0.0",
+        "currentDigest": "sha256:e71ec6c9cd7cd6b0153919196759a53aaa9b0ea307e16f1939278d269bd7c216",
+        "newValue": "1.0.1",
+        "newDigest": "sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444",
+        "updateType": "patch"
+      },
+      "nativeMismatchRule": "$exists(updateType) and ($not($exists(newDigest)) or newDigest != 'sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444' or updateType != 'patch' or $not($exists(newValue)) or newValue != '1.0.1')",
+      "changedDigestResolvedAndRejectedBeforeWrite": true,
+      "negativeInventoryUnchanged": true,
+      "approvedExactDiffVerified": true,
+      "merged": false
+    },
+    {
+      "case": "untagged",
+      "manager": "docker-compose",
+      "file": "digest-binding/compose.yaml",
+      "branch": "balemoh-digest-binding/untagged-2925d0a0ff1f",
+      "pr": 9,
+      "url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/9",
+      "head": "e7bdf4b395bde07684a77899871b47ba1f0aa843",
+      "preflight": {
+        "packageFile": "digest-binding/compose.yaml",
+        "packageName": "127.0.0.1:5500/fixture/image",
+        "currentValue": null,
+        "currentDigest": "sha256:e71ec6c9cd7cd6b0153919196759a53aaa9b0ea307e16f1939278d269bd7c216",
+        "newValue": null,
+        "newDigest": "sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444",
+        "updateType": "digest"
+      },
+      "nativeMismatchRule": "$exists(updateType) and ($not($exists(newDigest)) or newDigest != 'sha256:130734cd93fce52f64c797ef5bda7bc2341938e19a975ad3e13880f9f5302444' or updateType != 'digest' or $exists(newValue))",
+      "changedDigestResolvedAndRejectedBeforeWrite": true,
+      "negativeInventoryUnchanged": true,
+      "approvedExactDiffVerified": true,
+      "merged": false
+    }
+  ]
+}

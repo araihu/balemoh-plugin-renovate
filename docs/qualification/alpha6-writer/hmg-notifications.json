@@ -1,0 +1,15 @@
+{
+  "defaults": {
+    "ordinary": 3,
+    "securityDigest": 1,
+    "ordinaryDigest": 0
+  },
+  "digestOptIn": {
+    "newEvents": 5,
+    "backfillEvents": 0
+  },
+  "restoredRealSnapshot": true,
+  "restoredDefaults": true,
+  "testEventsMarkedRead": 9,
+  "existingEventsPreserved": true
+}

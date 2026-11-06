@@ -49,7 +49,7 @@ func (c *connection) admit() {
 				if security {
 					c.securitySeen[u.ID] = true
 				}
-				if known || !c.baseline {
+				if known || !c.baseline || !security && !c.config.notificationTypeAllowed(u.UpdateType) {
 					continue
 				}
 				if len(c.pending) >= 64 && security {

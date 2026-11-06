@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"syscall"
@@ -25,10 +26,23 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 	if write {
 		dryRun = nil
 	}
-	allow := map[string]any{"matchPackageNames": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageName) + "$/"}, "matchFileNames": []string{r.Dependency.PackageFile}, "enabled": true, "allowedVersions": "/^" + regexp.QuoteMeta(*r.Candidate.NewValue) + "$/", "groupName": nil, "groupSlug": nil}
+	allow := map[string]any{"matchPackageNames": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageName) + "$/"}, "matchFileNames": []string{r.Dependency.PackageFile}, "enabled": true, "groupName": nil, "groupSlug": nil}
+	if r.Candidate.NewValue != nil {
+		allow["allowedVersions"] = "/^" + regexp.QuoteMeta(*r.Candidate.NewValue) + "$/"
+	}
 	var identity []string
 	if json.Unmarshal([]byte(r.Dependency.DependencyKey), &identity) == nil && len(identity) == 2 && identity[1] != "" {
 		allow["matchDepTypes"] = []string{identity[1]}
+	}
+	rules := []any{map[string]any{"matchPackageNames": []string{"*"}, "enabled": false}, allow}
+	if r.Candidate.NewDigest != nil {
+		tagMismatch := "$exists(newValue)"
+		if r.Candidate.NewValue != nil {
+			tagMismatch = "$not($exists(newValue)) or newValue != '" + *r.Candidate.NewValue + "'"
+		}
+		// Native post-lookup rules disable mismatches before branch generation or writes.
+		expression := "$exists(updateType) and ($not($exists(newDigest)) or newDigest != '" + *r.Candidate.NewDigest + "' or updateType != '" + r.Candidate.UpdateType + "' or " + tagMismatch + ")"
+		rules = append(rules, map[string]any{"matchPackageNames": allow["matchPackageNames"], "matchFileNames": allow["matchFileNames"], "matchJsonata": []string{expression}, "enabled": false})
 	}
 	return map[string]any{
 		"platform": "github", "repositories": []string{r.Repository.Name}, "autodiscover": false, "onboarding": false, "requireConfig": "required",
@@ -38,8 +52,8 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 			"baseBranchPatterns": []string{r.Repository.BaseBranch}, "includePaths": []string{r.Dependency.PackageFile}, "enabledManagers": []string{r.Dependency.Manager},
 			"kubernetes":   map[string]any{"managerFilePatterns": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageFile) + "$/"}},
 			"branchPrefix": "balemoh-renovate/", "branchTopic": r.ID, "additionalBranchPrefix": "", "groupName": nil, "groupSlug": nil, "hashedBranchLength": nil,
-			"fetchChangeLogs": "off", "pinDigests": false,
-			"packageRules": []any{map[string]any{"matchPackageNames": []string{"*"}, "enabled": false}, allow},
+			"fetchChangeLogs": "off", "pinDigests": r.Candidate.NewDigest != nil,
+			"packageRules": rules,
 		},
 	}
 }
@@ -53,12 +67,14 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 				Name     string `json:"branchName"`
 				Result   string `json:"result"`
 				Upgrades []struct {
-					File    string  `json:"packageFile"`
-					Name    string  `json:"depName"`
-					Package string  `json:"packageName"`
-					Current *string `json:"currentValue"`
-					Value   *string `json:"newValue"`
-					Digest  *string `json:"newDigest"`
+					File          string  `json:"packageFile"`
+					Name          string  `json:"depName"`
+					Package       string  `json:"packageName"`
+					Current       *string `json:"currentValue"`
+					Value         *string `json:"newValue"`
+					Digest        *string `json:"newDigest"`
+					CurrentDigest *string `json:"currentDigest"`
+					Type          string  `json:"updateType"`
 				} `json:"upgrades"`
 			} `json:"branches"`
 		} `json:"repositories"`
@@ -79,7 +95,10 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 		return errEngine
 	}
 	for _, u := range upgrades {
-		if u.File != r.Dependency.PackageFile || u.Package != r.Dependency.PackageName || u.Current == nil || u.Value == nil || *u.Current != *r.Dependency.CurrentValue || *u.Value != *r.Candidate.NewValue || u.Digest != nil {
+		if u.Current != nil && *u.Current == "" {
+			u.Current = nil
+		}
+		if u.File != r.Dependency.PackageFile || u.Package != r.Dependency.PackageName || !reflect.DeepEqual(u.Current, r.Dependency.CurrentValue) || !reflect.DeepEqual(u.Value, r.Candidate.NewValue) || !reflect.DeepEqual(u.CurrentDigest, r.Dependency.CurrentDigest) || !reflect.DeepEqual(u.Digest, r.Candidate.NewDigest) || (r.Candidate.NewDigest != nil && u.Type != r.Candidate.UpdateType) {
 			return errEngine
 		}
 	}
@@ -201,7 +220,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	if err != nil || exists {
 		return errEngine
 	}
-	// The writer receives the same scope and fixed tag, with no approval/check bypass.
+	// The writer receives the same scope and target binding, with no approval/check bypass.
 	phase = "writer"
 	mayHaveWritten = true
 	if invoke(true) != nil {

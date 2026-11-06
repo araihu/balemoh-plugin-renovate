@@ -1,0 +1,38 @@
+{
+  "readOnlyTracking": "passed",
+  "records": [
+    {
+      "case": "tagged",
+      "pr": 7,
+      "head": "b288672c74e92686cc06fc49fa651353bee31257",
+      "state": "open",
+      "checks": "unknown",
+      "tracker": "internal/requests.github.pull, opt-in TestNativePinnedPRTracking",
+      "exactDiffVerified": true
+    },
+    {
+      "case": "pinned-tag",
+      "pr": 8,
+      "head": "c7a24e6f3b62b7d42193af67ed5d43faaa2122fc",
+      "state": "open",
+      "checks": "unknown",
+      "tracker": "internal/requests.github.pull, opt-in TestNativePinnedPRTracking",
+      "exactDiffVerified": true
+    },
+    {
+      "case": "untagged",
+      "pr": 9,
+      "head": "e7bdf4b395bde07684a77899871b47ba1f0aa843",
+      "state": "open",
+      "checks": "unknown",
+      "tracker": "internal/requests.github.pull, opt-in TestNativePinnedPRTracking",
+      "exactDiffVerified": true
+    }
+  ],
+  "workflowState": "disabled_manually",
+  "restoredWorkflowPermissions": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  },
+  "upgradePRMerges": 0
+}

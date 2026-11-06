@@ -1,0 +1,118 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:22d0c77a2d44e2dcc3776f52c210c7f3bcfbacb69902b416f460f44b95a6e467",
+  "sourceCommit": "f0108bea8b4223a7f0bb2f9f8a52d00af247737f",
+  "version": "0.0.1-alpha.6",
+  "controllerBinarySHA256": "957bd48015e2493089a796c020364f8f18b42b8c81a8da228f978b2356c34ee5",
+  "repository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "approvedBase": "c981d765e96ef95157eca15984657f151265aabb",
+  "selectedFile": "alpha6/compose.yaml",
+  "from": "docker.io/library/nginx@sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+  "to": "docker.io/library/nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+  "case": "compose-untagged",
+  "qualification": "passed",
+  "request": {
+    "snapshotDigest": "05a3d226d99fb23806bd3e297093bca5a4bbf63ffa337494c685e21bff53fffe",
+    "id": "c4835582e820f9eeecda9269ce045b628a38c4460d1af7597254997f4ef142de",
+    "repository": {
+      "platform": "github",
+      "name": "guilycst/balemoh-renovate-engine-poc-20261101",
+      "baseBranch": "main",
+      "commit": "c981d765e96ef95157eca15984657f151265aabb"
+    },
+    "dependency": {
+      "id": "f99d6840011bbd8ab497de7484ec4a8dfc8c254350f1e9ea1578218f8a00e7eb",
+      "manager": "docker-compose",
+      "packageFile": "alpha6/compose.yaml",
+      "dependencyKey": "[\"docker.io/library/nginx\",\"\"]",
+      "packageName": "docker.io/library/nginx",
+      "sourceOccurrences": 1,
+      "currentValue": null,
+      "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+      "assessment": "updates_found",
+      "candidates": [
+        {
+          "id": "5922bb2021bf24ae595aafa653742b98b9952f02277d4291a6344111aac1909e",
+          "newValue": null,
+          "newDigest": "sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+          "updateType": "digest",
+          "policy": "unknown",
+          "workflow": "unknown"
+        }
+      ],
+      "reasons": []
+    },
+    "candidate": {
+      "id": "5922bb2021bf24ae595aafa653742b98b9952f02277d4291a6344111aac1909e",
+      "newValue": null,
+      "newDigest": "sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+      "updateType": "digest",
+      "policy": "unknown",
+      "workflow": "unknown"
+    },
+    "branch": "balemoh-renovate/c4835582e820f9eeecda9269ce045b628a38c4460d1af7597254997f4ef142de",
+    "state": "open",
+    "createdAt": "2026-11-05T12:20:28.032286942Z",
+    "updatedAt": "2026-11-05T12:21:27.819740074Z",
+    "trackedAt": "2026-11-05T12:21:27.819740074Z",
+    "trackingError": false,
+    "pr": {
+      "number": 14,
+      "url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/14",
+      "headSha": "11c87790a553b5a227af3005baa8cf0101435a3e",
+      "state": "open",
+      "checks": "passing"
+    }
+  },
+  "transitions": [
+    {
+      "state": "queued",
+      "reason": ""
+    },
+    {
+      "state": "running",
+      "reason": ""
+    },
+    {
+      "state": "open",
+      "reason": ""
+    }
+  ],
+  "duplicateSubmissionsSameReceipt": true,
+  "restartRetainedReceiptAndPR": true,
+  "newPRs": 1,
+  "newBranches": 1,
+  "previousPRsUnchanged": true,
+  "previousBranchesUnchanged": true,
+  "ordinaryIssuesUnchanged": true,
+  "exactSelectedDiffVerified": true,
+  "mainUnchanged": true,
+  "automerge": false,
+  "merged": false,
+  "credential": "writer: fine-grained fixture-only PAT expiring 2026-11-06; reader: short-lived read-only GITHUB_TOKEN",
+  "ciScope": "real pull_request workflow, exact-head Checks and commit status required",
+  "fixtureScope": "controlled initial snapshot; shipped native preflight verifies live Git content",
+  "backupRestore": {
+    "records": 1,
+    "sameRequestAndPR": true,
+    "freshTrackingAfterRestore": true,
+    "retainedTargetRejected": true
+  },
+  "ciEvidence": {
+    "headSha": "11c87790a553b5a227af3005baa8cf0101435a3e",
+    "controllerChecks": "passing",
+    "checkRun": {
+      "id": 127241393290,
+      "name": "selected-image",
+      "head_sha": "11c87790a553b5a227af3005baa8cf0101435a3e",
+      "status": "completed",
+      "conclusion": "success",
+      "details_url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/42026343655/job/127241393290"
+    },
+    "commitStatus": {
+      "id": 58146383715,
+      "context": "fixture/selected-image",
+      "state": "success",
+      "target_url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/42026343655"
+    }
+  }
+}

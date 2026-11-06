@@ -240,6 +240,11 @@ func (c *Controller) observe(ctx context.Context, r Record) Record {
 	r.TrackedAt = &now
 	r.UpdatedAt = now
 	r.TrackingError = err != nil
+	if err != nil && r.PR != nil {
+		retained := *r.PR
+		retained.Checks = "unknown"
+		r.PR = &retained
+	}
 	if pr != nil {
 		r.PR = pr
 		r.State = pr.State
