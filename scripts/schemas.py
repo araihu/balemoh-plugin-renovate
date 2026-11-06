@@ -59,8 +59,9 @@ def output(name, extra):
 output("list-output", {"items": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/dependency"}},
                        "total": {"$ref": "#/$defs/count"}, "revision": {"type": "string", "pattern": "^[1-9][0-9]*$"}, "nextCursor": string(1024)})
 output("get-output", {"dependency": {"$ref": "#/$defs/dependency"}})
-counts = {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0, "maximum": 200000}}
-output("summary-output", {"assessments": counts, "updateTypes": counts, "candidates": {"type": "integer", "minimum": 0, "maximum": 200000}})
+candidate_count = {"type": "integer", "minimum": 0, "maximum": 200000}
+counts = {"type": "object", "additionalProperties": candidate_count}
+output("summary-output", {"assessments": counts, "updateTypes": counts, "candidates": candidate_count, "securityCandidates": candidate_count, "requestStates": counts, "unconfirmedRequests": {"$ref": "#/$defs/count"}})
 save("widget", obj({"repository": string(), "updateType": dict(widget_update_type, type="string", maxLength=32), "maxRows": {"type": "integer", "minimum": 1, "maximum": 5}}))
 save("connection", obj({
     "controllerURL": {"type":"string","maxLength":2048,"description":"Optional private HTTPS request controller; submissions require a separate action grant."},

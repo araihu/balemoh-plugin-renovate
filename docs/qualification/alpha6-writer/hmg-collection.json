@@ -1,0 +1,25 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:22d0c77a2d44e2dcc3776f52c210c7f3bcfbacb69902b416f460f44b95a6e467",
+  "repository": {
+    "platform": "github",
+    "name": "guilycst/home-lab",
+    "baseBranch": "main",
+    "commit": "26040307022454fede3566d627223f4697ed3dba"
+  },
+  "runId": "b580502a-9340-46e3-9679-5c55fed91f00",
+  "completedAt": "2026-11-05T12:26:19.582906563Z",
+  "coverage": {
+    "scope": "Explicit image managers; repository ignore paths and implicit chart images remain outside scope Empty Helm override records outside these counts: 8; their image references require chart inheritance. Unresolved Dockerfile build-argument records outside these counts: 1.",
+    "status": "partial",
+    "sourceRecords": 210,
+    "extracted": 182,
+    "assessed": 42,
+    "excluded": 12,
+    "unknown": 128,
+    "reasons": [
+      "source_problems",
+      "unassessed_dependencies"
+    ]
+  },
+  "readOnly": true
+}

@@ -48,9 +48,12 @@ type List struct {
 }
 type Summary struct {
 	Meta
-	Assessments map[string]int `json:"assessments"`
-	UpdateTypes map[string]int `json:"updateTypes"`
-	Candidates  int            `json:"candidates"`
+	Assessments         map[string]int `json:"assessments"`
+	UpdateTypes         map[string]int `json:"updateTypes"`
+	Candidates          int            `json:"candidates"`
+	SecurityCandidates  int            `json:"securityCandidates"`
+	RequestStates       map[string]int `json:"requestStates"`
+	UnconfirmedRequests int            `json:"unconfirmedRequests"`
 }
 type Detail struct {
 	Meta
@@ -100,20 +103,7 @@ func (b *Backend) Query(ctx context.Context, r backend.Request) (backend.Result,
 		if decode(r.Input, &f) != nil || f.Cursor != "" || f.Revision != "" || f.Limit != 0 || !ValidFilter(f) {
 			return backend.Result{}, backend.Fail("invalid_argument")
 		}
-		s := Summary{Meta: c.meta(), Assessments: map[string]int{}, UpdateTypes: map[string]int{}}
-		for _, d := range c.snapshot.Dependencies {
-			if !c.matches(d, f) {
-				continue
-			}
-			s.Assessments[d.Assessment]++
-			for _, u := range d.Candidates {
-				if candidateMatches(u, f) {
-					s.UpdateTypes[u.UpdateType]++
-					s.Candidates++
-				}
-			}
-		}
-		value = s
+		value = c.summary(f)
 	case "upgrades.get":
 		var input struct {
 			ID string `json:"dependencyId"`
@@ -249,4 +239,85 @@ func (c *connection) list(data []byte) (List, error) {
 		next = base64.RawURLEncoding.EncodeToString(raw)
 	}
 	return List{c.meta(), items[offset:end], len(items), revision, next}, nil
+}
+
+func (c *connection) summary(f Filter) Summary {
+	s := Summary{Meta: c.meta(), Assessments: map[string]int{}, UpdateTypes: map[string]int{}, RequestStates: map[string]int{}}
+	selected := map[string]bool{}
+	for _, d := range c.snapshot.Dependencies {
+		if !c.matches(d, f) {
+			continue
+		}
+		s.Assessments[d.Assessment]++
+		for _, u := range d.Candidates {
+			if !candidateMatches(u, f) {
+				continue
+			}
+			s.UpdateTypes[u.UpdateType]++
+			s.Candidates++
+			if u.IsVulnerabilityAlert {
+				s.SecurityCandidates++
+			}
+			selected[d.ID+"/"+u.ID] = true
+		}
+	}
+	latest := map[string]requests.Record{}
+	for _, r := range c.controller.Requests {
+		key := r.Dependency.ID + "/" + r.Candidate.ID
+		if !selected[key] {
+			continue
+		}
+		prior, ok := latest[key]
+		if !ok || r.CreatedAt.After(prior.CreatedAt) {
+			latest[key] = r
+		} else if r.CreatedAt.Equal(prior.CreatedAt) {
+			latest[key] = summaryRecord(r, prior)
+		}
+	}
+	deduplicated := map[string]requests.Record{}
+	for key, r := range latest {
+		if r.PR != nil {
+			key = "pr/" + r.PR.URL
+		} else {
+			key = "request/" + key
+		}
+		if prior, ok := deduplicated[key]; ok {
+			r = summaryRecord(r, prior)
+		}
+		deduplicated[key] = r
+	}
+	for _, r := range deduplicated {
+		if r.TrackingError {
+			s.UnconfirmedRequests++
+		} else {
+			s.RequestStates[r.State]++
+		}
+	}
+
+	return s
+}
+
+// Equal-time contradictory evidence stays unconfirmed rather than choosing a state.
+func summaryRecord(a, b requests.Record) requests.Record {
+	evidenceTime := func(r requests.Record) time.Time {
+		stamp := r.UpdatedAt
+		if r.TrackedAt != nil && r.TrackedAt.After(stamp) {
+			stamp = *r.TrackedAt
+		}
+		if r.CreatedAt.After(stamp) {
+			stamp = r.CreatedAt
+		}
+		return stamp
+	}
+	at, bt := evidenceTime(a), evidenceTime(b)
+	if at.After(bt) {
+		return a
+	}
+	if bt.After(at) {
+		return b
+	}
+	if a.State != b.State || a.TrackingError || b.TrackingError {
+		a.TrackingError = true
+	}
+	return a
 }

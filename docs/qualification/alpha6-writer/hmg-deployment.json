@@ -1,0 +1,18 @@
+{
+  "namespace": "balemoh-hmg01",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:22d0c77a2d44e2dcc3776f52c210c7f3bcfbacb69902b416f460f44b95a6e467",
+  "sourceCommit": "f0108bea8b4223a7f0bb2f9f8a52d00af247737f",
+  "manifestDigest": "79ff5d86d9c5554daa3299b99f79b8c3f7625e647a6adf0ee37fdce7ae2792ac",
+  "packageDigest": "3b66df25b593a67398a877e89e290ad1332f29cc2bc1f83c93f3413879699bf2",
+  "fixtureRepository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "fixtureBase": "c981d765e96ef95157eca15984657f151265aabb",
+  "productionWriterEnabled": false,
+  "homeLabHMGWriterEnabled": false,
+  "fixtureHMGWriterEnabled": true,
+  "currentBotChanged": false,
+  "upgradePRMerges": 0,
+  "sessionOnlyClaims": [
+    "hmg-alpha6-api",
+    "hmg-alpha6-requests"
+  ]
+}

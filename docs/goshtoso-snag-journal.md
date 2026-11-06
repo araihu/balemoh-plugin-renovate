@@ -32,3 +32,27 @@ Closing checkpoint: full race suite, vet and package build passed. Disposable HM
   later swap/navigation guards. Regression executes the pinned response
   coordinator with side-effect spies; HMG normal requests and served asset hash
   verified. No replacement control, dependency upgrade or upstream message.
+
+- List PR controls: inspected pinned v0.4.4 Table.Row.Actions, Column,
+  Link options and Badge.Config. Composed row-scoped status with native GET
+  links into the existing review route. Mobile cards reuse the same eligibility
+  and status components. No custom control, library gap or dependency change.
+
+Closing checkpoint for list PR controls: full race suite, vet, package build and
+candidate-target regressions passed. HMG's existing Goshtoso dark theme verified
+at 1440px and 390px: direct PR navigation target, merged state/checks, keyboard
+Details navigation, Back state, no horizontal overflow, unique DOM IDs and no
+console errors. Read-only connection keeps requests disabled. Initial HTML
+metadata and the existing 1280x640 PNG preview passed. Full theme/mode matrix,
+physical-device and screen-reader/axe audits were not rerun. No merge control,
+controller change, publication or production rollout.
+
+
+## 2026-11-05: overview widget card width
+
+Need: responsive aggregate widget in host-owned dashboard placement. Inspected
+public v0.4.4 Card Config Body/Footer/RootClass and its usage example. Composed
+Card, Badge and Link. The default vertical Card caps width at max-w-sm and exposes
+no fluid-width option; a scoped RootClass max-width override lets placement own
+width. No internal markup copied or dependency changed. Closing checkpoint:
+aggregate domain content remains semantic; no replacement control or runtime.

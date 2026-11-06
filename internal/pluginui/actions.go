@@ -26,7 +26,7 @@ func (h Handler) request(ctx context.Context, r ui.Request, host ui.HostServices
 	if e != nil {
 		return ui.Response{}, ui.ErrUnavailable
 	}
-	filter := advisory.Filter{Search: r.Query.Get("search"), Assessment: querySelection(r.Query, "assessment"), UpdateType: querySelection(r.Query, "updateType"), Workflow: querySelection(r.Query, "workflow")}
+	filter := advisory.Filter{Search: r.Query.Get("search"), Repository: r.Query.Get("repository"), Assessment: querySelection(r.Query, "assessment"), UpdateType: querySelection(r.Query, "updateType"), Workflow: querySelection(r.Query, "workflow")}
 	if !r.Query.Has("assessment") {
 		filter.Assessment = "updates_found"
 	}

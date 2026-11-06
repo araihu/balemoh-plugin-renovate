@@ -1,6 +1,6 @@
-# Read-only advisory implementation
+# Renovate plugin architecture
 
-The independent plugin uses the published `plugin-sdk v0.0.1-alpha.3` and Goshtoso `v0.4.4`, matching the alpha.2 UI profile. Balemoh owns its shell and shared runtime. No Balemoh internal package is imported.
+The independent plugin uses the published `plugin-sdk v0.0.1-alpha.4` and Goshtoso `v0.4.4`. Balemoh owns its shell and shared runtime. No Balemoh internal package is imported.
 
 The collector inherits Renovate 44.197.0 from its immutable base image. It only runs full dry-run, with automerge and scripts disabled. Each run gets an empty workspace. It compares GitHub base SHA before/after, verifies the retained checkout base branch and remote-tracking base against that SHA, reads policy from that checkout, normalizes the report, then replaces one file atomically. A shared filesystem lock serializes scheduled and manual executions of this binary. A failed or moving run cannot replace the last snapshot.
 
@@ -12,7 +12,7 @@ Backend polling uses a ten-second timeout, a ten MiB response limit, certificate
 
 SDK credential files currently accept bearer-token characters only. `snapshot-ca` therefore carries one base64-encoded DER trust-anchor certificate, bounded by the host's 4096-byte credential contract. The source server uses ordinary PEM key/certificate files. Certificate validation remains enabled. The optional CA is only delivered to the backend.
 
-SDK forms currently support scalar fields and arrays of string enums. The connection uses `serviceMappingsJSON`, a bounded JSON string containing at most 256 exact dependency/service mappings and 64 distinct service IDs. The backend validates it. Host service grants remain separate. Missing catalog presentation never removes image data. Exact mapped IDs resolve through `ui.ServiceCatalog`, then `ui.ValidateServiceIdentities` checks the returned identities and local asset URLs. The list, detail and widget compose current service name with the host icon. A missing icon retains the name; denied/missing/invalid catalog presentation retains image/file data. Image equality does not establish service identity, and multi-service groups stay unmapped. No discovery/catalog-inventory capability is added.
+SDK forms currently support scalar fields and arrays of string enums. The connection uses `serviceMappingsJSON`, a bounded JSON string containing at most 256 exact dependency/service mappings and 64 distinct service IDs. The backend validates it. Host service grants remain separate. Missing catalog presentation never removes image data. Exact mapped IDs resolve through `ui.ServiceCatalog`, then `ui.ValidateServiceIdentities` checks the returned identities and local asset URLs. The list and detail compose current service name with the host icon. The overview widget uses aggregate counts. A missing icon retains the name; denied/missing/invalid catalog presentation retains image/file data. Image equality does not establish service identity, and multi-service groups stay unmapped. No discovery/catalog-inventory capability is added.
 
 Notifications are optional and disabled by package default. Current complete or partial observations establish/admit positive `updates_found` candidates. Unrelated unknown groups do not invalidate a positive candidate, and partial coverage appears in the message. Startup and recovery after stale/unavailable data establish silent baselines. Major updates remain `info`. An explicit Renovate `isVulnerabilityAlert=true` flag produces `warning`, never inferred CVE severity. A first later security flag has its own stable event ID so it does not rewrite an ordinary notice. Regular and security seen-sets survive candidate disappearance during a session. A 64-item queue retries timeout/unavailable with frozen content; security notices can displace queued unaccepted ordinary notices, and excess admissions log only a connection ID and count. No durable outbox or cross-session replay promise exists. Service references come only from explicit mappings. Retrofitting bindings for previously published events is deferred.
 
@@ -20,7 +20,7 @@ Adapter `0.0.3` retains an explicit dependency-update security flag without chan
 
 ## UI composition receipt
 
-Primary task: inspect image candidates in repository files, then inspect evidence or open an associated PR. Existing Balemoh identity, compact operations list, native detail navigation, and canonical URL filters. No action writes Git, calls a registry, or starts a scan.
+Primary task: inspect image candidates in repository files, then inspect evidence or open an associated PR. Existing Balemoh identity, compact operations list, native detail navigation, and canonical URL filters. Read-only views query retained data. Explicitly granted PR submissions use the separate request controller; merging stays manual.
 
 | Need | Inspected public API | Decision |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ Primary task: inspect image candidates in repository files, then inspect evidenc
 | Image/file groups | `table.Table`, typed columns/rows/cell components; `panel.Panel` header/actions/body/root attrs | Desktop table plus mobile panel comparison. Table Config/Column exposes no mobile/card mode in v0.4.4; CSS exposes one supported composition at a time. |
 | Detail evidence | `panel.Panel`, header/body slots | Compose with domain definition lists |
 | Coverage/staleness | `alert.Alert`, warning tone | Reuse |
-| Security marker | `badge.Badge`, warning tone, soft appearance | Reuse beside the exact candidate in list/detail/widget |
+| Security marker | `badge.Badge`, warning tone, soft appearance | Reuse beside the exact candidate in list/detail; aggregate flagged-candidate count in the overview widget |
 | Service presentation | `icon.Icon`, external sprite URL/symbol, decorative mode; host `LibraryImage` composition example | Compose public sprite icon or semantic image for host image URLs; domain layout beside the name |
 | Navigation and recovery | `link.Link`, `emptystate.EmptyState` | Reuse |
 
@@ -156,3 +156,70 @@ report paragraph and idle/success filter copy. Collection time, freshness and
 coverage remain in its metadata. Coverage retains the repository breakdown and
 warning causes; detail/widget warnings are unchanged. The live filter status is
 empty when idle or successful, visible while updating or when a request fails.
+
+## PR controls in the image list
+
+The desktop table adds a PR status column; mobile cards expose the same status.
+Controller state takes precedence over static report links. Tracking failures
+retain the PR destination with a last-known-status label and suppress passing
+checks. Reported-only PRs remain explicitly unverified. Active group requests
+remain visible even when a candidate filter hides their original candidate.
+
+Row actions use Goshtoso Table's Actions slot and Link for GET navigation. They
+open the verified or reported PR, view a retained request, or navigate to the
+existing exact-candidate review route. Multiple candidates have distinct target
+labels. Existing CanReviewAgain/CanRequest guards own stale, grant, writer,
+unsupported and terminal eligibility. The list never submits the mutation.
+
+| List state | Action | Expected destination | New writes |
+|---|---|---|---:|
+| fresh, granted, enabled, supported | Review PR request | matching image/candidate review, filters retained | 0 |
+| stale, denied, disabled, unavailable or unsupported | review link absent | Details remains available | 0 |
+| queued/running/needs review | View request | matching retained request details | 0 |
+| open/draft/closed/merged PR | View PR | exact retained GitHub PR | 0 |
+| tracking failure | View PR | retained PR; no passing-check claim | 0 |
+| reported PR only | View reported PR | report URL, status unverified | 0 |
+| blocked, same snapshot | review link absent | retained request details | 0 |
+| blocked, changed snapshot | Review PR request | existing revalidation route | 0 |
+
+No backend, controller, credential, merge or submission contract changes.
+
+Terminal PRs use neutral View PR navigation. Merged records do not instruct
+another merge; closed records point to GitHub for the closure reason. Terminal
+checks are labelled last reported, and unavailable tracking cannot claim passing
+checks in either the list or Details. Request review retains repository context
+as well as search and update-type selections through GET, POST, Cancel and PRG.
+
+
+## Upgrade overview widget
+
+Operate mode, inheriting Balemoh's existing theme. The widget is one public
+Goshtoso Card with body/footer slots. It replaces the image list with image-group
+and candidate totals, a linked type breakdown, explicit Renovate security-flag
+count and compact tracked-request states. No chart or nested cards are needed.
+Card/Badge/Link were inspected in the pinned v0.4.4 API and composed directly.
+The card's public RootClass removes its content-card width limit so placement owns
+its width. Container queries adapt the type grid to narrow dashboard slots.
+
+The existing summary query counts every matching candidate, independent of legacy
+maxRows. Repository and update-type placement filters apply to every count and
+list link. Type links keep repository scope. Counts by type and security flag are
+candidate counts; the lead total counts image/file groups. Latest retained
+requests count only exact matching dependency/candidate identities, with PR URLs
+deduplicated. Tracking errors are counted separately and unavailable tracking
+never appears as zero requests. PR counts cover these upgrade candidates rather
+than the repository's entire PR inventory.
+
+Zero candidates says No upgrade candidates reported. Missing data stays
+unavailable; stale data is labelled as previous results. Partial coverage links
+to the coverage page, and the footer retains collection time. No write or merge
+action is exposed. Current bot, controller configuration and production writer
+are unchanged.
+
+
+Overview review corrections: type, coverage and footer links include repository
+context in their accessible names, while their visible text stays concise.
+Shared PR URLs use the freshest retained tracking/update/creation evidence.
+Equal-time conflicting states or tracking errors count as unconfirmed. Candidate
+and security totals share the 200,000-candidate output bound; image/group counts
+retain their separate bound.

@@ -39,13 +39,15 @@ templ RequestStatus(m Model,r requests.Record) {
  <dl class="image-upgrades-reference"><div><dt>Requested candidate</dt><dd>@ReferenceValue(r.Candidate.NewValue,r.Candidate.NewDigest,true)</dd></div></dl>
  </div>
  if r.PR!=nil {
- @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open upgrade pull request }
- <p>{ checksLabel(r.PR.Checks) }</p>
+ @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ { "View PR #"+count(r.PR.Number) } }
+ <p>{ m.requestChecks(r,false) }</p>
  }
  if r.TrackedAt!=nil {
  <p>Last checked: <time datetime={ r.TrackedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ r.TrackedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</time></p>
  }
- <p>Review and merge the PR manually in GitHub.</p>
+ if guidance:=requestGuidance(r.State);guidance!="" {
+ <p>{ guidance }</p>
+ }
  @link.Link(m.StatusURL){ Refresh request status }
  </section>
 }

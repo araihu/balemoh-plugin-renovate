@@ -68,7 +68,7 @@ templ Results(m Model) {
  </div>
  <div class="image-upgrades-mobile" aria-label="Image candidate comparisons">
  for _,d:=range m.List.Items {
- @panel.Panel(panel.Config{Header:ImageCell(m,d,"cards"),Body:MobileBody(d),Footer:DetailLink(m.Links[d.ID],d),RootClass:"image-upgrades-item",RootAttrs:templ.Attributes{"role":"article","aria-label":d.PackageName}})
+ @panel.Panel(panel.Config{Header:ImageCell(m,d,"cards"),Body:MobileBody(m,d),Footer:ListActions(m.forItem(d)),RootClass:"image-upgrades-item",RootAttrs:templ.Attributes{"role":"article","aria-label":d.PackageName}})
  }
  </div>
  }
@@ -185,13 +185,14 @@ templ Assessment(d advisory.Item) {
 templ DetailLink(destination string,d advisory.Item) {
  @link.Link(destination,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":"Details for "+d.PackageName+" in "+d.PackageFile})){ Details }
 }
-templ MobileBody(d advisory.Item) {
+templ MobileBody(m Model,d advisory.Item) {
  <div class="image-upgrades-cell">
  <p>{ assessmentLabel(d) }</p>
  <div class="image-upgrades-reference-pair">
  <div class="image-upgrades-cell"><strong>Git reference</strong>@Reference(d)</div>
  <div class="image-upgrades-cell"><strong>Candidates</strong>@Proposals(d)</div>
  </div>
+ <div class="image-upgrades-cell"><strong>PR status</strong>@ListPRStatus(m.forItem(d))</div>
  for _,reason:=range displayReasons(d) {
  <p>{ reasonLabel(reason) }</p>
  }
@@ -239,7 +240,7 @@ templ DetailBody(m Model) {
  <p>Reported branch result: { branchResultLabel(u.BranchResult) }</p>
  }
  if u.PR!=nil {
- @link.Link(u.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open reported pull request }
+ @link.Link(u.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ View reported pull request }
  }
  @UpgradeAction(m,u)
  }
@@ -343,22 +344,6 @@ templ TechnicalEvidence(m Model) {
  <div><dt>Renovate</dt><dd>{ m.Meta.Producer.RenovateVersion }</dd></div>
  <div><dt>Renovate image</dt><dd><code class="image-upgrades-exact">{ m.Meta.Producer.RenovateImage }</code></dd></div>
  </dl>
- </div>
-}
-templ Widget(m Model) {
- <div class="image-upgrades">
- @Observation(m)
- <p>{ count(m.List.Total) } image groups have Renovate candidates.</p>
- for _,d:=range m.List.Items {
- <div class="image-upgrades-cell">
- @ServiceIdentity(m,d)
- if hasSecurity(d) {
- @SecurityTag()
- }
- <div>@link.Link(m.Links[d.ID]){ { d.PackageName } }<span> · { count(len(d.Candidates)) } candidates</span></div>
- </div>
- }
- @link.Link(m.BackURL,link.WithRootClass("image-upgrades-action")){ View image upgrades }
  </div>
 }
 templ Recovery(m Model,code string) {

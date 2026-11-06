@@ -1,0 +1,22 @@
+{
+  "desktop": {
+    "checksPassed": true,
+    "overflow": false,
+    "prLink": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/15",
+    "prOpen": true,
+    "width": 1280
+  },
+  "desktopCoverage": {
+    "overflow": false,
+    "tables": 2,
+    "width": 1280
+  },
+  "mobileWidth": 390,
+  "mobileOverflow": false,
+  "autoApplySearch": true,
+  "checkboxTypeFilter": true,
+  "nonStickyTableHeader": true,
+  "homeLabActionsDisabled": true,
+  "independentReview": false,
+  "physicalDevice": false
+}

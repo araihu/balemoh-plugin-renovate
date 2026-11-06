@@ -49,3 +49,24 @@
 .image-upgrades-coverage-copy { max-width: 72ch; }
 
 .image-upgrades [data-filter-status]:empty { display: none; }
+
+.image-upgrades-row-actions { display: grid; gap: .25rem; justify-items: end; text-align: right; min-width: 0; }
+.image-upgrades-row-actions a { white-space: normal; overflow-wrap: anywhere; }
+.image-upgrades-mobile .image-upgrades-row-actions { justify-items: start; text-align: left; }
+
+/* The public Card defaults to max-w-sm; dashboard placement owns the width. */
+.image-upgrades-widget { container-type: inline-size; width: 100%; max-width: none; min-width: 0; }
+.image-upgrades-widget-body { display: grid; gap: .65rem; min-width: 0; }
+.image-upgrades-widget-state { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.image-upgrades-widget-state:empty { display: none; }
+.image-upgrades-widget-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem 1rem; }
+.image-upgrades-widget-types > div { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-width: 0; }
+.image-upgrades-widget-types a { min-width: 2.75rem; }
+.image-upgrades-widget-types dd, .image-upgrades-widget-prs dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.image-upgrades-widget-requests { display: grid; gap: .5rem; padding-top: .75rem; }
+.image-upgrades-widget-prs { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
+.image-upgrades-widget-prs > div { display: flex; gap: .5rem; }
+.image-upgrades-widget-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; }
+@container (max-width: 22rem) {
+ .image-upgrades-widget-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

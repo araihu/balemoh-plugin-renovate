@@ -1,0 +1,20 @@
+[
+  {
+    "case": "pinned-tag",
+    "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/12",
+    "headSha": "8470f9e8353a4c9c981a08cda3b46adbb1e3d96b",
+    "archiveSHA256": "31eb6d1f79e3544368561281d42db6fdb6f5420d3b28e45054d523ffde30e388"
+  },
+  {
+    "case": "dockerfile-digest",
+    "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/13",
+    "headSha": "41cb797bce4950d40b2127b75e4146738e761ac1",
+    "archiveSHA256": "cee72a43bf9c71b9ce2ef3e67dd970d1fd9754876a0c746a8c751a0dc5a15c6e"
+  },
+  {
+    "case": "compose-untagged",
+    "pr": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/14",
+    "headSha": "11c87790a553b5a227af3005baa8cf0101435a3e",
+    "archiveSHA256": "382665c7af1025de5708d5676ddd75bd6282e2d8338f8216b6da767078b85713"
+  }
+]

@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "id": "araihu.image-upgrades",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1-alpha.7",
   "name": "Image upgrades",
   "protocol": "balemoh.plugins/v1alpha1",
   "uiProfile": "balemoh.goshtoso/v1alpha2",
@@ -72,7 +72,8 @@
       ],
       "capabilities": [
         "data.query/v1"
-      ]
+      ],
+      "description": "Compare image upgrade candidates, track pull requests and review selected upgrades before requesting a PR."
     },
     {
       "id": "detail",
@@ -83,7 +84,8 @@
       ],
       "capabilities": [
         "data.query/v1"
-      ]
+      ],
+      "description": "Compare exact Git image references and upgrade candidates, with tracked pull request status and manual review."
     },
     {
       "id": "coverage",
@@ -94,7 +96,8 @@
       ],
       "capabilities": [
         "data.query/v1"
-      ]
+      ],
+      "description": "Inspect image collection outcomes, lookup warning causes and repository scan coverage."
     },
     {
       "id": "request",

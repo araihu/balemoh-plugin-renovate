@@ -1,8 +1,8 @@
 # Balemoh Renovate
 
 
-[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. Plugin version `0.0.1-alpha.6` requires SDK `v0.0.1-alpha.4`; production activation stays separate.
-Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. Plugin version `0.0.1-alpha.7` requires SDK `v0.0.1-alpha.4`; production activation stays separate.
+Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes an overview widget with upgrade-type, security-flag and tracked-PR counts, a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
 
 Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the production writer until a separate handover. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
 
@@ -71,7 +71,7 @@ Optional mapping string example:
 
 Use exact derived IDs. Do not infer runtime identity from image or file names. Up to 256 mappings and 64 distinct services are accepted. The host service grant is separate. Add the same `serviceId` to the BFF installation's `serviceIDs` array. Obtain service IDs from the host catalog and dependency IDs from `upgrades.list` or `upgrades.get`; compare the intended repository, manager, file and declaration before saving a mapping. If a group covers several services, leave it unmapped in this version.
 
-Mapped groups show the host's current service name and icon in the list, detail and summary widget. Sprite icons use Goshtoso's public `icon.Icon`; image icons use the validated same-origin host URL. Both are decorative beside the name. Hidden, missing, ungranted or unavailable catalog entries fall back to the image/file presentation. Name and icon changes never change dependency or candidate IDs. No image-name matching or runtime-version claim is made.
+Mapped groups show the host's current service name and icon in the list and detail views. The overview widget shows repository-level counts and does not resolve service mappings. Sprite icons use Goshtoso's public `icon.Icon`; image icons use the validated same-origin host URL. Both are decorative beside the name. Hidden, missing, ungranted or unavailable catalog entries fall back to the image/file presentation. Name and icon changes never change dependency or candidate IDs. No image-name matching or runtime-version claim is made.
 
 The detail route parameter is `dependency-id` because SDK route parameters require lowercase local identifiers; query input remains `dependencyId`.
 

@@ -204,6 +204,22 @@
       "type": "integer",
       "minimum": 0,
       "maximum": 200000
+    },
+    "securityCandidates": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 200000
+    },
+    "requestStates": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 200000
+      }
+    },
+    "unconfirmedRequests": {
+      "$ref": "#/$defs/count"
     }
   },
   "required": [
@@ -218,7 +234,10 @@
     "controller",
     "assessments",
     "updateTypes",
-    "candidates"
+    "candidates",
+    "securityCandidates",
+    "requestStates",
+    "unconfirmedRequests"
   ],
   "$defs": {
     "id": {

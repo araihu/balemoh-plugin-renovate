@@ -69,9 +69,18 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	if len(f.Repository) <= 256 {
 		resetFilter.Repository = f.Repository
 	}
-	model := view.Model{Request: r, Filter: f, CurrentURL: current, ResultsURL: fragment, BackURL: appendQuery(current, q), RestartURL: restart, ResetURL: appendQuery(current, filterQuery(resetFilter)), CoverageURL: appendQuery(coverage, q), Services: map[string]ui.ServiceIdentity{}, Links: map[string]string{}}
+	model := view.Model{Request: r, Filter: f, CurrentURL: current, ResultsURL: fragment, BackURL: appendQuery(current, q), RestartURL: restart, ResetURL: appendQuery(current, filterQuery(resetFilter)), CoverageURL: appendQuery(coverage, q), Services: map[string]ui.ServiceIdentity{}, Links: map[string]string{}, RequestLinks: map[string]string{}}
 
-	if r.ContributionID == "detail" {
+	if r.ContributionType == "widget" {
+		input, _ := json.Marshal(advisory.Filter{Repository: f.Repository, UpdateType: f.UpdateType, Assessment: f.Assessment})
+		result, err = host.Query(ctx, "upgrades.summary", input)
+		if err == nil {
+			err = json.Unmarshal(result.Data, &model.Summary)
+			model.Meta = model.Summary.Meta
+			model.Result = result
+			component = view.Widget(model)
+		}
+	} else if r.ContributionID == "detail" {
 		input, _ := json.Marshal(map[string]string{"dependencyId": r.PathParams["dependency-id"]})
 		result, err = host.Query(ctx, "upgrades.get", input)
 		var data advisory.Detail
@@ -115,15 +124,17 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 					link += "?" + q.Encode()
 				}
 				model.Links[item.ID] = link
+				for _, candidate := range item.Candidates {
+					href, _ := r.PageURL(h.Manifest, "request", map[string]string{"dependency-id": item.ID, "candidate-id": candidate.ID})
+					model.RequestLinks[candidate.ID] = appendQuery(href, q)
+				}
 			}
 			next := q.Clone()
 			next.Set("cursor", data.NextCursor)
 			next.Set("revision", data.Revision)
 			model.NextURL = current + "?" + next.Encode()
 
-			if r.ContributionType == "widget" {
-				component = view.Widget(model)
-			} else if r.Mode == "fragment" && r.Region == "results" {
+			if r.Mode == "fragment" && r.Region == "results" {
 				component = view.Results(model)
 			} else {
 				component = view.Current(model)
@@ -152,6 +163,9 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	}
 	response, e := render.Component(ctx, "Image upgrades", component)
 	response.Status = status
+	if page, ok := h.Manifest.Page(r.ContributionID); ok {
+		response.Title, response.Description = page.Title, page.Description
+	}
 	response.AssetIDs = []string{"layout", "filters"}
 	if r.Mode == "fragment" {
 		response.Kind = "fragment"
