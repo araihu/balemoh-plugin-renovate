@@ -107,7 +107,7 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 		}
 		roots.AddCert(cert)
 	}
-	if c.ControllerURL != "" && (secrets["controller-read-token"] == "" || secrets["controller-action-token"] == "" || secrets["controller-read-token"] == secrets["controller-action-token"]) {
+	if c.ControllerURL != "" && (secrets["controller-read-token"] == "" || secrets["controller-read-token"] == secrets["controller-action-token"]) {
 		return c, nil, backend.Fail("invalid_argument")
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()

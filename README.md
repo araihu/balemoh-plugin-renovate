@@ -1,7 +1,7 @@
 # Balemoh Renovate
 
 
-[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. Plugin version `0.0.1-alpha.7` requires SDK `v0.0.1-alpha.4`; production activation stays separate.
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. Plugin version `0.0.1-alpha.8` requires SDK `v0.0.1-alpha.4`; production activation stays separate.
 Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes an overview widget with upgrade-type, security-flag and tracked-PR counts, a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
 
 Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the production writer until a separate handover. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
@@ -157,9 +157,10 @@ The optional `-notifications` fixture mode starts with one candidate withheld, t
 
 The optional `upgrades.request` action needs both an explicit named grant and
 `data.action/v1`. Configure `controllerURL` with a private HTTPS origin and the
-API-only secrets `controller-read-token`, `controller-action-token` and optional
-`controller-ca`, base64 DER. Read/action bearers must differ. Neither GitHub nor
-controller credentials reach the BFF.
+API-only `controller-read-token` secret for PR tracking. `controller-ca` is
+optional base64 DER trust. Read-only tracking needs no action token. Submission
+also requires `controller-action-token`, distinct from the read token. Neither
+GitHub nor controller credentials reach the BFF.
 
 The UI shows a confirmation page for supported tag upgrades, submits immutable
 selection IDs and the retained snapshot digest, then redirects to the durable

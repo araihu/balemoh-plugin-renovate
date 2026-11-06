@@ -1,17 +1,19 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.7`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Plugin version: `0.0.1-alpha.8`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Status: prepared source, not published. [Alpha.7 release notes](releases/v0.0.1-alpha.7.md)
-and [source qualification](qualification/alpha7-ui/README.md) describe the current
-scope. No alpha.7 publication receipt or deployment pin exists yet.
+Status: prepared source, not published. [Alpha.8 release notes](releases/v0.0.1-alpha.8.md)
+describe the read-only controller credential fix. No alpha.8 publication receipt
+or deployment pin exists yet.
 
-Alpha.7 replaces the homepage image list with an overview card, adds list PR
-status/actions and fixes request navigation and terminal-state guidance. The
-widget counts all matching candidates, labels repository-specific destinations,
-uses the freshest retained evidence when grouping PRs, and supports the same
-security-count range as other candidate counts. Conflicting equal-time PR
-observations stay unconfirmed. SDK, Goshtoso and Renovate pins are unchanged.
+Alpha.8 allows PR tracking with only the controller read token. Request
+submission still requires a distinct action token, host grant and enabled
+controller. The host must accept SDK alpha.4 action declarations even when the
+connection has no action grant.
+
+Alpha.7 introduced the overview card, list PR states and candidate-review links.
+Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence
+for those unchanged interfaces. Alpha.8 requires its own publication receipt.
 
 Alpha.6 introduced pinned-image requests, notification type selection,
 collection diagnostics, coverage tables and automatic checkbox filters. Its
@@ -52,4 +54,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.7 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.7 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
