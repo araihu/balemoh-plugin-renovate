@@ -1,15 +1,10 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.8`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Plugin version: `0.0.1-alpha.9`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Status: prepared source, not published. [Alpha.8 release notes](releases/v0.0.1-alpha.8.md)
-describe the read-only controller credential fix. No alpha.8 publication receipt
-or deployment pin exists yet.
+Alpha.9 fixes rejection of the two explicit timestamp-optional warnings in exact native dry-run plans. See [release notes](releases/v0.0.1-alpha.9.md). Other plan problems and all selection mismatches remain blocked. The existing action grant, separate credentials and manual merge requirements remain in place.
 
-Alpha.8 allows PR tracking with only the controller read token. Request
-submission still requires a distinct action token, host grant and enabled
-controller. The host must accept SDK alpha.4 action declarations even when the
-connection has no action grant.
+The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence. Alpha.9 needs its own publication receipt and homelab writer proof.
 
 Alpha.7 introduced the overview card, list PR states and candidate-review links.
 Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence

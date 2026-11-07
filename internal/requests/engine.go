@@ -83,8 +83,25 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 		return errEngine
 	}
 	repo, ok := native.Repositories[r.Repository.Name]
-	if !ok || len(repo.Problems) > 0 || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
+	if !ok || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
 		return errEngine
+	}
+	for _, raw := range repo.Problems {
+		var problem struct {
+			Name  string `json:"name"`
+			Level int    `json:"level"`
+			Msg   string `json:"msg"`
+		}
+		if json.Unmarshal(raw, &problem) != nil || problem.Name != "renovate" || problem.Level != 40 {
+			return errEngine
+		}
+		// These pinned-engine warnings explicitly preserve timestamp-optional policy.
+		switch problem.Msg {
+		case "Some release(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information",
+			"Some upgrade(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information":
+		default:
+			return errEngine
+		}
 	}
 	// Full dry-run creates no commit SHA, so Renovate can report no-work for a selected upgrade.
 	if result := repo.Branches[0].Result; result != "done" && result != "pr-created" && result != "no-work" {
