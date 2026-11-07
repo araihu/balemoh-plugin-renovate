@@ -16,6 +16,8 @@ Required and default environment values come from [generated App configuration](
 
 The native Renovate engine needs Contents and Pull requests read/write, plus Issues, Metadata and Commit statuses read access for its single repository. Commit-status reads are required when it observes the branch after pushing; lacking this permission can leave an owned branch without a PR. The controller's separate tracking App does not supply credentials to the native engine.
 
+The engine sets `statusCheckWhen.minimumReleaseAge=never` in both preflight and write profiles. This skips publishing the optional `renovate/stability-days` commit status, which requires status write access. Repository release-age eligibility and internal checks remain active; deferred native plans still fail preflight.
+
 A branch without a verified PR becomes `needs_attention` and is never replayed automatically. Inspect its exact diff and repository state before operator recovery. Keep the branch and request receipt; do not delete either to force a retry. Upgrade PR merges remain manual.
 
 ## Request backup

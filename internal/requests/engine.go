@@ -49,6 +49,8 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 		"dryRun": dryRun, "persistRepoData": true, "baseDir": work, "cacheDir": filepath.Join(work, "cache"), "reportType": "file", "reportPath": filepath.Join(work, "report.json"), "reportFormatting": false,
 		"allowScripts": false, "allowPlugins": false, "allowedCommands": []string{}, "internalHostAccess": "block",
 		"force": map[string]any{"automerge": false, "platformAutomerge": false, "dependencyDashboard": false, "dependencyDashboardApproval": false, "prCreation": "immediate", "pruneStaleBranches": false,
+			// Keep release-age gating without publishing a status using the read-only status grant.
+			"statusCheckWhen":    map[string]any{"minimumReleaseAge": "never"},
 			"baseBranchPatterns": []string{r.Repository.BaseBranch}, "includePaths": []string{r.Dependency.PackageFile}, "enabledManagers": []string{r.Dependency.Manager},
 			"kubernetes":   map[string]any{"managerFilePatterns": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageFile) + "$/"}},
 			"branchPrefix": "balemoh-renovate/", "branchTopic": r.ID, "additionalBranchPrefix": "", "groupName": nil, "groupSlug": nil, "hashedBranchLength": nil,

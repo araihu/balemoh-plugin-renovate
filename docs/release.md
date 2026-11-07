@@ -1,8 +1,8 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.9`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Plugin version: `0.0.1-alpha.10`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Alpha.9 fixes rejection of the two explicit timestamp-optional warnings in exact native dry-run plans. See [release notes](releases/v0.0.1-alpha.9.md). Other plan problems and all selection mismatches remain blocked. The existing action grant, separate credentials and manual merge requirements remain in place.
+Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Release-age eligibility, exact selection, separate credentials and manual merges remain unchanged. See [release notes](releases/v0.0.1-alpha.10.md).
 
 The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence. Alpha.9 needs its own publication receipt and homelab writer proof.
 

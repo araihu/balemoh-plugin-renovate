@@ -24,6 +24,14 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 		t.Fatal("writer changed the approved scope")
 	}
 	force := write["force"].(map[string]any)
+	if force["statusCheckWhen"].(map[string]any)["minimumReleaseAge"] != "never" {
+		t.Fatal("release-age status publication requires ungranted status write access")
+	}
+	for _, key := range []string{"minimumReleaseAge", "minimumReleaseAgeBehaviour", "internalChecksFilter", "ignoreTests"} {
+		if _, overridden := force[key]; overridden {
+			t.Fatal("repository eligibility or check policy overridden", key)
+		}
+	}
 	for _, key := range []string{"automerge", "platformAutomerge", "dependencyDashboard", "dependencyDashboardApproval", "pruneStaleBranches"} {
 		if force[key] != false {
 			t.Fatal("unsafe override", key)
