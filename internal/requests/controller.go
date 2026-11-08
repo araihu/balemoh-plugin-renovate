@@ -49,7 +49,7 @@ func New(c Config) (*Controller, error) {
 	}
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	controller := &Controller{wake: make(chan struct{}, 1), config: c, store: s, reader: reader, action: action, github: github{endpoint: "https://api.github.com", token: readToken, tokenFile: c.GitHubReadTokenFile, author: c.PRAuthor, client: &http.Client{Transport: t, Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}}
+	controller := &Controller{wake: make(chan struct{}, 1), config: c, store: s, reader: reader, action: action, github: github{fingerprintFile: c.GeneratedFingerprintFile, endpoint: "https://api.github.com", token: readToken, tokenFile: c.GitHubReadTokenFile, author: c.PRAuthor, client: &http.Client{Transport: t, Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}}}
 	for _, r := range s.records {
 		if r.Repository.Name != c.Repository || r.Repository.BaseBranch != c.BaseBranch {
 			s.close()
@@ -168,7 +168,7 @@ func (c *Controller) Handler() http.Handler {
 		}
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(Catalog{Enabled: c.config.WriterEnabled, Requests: c.store.list()})
+		_ = json.NewEncoder(w).Encode(Catalog{GeneratedFingerprintFile: c.config.GeneratedFingerprintFile, Enabled: c.config.WriterEnabled, Requests: c.store.list()})
 	})
 	mux.HandleFunc("POST /v1/requests", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
@@ -361,7 +361,7 @@ func DecodeCatalog(data []byte) (Catalog, error) {
 	var out Catalog
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
-	if len(data) > 1<<20 || d.Decode(&out) != nil || d.Decode(new(any)) != io.EOF || out.Requests == nil || len(out.Requests) > 512 {
+	if len(data) > 1<<20 || d.Decode(&out) != nil || d.Decode(new(any)) != io.EOF || out.Requests == nil || len(out.Requests) > 512 || out.GeneratedFingerprintFile != "" && !validFingerprintPath(out.GeneratedFingerprintFile) {
 		return out, errors.New("invalid controller response")
 	}
 	return out, nil

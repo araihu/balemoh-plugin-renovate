@@ -181,6 +181,17 @@ and approved base, then invokes pinned Renovate with the same scope. Dashboard,
 automerge, platform automerge and pruning are disabled. Existing repository
 policy remains required. No hosted bot dashboard edit is involved.
 
+For repositories with a generated Markdown source fingerprint, set
+`UPGRADES_CONTROLLER_GENERATED_FINGERPRINT_FILE` to its repository-relative path.
+The pinned engine then runs a fixed helper shipped in the controller to hash
+Git-visible paths, modes and contents and refresh only the `Source digest` line.
+It does not execute repository scripts. The request review discloses this file,
+and tracking rejects changes to any other artifact content or unapproved image.
+Leave the setting empty for the original image-only behavior. This helper matches
+the homelab inventory fingerprint contract; it does not regenerate topology or
+counts. CI must still validate the full artifact. Back up retained requests and
+upgrade the UI, controller and backup tool together before enabling this setting.
+
 Requests support unpinned tag major/minor/patch upgrades, tagged SHA-256 digest
 updates, pinned tag upgrades and digest-only updates in Kubernetes, Docker Compose
 and Dockerfiles. Native post-lookup rules reject an unapproved target digest

@@ -20,6 +20,12 @@ func main() {
 	}
 }
 func run() error {
+	if len(os.Args) > 1 {
+		if len(os.Args) != 3 || os.Args[1] != "refresh-fingerprint" {
+			return fmt.Errorf("invalid controller command")
+		}
+		return requests.RefreshFingerprint(os.Args[2])
+	}
 	c, err := requests.Load()
 	if err != nil {
 		return err

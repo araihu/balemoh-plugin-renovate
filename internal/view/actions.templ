@@ -84,5 +84,10 @@ templ RequestReview(m Model) {
  <div><dt>Matching declarations</dt><dd>{ count(max(m.Detail.Dependency.SourceOccurrences,1)) }</dd></div>
  </dl>
  @CandidateSummary(m.Detail.Dependency,m.Selected)
- <p>The request covers this image and Git file group. Other files and images are outside this approval.</p>
+ <p>The request covers this image and Git file group.</p>
+ if m.Meta.Controller.GeneratedFingerprintFile!="" {
+ <p>The generated fingerprint in <code class="image-upgrades-exact">{ m.Meta.Controller.GeneratedFingerprintFile }</code> will also be refreshed. Other content remains outside this approval.</p>
+ } else {
+ <p>Other files and images are outside this approval.</p>
+ }
 }

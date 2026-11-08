@@ -58,7 +58,7 @@ func TestPinnedAdmissionAndQualifiedNativeBinding(t *testing.T) {
 			if !Supported(r.Dependency, r.Candidate) || r.Validate() != nil {
 				t.Fatal("qualified pinned shape rejected")
 			}
-			read, write := engineProfile(r, "/work/test", false), engineProfile(r, "/work/test", true)
+			read, write := engineProfile(r, "/work/test", false, ""), engineProfile(r, "/work/test", true, "")
 			read["dryRun"] = nil
 			a, _ := json.Marshal(read)
 			b, _ := json.Marshal(write)

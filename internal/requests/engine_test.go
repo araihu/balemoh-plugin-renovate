@@ -13,7 +13,7 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	read, write := engineProfile(r, "/work/test", false), engineProfile(r, "/work/test", true)
+	read, write := engineProfile(r, "/work/test", false, ""), engineProfile(r, "/work/test", true, "")
 	if read["dryRun"] != "full" || write["dryRun"] != nil {
 		t.Fatal("incorrect writer mode")
 	}

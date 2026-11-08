@@ -123,10 +123,11 @@ func backupRecord(data []byte, repository string) (string, error) {
 }
 func backupCatalog(raw []byte, repository string) (BackupManifest, map[string][]byte, error) {
 	var wire struct {
-		Enabled  *bool           `json:"enabled"`
-		Requests json.RawMessage `json:"requests"`
+		GeneratedFingerprintFile string          `json:"generatedFingerprintFile,omitempty"`
+		Enabled                  *bool           `json:"enabled"`
+		Requests                 json.RawMessage `json:"requests"`
 	}
-	if len(raw) > backupLimit || backupJSON(raw, &wire) != nil || wire.Enabled == nil || len(bytes.TrimSpace(wire.Requests)) == 0 || bytes.TrimSpace(wire.Requests)[0] != '[' {
+	if len(raw) > backupLimit || backupJSON(raw, &wire) != nil || wire.Enabled == nil || wire.GeneratedFingerprintFile != "" && !validFingerprintPath(wire.GeneratedFingerprintFile) || len(bytes.TrimSpace(wire.Requests)) == 0 || bytes.TrimSpace(wire.Requests)[0] != '[' {
 		return BackupManifest{}, nil, invalidBackup
 	}
 	var rows []json.RawMessage

@@ -43,8 +43,9 @@ type Record struct {
 }
 
 type Catalog struct {
-	Enabled  bool     `json:"enabled"`
-	Requests []Record `json:"requests"`
+	GeneratedFingerprintFile string   `json:"generatedFingerprintFile,omitempty"`
+	Enabled                  bool     `json:"enabled"`
+	Requests                 []Record `json:"requests"`
 }
 
 func Digest(s *snapshot.Snapshot) string {

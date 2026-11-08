@@ -21,7 +21,7 @@ import (
 
 var errEngine = errors.New("Renovate execution not confirmed")
 
-func engineProfile(r Record, work string, write bool) map[string]any {
+func engineProfile(r Record, work string, write bool, fingerprintFile string) map[string]any {
 	var dryRun any = "full"
 	if write {
 		dryRun = nil
@@ -44,7 +44,7 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 		expression := "$exists(updateType) and ($not($exists(newDigest)) or newDigest != '" + *r.Candidate.NewDigest + "' or updateType != '" + r.Candidate.UpdateType + "' or " + tagMismatch + ")"
 		rules = append(rules, map[string]any{"matchPackageNames": allow["matchPackageNames"], "matchFileNames": allow["matchFileNames"], "matchJsonata": []string{expression}, "enabled": false})
 	}
-	return map[string]any{
+	profile := map[string]any{
 		"platform": "github", "repositories": []string{r.Repository.Name}, "autodiscover": false, "onboarding": false, "requireConfig": "required",
 		"dryRun": dryRun, "persistRepoData": true, "baseDir": work, "cacheDir": filepath.Join(work, "cache"), "reportType": "file", "reportPath": filepath.Join(work, "report.json"), "reportFormatting": false,
 		"allowScripts": false, "allowPlugins": false, "allowedCommands": []string{}, "internalHostAccess": "block",
@@ -58,6 +58,13 @@ func engineProfile(r Record, work string, write bool) map[string]any {
 			"packageRules": rules,
 		},
 	}
+	if fingerprintFile != "" {
+		command := "/usr/local/bin/image-upgrades-controller refresh-fingerprint " + fingerprintFile
+		profile["allowShellExecutorForPostUpgradeCommands"] = false
+		profile["allowedCommands"] = []string{"^" + regexp.QuoteMeta(command) + "$"}
+		profile["force"].(map[string]any)["postUpgradeTasks"] = map[string]any{"commands": []string{command}, "executionMode": "branch", "fileFilters": []string{fingerprintFile}, "workingDirTemplate": "", "dataFileTemplate": "", "installTools": map[string]string{}}
+	}
+	return profile
 }
 
 func verifyFullDryRunPlan(data []byte, r Record) error {
@@ -163,7 +170,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 		return errEngine
 	}
 	invoke := func(write bool) error {
-		p := engineProfile(r, work, write)
+		p := engineProfile(r, work, write, c.config.GeneratedFingerprintFile)
 		b, _ := json.Marshal(p)
 		path := filepath.Join(work, "config.json")
 		if os.WriteFile(path, b, 0600) != nil {
@@ -217,7 +224,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	}
 	id[6], id[8] = id[6]&15|64, id[8]&63|128
 	now := time.Now().UTC()
-	profile, _ := json.Marshal(engineProfile(r, work, false))
+	profile, _ := json.Marshal(engineProfile(r, work, false, c.config.GeneratedFingerprintFile))
 	m := snapshot.Metadata{RunID: fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:]), StartedAt: started, CompletedAt: now, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: snapshot.ID(string(profile))}, Repository: r.Repository, DryRun: "full", CheckoutCommit: base, BeforeCommit: base, AfterCommit: base}
 	s, e := snapshot.Normalize(data, m)
 	if e != nil {

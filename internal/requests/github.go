@@ -17,6 +17,7 @@ import (
 )
 
 type github struct {
+	fingerprintFile         string
 	client                  *http.Client
 	endpoint, token, author string
 	tokenFile               string
@@ -99,6 +100,7 @@ type nativePR struct {
 		} `json:"repo"`
 	} `json:"head"`
 	Base struct {
+		SHA  string `json:"sha"`
 		Ref  string `json:"ref"`
 		Repo struct {
 			FullName string `json:"full_name"`
@@ -136,7 +138,7 @@ func (g github) pull(ctx context.Context, r Record) (*PullRequest, error) {
 	if p.State != "open" && p.State != "closed" {
 		return nil, errors.New("unknown PR state")
 	}
-	if err := g.verifyDiff(ctx, r, p.Number, p.Head.SHA); err != nil {
+	if err := g.verifyDiff(ctx, r, p.Number, p.Head.SHA, p.Base.SHA); err != nil {
 		return nil, err
 	}
 	checks, checksErr := g.checks(ctx, r.Repository.Name, p.Head.SHA)
@@ -148,28 +150,43 @@ func (g github) pull(ctx context.Context, r Record) (*PullRequest, error) {
 	if e := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls/"+strconv.Itoa(p.Number), &latest); e != nil {
 		return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: "unknown"}, e
 	}
-	if latest.Head.SHA != p.Head.SHA {
+	if latest.Head.SHA != p.Head.SHA || g.fingerprintFile != "" && latest.Base.SHA != p.Base.SHA {
 		return nil, errors.New("PR head changed during verification")
 	}
 	return &PullRequest{Number: p.Number, URL: p.URL, HeadSHA: p.Head.SHA, State: state, Checks: checks}, checksErr
 }
 
-func (g github) verifyDiff(ctx context.Context, r Record, number int, head string) error {
+func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base string) error {
 	var files []struct {
-		Name string `json:"filename"`
+		Name   string `json:"filename"`
+		Status string `json:"status"`
 	}
 	if err := g.get(ctx, "/repos/"+r.Repository.Name+"/pulls/"+strconv.Itoa(number)+"/files?per_page=100", &files); err != nil {
 		return err
 	}
-	if len(files) != 1 || files[0].Name != r.Dependency.PackageFile {
+	if len(files) < 1 || len(files) > 2 {
 		return errors.New("PR contains unexpected files")
 	}
-	read := func(ref string) ([]byte, error) {
+	imageFound, fingerprintFound := false, false
+	for _, file := range files {
+		switch {
+		case file.Name == r.Dependency.PackageFile && !imageFound:
+			imageFound = true
+		case g.fingerprintFile != "" && validFingerprintPath(g.fingerprintFile) && file.Name == g.fingerprintFile && !fingerprintFound && file.Status == "modified":
+			fingerprintFound = true
+		default:
+			return errors.New("PR contains unexpected files")
+		}
+	}
+	if !imageFound {
+		return errors.New("PR does not contain approved image file")
+	}
+	read := func(file, ref string) ([]byte, error) {
 		var body struct {
 			Encoding string `json:"encoding"`
 			Content  string `json:"content"`
 		}
-		if err := g.get(ctx, "/repos/"+r.Repository.Name+"/contents/"+url.PathEscape(r.Dependency.PackageFile)+"?ref="+url.QueryEscape(ref), &body); err != nil {
+		if err := g.get(ctx, "/repos/"+r.Repository.Name+"/contents/"+url.PathEscape(file)+"?ref="+url.QueryEscape(ref), &body); err != nil {
 			return nil, err
 		}
 		if body.Encoding != "base64" {
@@ -181,11 +198,48 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head strin
 		}
 		return data, nil
 	}
-	before, err := read(r.Repository.Commit)
+	if fingerprintFound {
+		if !sha.MatchString(base) {
+			return errors.New("PR base unavailable")
+		}
+		before, err := read(g.fingerprintFile, base)
+		if err != nil {
+			return err
+		}
+		after, err := read(g.fingerprintFile, head)
+		if err != nil {
+			return err
+		}
+		if !fingerprintOnly(before, after) {
+			return errors.New("PR fingerprint content differs from approval")
+		}
+		var tree struct {
+			Truncated bool `json:"truncated"`
+			Entries   []struct {
+				Path string `json:"path"`
+				Mode string `json:"mode"`
+				Type string `json:"type"`
+			} `json:"tree"`
+		}
+		if err := g.get(ctx, "/repos/"+r.Repository.Name+"/git/trees/"+head+"?recursive=1", &tree); err != nil {
+			return err
+		}
+		regular := false
+		for _, entry := range tree.Entries {
+			if entry.Path == g.fingerprintFile {
+				regular = entry.Mode == "100644" && entry.Type == "blob"
+				break
+			}
+		}
+		if tree.Truncated || !regular {
+			return errors.New("PR fingerprint is not a bounded regular file")
+		}
+	}
+	before, err := read(r.Dependency.PackageFile, r.Repository.Commit)
 	if err != nil {
 		return err
 	}
-	after, err := read(head)
+	after, err := read(r.Dependency.PackageFile, head)
 	if err != nil {
 		return err
 	}

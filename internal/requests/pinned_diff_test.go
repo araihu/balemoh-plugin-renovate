@@ -62,7 +62,7 @@ func TestPinnedDiffUsesCompleteReferences(t *testing.T) {
 					}))
 					defer server.Close()
 					g := github{endpoint: server.URL, client: server.Client(), token: "test"}
-					if err := g.verifyDiff(t.Context(), r, 42, strings.Repeat("c", 40)); (err == nil) != test.ok {
+					if err := g.verifyDiff(t.Context(), r, 42, strings.Repeat("c", 40), r.Repository.Commit); (err == nil) != test.ok {
 						t.Fatalf("diff acceptance=%v, want %v", err, test.ok)
 					}
 				})

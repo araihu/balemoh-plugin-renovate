@@ -168,6 +168,10 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "generatedFingerprintFile": {
+          "type": "string",
+          "maxLength": 512
+        },
         "enabled": {
           "type": "boolean"
         },
