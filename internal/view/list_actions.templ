@@ -2,7 +2,7 @@ package view
 
 import (
  "github.com/araihu/goshtoso/components/badge"
- "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
 )
 
 templ ListPRStatus(m Model) {
@@ -32,23 +32,23 @@ templ ListPRStatus(m Model) {
  </div>
 }
 
-templ ListActions(m Model) {
+templ ListActions(m Model,scope string) {
  <div class="image-upgrades-row-actions">
  if r:=m.listRequest();r!=nil {
  if r.PR!=nil {
- @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer","aria-label":"View PR #"+count(r.PR.Number)+" for "+m.Detail.Dependency.PackageName+" in "+m.Detail.Dependency.PackageFile})){ { "View PR #"+count(r.PR.Number) } }
+ @IconAction(m,scope+"-pr",r.PR.URL,"View PR #"+count(r.PR.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
  } else {
- @link.Link(m.StatusURL,link.WithRootClass("image-upgrades-action")){ View request }
+ @IconAction(m,scope+"-request",m.StatusURL,"View request",heroicons.Icon16SolidClipboardDocumentList,false)
  }
  }
  for _,pr:=range m.reportedPRs() {
- @link.Link(pr.URL,link.WithTarget("_blank"),link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer","aria-label":"View reported PR #"+count(pr.Number)+" for "+m.Detail.Dependency.PackageName+" in "+m.Detail.Dependency.PackageFile})){ { "View reported PR #"+count(pr.Number) } }
+ @IconAction(m,scope+"-reported-"+count(pr.Number),pr.URL,"View reported PR #"+count(pr.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
  }
  for _,candidate:=range m.Detail.Dependency.Candidates {
  if m.CanReviewAgain(candidate) && m.RequestLinks[candidate.ID]!="" {
- @link.Link(m.RequestLinks[candidate.ID],link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":reviewPRLabel(m.Detail.Dependency,candidate)+" for "+m.Detail.Dependency.PackageName+" in "+m.Detail.Dependency.PackageFile})){ { reviewPRLabel(m.Detail.Dependency,candidate) } }
+ @IconAction(m,scope+"-review-"+candidate.ID,m.RequestLinks[candidate.ID],reviewPRLabel(m.Detail.Dependency,candidate),heroicons.Icon16SolidArrowUp,false)
  }
  }
- @DetailLink(m.StatusURL,m.Detail.Dependency)
+ @IconAction(m,scope+"-details",m.StatusURL,"Details",heroicons.Icon16SolidEye,false)
  </div>
 }

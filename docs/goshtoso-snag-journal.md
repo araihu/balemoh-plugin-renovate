@@ -56,3 +56,11 @@ Card, Badge and Link. The default vertical Card caps width at max-w-sm and expos
 no fluid-width option; a scoped RootClass max-width override lets placement own
 width. No internal markup copied or dependency changed. Closing checkpoint:
 aggregate domain content remains semantic; no replacement control or runtime.
+
+## 2026-11-07: Icon actions with tooltips
+
+Need: compact navigation actions in upgrade rows and details, preserving candidate identity and accessibility. Inspected pinned v0.4.4 Link options/target handling, Icon/Heroicons symbols, Tooltip custom triggers/portal and the existing SourceType composition. Composed these public APIs. No new component, dependency, custom interaction script or library gap.
+
+A shared icon-link composition keeps native GET navigation, an image/file-specific accessible name and a tooltip description. Table/card/candidate scopes keep IDs unique. Review tooltips distinguish multiple candidate versions. External PR links retain noopener/noreferrer and announce the new tab. Actions have 44px minimum targets. The final PR submission retains its explicit text and existing confirmation flow.
+
+Closing checkpoint: `make test` passed, including race tests, vet, filter/A-B-A tests and regressions for accessible names, icon-only contents, safe PR navigation and responsive IDs. Actual consumer templates in an isolated component preview passed list/detail checks at 390px and 1440px in Goshtoso/Minimal, light/dark. All 16 combinations had named icon links, matching tooltips, minimum targets and no page overflow. Keyboard focus revealed the correct tooltip; Escape dismissed it without losing focus. Details navigation worked; no browser errors were recorded. No live GitHub action, host integration/screen-reader audit, publication or deployment was performed.

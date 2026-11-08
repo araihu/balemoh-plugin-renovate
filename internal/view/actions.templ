@@ -5,22 +5,22 @@ import (
  "github.com/araihu/balemoh-plugin-renovate/internal/requests"
  "github.com/araihu/goshtoso/components/alert"
  "github.com/araihu/goshtoso/components/form"
- "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
  "github.com/araihu/goshtoso/components/pageheader"
  "github.com/araihu/goshtoso/components/panel"
 )
 
 templ UpgradeAction(m Model,u snapshot.Candidate) {
  if existing:=m.RequestFor(u.ID);existing!=nil {
- @RequestStatus(m,*existing)
+ @RequestStatus(m,*existing,"detail-"+u.ID)
  if m.CanReviewAgain(u) {
- @link.Link(m.RequestLinks[u.ID]){ Review a new request }
+ @IconAction(m,"detail-new-"+u.ID,m.RequestLinks[u.ID],"Review a new request",heroicons.Icon16SolidArrowUp,false)
  }
  } else if active:=m.OtherActiveRequest(u.ID);u.PR==nil && active!=nil {
  <p>Another candidate for this image and file already has an active request.</p>
- @RequestStatus(m,*active)
+ @RequestStatus(m,*active,"detail-"+u.ID)
  } else if u.PR==nil && m.CanRequest(u) {
- @link.Link(m.RequestLinks[u.ID]){ Review PR request }
+ @IconAction(m,"detail-review-"+u.ID,m.RequestLinks[u.ID],reviewPRLabel(m.Detail.Dependency,u),heroicons.Icon16SolidArrowUp,false)
  } else if u.PR==nil && m.Meta.ControllerAvailable && !m.Meta.Controller.Enabled {
  <p>PR requests are disabled pending writer migration.</p>
  } else if u.PR==nil && m.Meta.ControllerAvailable && m.Meta.Controller.Enabled {
@@ -28,7 +28,7 @@ templ UpgradeAction(m Model,u snapshot.Candidate) {
  }
 }
 
-templ RequestStatus(m Model,r requests.Record) {
+templ RequestStatus(m Model,r requests.Record,scope string) {
  <section aria-label="Upgrade request status" class="image-upgrades-cell">
  <h3 class="text-lg font-semibold">{ requestState(r.State) }</h3>
  if !m.Meta.ControllerAvailable || r.TrackingError {
@@ -39,7 +39,7 @@ templ RequestStatus(m Model,r requests.Record) {
  <dl class="image-upgrades-reference"><div><dt>Requested candidate</dt><dd>@ReferenceValue(r.Candidate.NewValue,r.Candidate.NewDigest,true)</dd></div></dl>
  </div>
  if r.PR!=nil {
- @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ { "View PR #"+count(r.PR.Number) } }
+ @IconAction(m,scope+"-pr",r.PR.URL,"View PR #"+count(r.PR.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
  <p>{ m.requestChecks(r,false) }</p>
  }
  if r.TrackedAt!=nil {
@@ -48,7 +48,7 @@ templ RequestStatus(m Model,r requests.Record) {
  if guidance:=requestGuidance(r.State);guidance!="" {
  <p>{ guidance }</p>
  }
- @link.Link(m.StatusURL){ Refresh request status }
+ @IconAction(m,scope+"-refresh",m.StatusURL,"Refresh request status",heroicons.Icon16SolidArrowPath,false)
  </section>
 }
 
@@ -62,7 +62,7 @@ templ RequestUpgrade(m Model) {
  }
  @panel.Panel(panel.Config{Header:SectionTitle(m.Detail.Dependency.PackageName),Body:RequestReview(m)})
  if existing:=m.RequestFor(m.Selected.ID);existing!=nil {
- @RequestStatus(m,*existing)
+ @RequestStatus(m,*existing,"request-review")
  }
  if m.CanReviewAgain(m.Selected) {
  @form.Form(form.Config{ID:m.Request.DOMID("request-form"),Action:m.ActionURL,Method:"post",RootAttrs:templ.Attributes{"x-data":"{ submitting: false }","@submit":"submitting = true","@pageshow.window":"submitting = false"},Footer:&form.FooterConfig{SubmitLabel:"Request pull request",CancelLabel:"Cancel",CancelHref:m.BackURL,SubmitDisabled:"submitting"}}) {

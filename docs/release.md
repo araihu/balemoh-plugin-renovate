@@ -1,10 +1,12 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.10`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Plugin version: `0.0.1-alpha.11`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Release-age eligibility, exact selection, separate credentials and manual merges remain unchanged. See [release notes](releases/v0.0.1-alpha.10.md).
+Alpha.11 uses icon actions with tooltips in upgrade lists and details. Native links keep image/candidate-specific accessible names, keyboard help, 44px targets and distinct responsive IDs. The final PR submission keeps its explicit text. See [release notes](releases/v0.0.1-alpha.11.md).
 
-The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence. Alpha.9 needs its own publication receipt and homelab writer proof.
+Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Its approved homelab cutover and recovered PR #861 are recorded in [homelab deployment PR #862](https://github.com/guilycst/home-lab/pull/862). Alpha.11 leaves this engine profile, release-age eligibility, credentials and manual merges unchanged.
+
+The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence.
 
 Alpha.7 introduced the overview card, list PR states and candidate-review links.
 Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence

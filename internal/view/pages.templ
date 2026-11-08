@@ -68,7 +68,7 @@ templ Results(m Model) {
  </div>
  <div class="image-upgrades-mobile" aria-label="Image candidate comparisons">
  for _,d:=range m.List.Items {
- @panel.Panel(panel.Config{Header:ImageCell(m,d,"cards"),Body:MobileBody(m,d),Footer:ListActions(m.forItem(d)),RootClass:"image-upgrades-item",RootAttrs:templ.Attributes{"role":"article","aria-label":d.PackageName}})
+ @panel.Panel(panel.Config{Header:ImageCell(m,d,"cards"),Body:MobileBody(m,d),Footer:ListActions(m.forItem(d),"cards"),RootClass:"image-upgrades-item",RootAttrs:templ.Attributes{"role":"article","aria-label":d.PackageName}})
  }
  </div>
  }
@@ -182,9 +182,6 @@ templ Assessment(d advisory.Item) {
  }
  </div>
 }
-templ DetailLink(destination string,d advisory.Item) {
- @link.Link(destination,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":"Details for "+d.PackageName+" in "+d.PackageFile})){ Details }
-}
 templ MobileBody(m Model,d advisory.Item) {
  <div class="image-upgrades-cell">
  <p>{ assessmentLabel(d) }</p>
@@ -240,7 +237,7 @@ templ DetailBody(m Model) {
  <p>Reported branch result: { branchResultLabel(u.BranchResult) }</p>
  }
  if u.PR!=nil {
- @link.Link(u.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ View reported pull request }
+ @IconAction(m,"detail-reported-"+u.ID,u.PR.URL,"View reported PR #"+count(u.PR.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
  }
  @UpgradeAction(m,u)
  }

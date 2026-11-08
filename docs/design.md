@@ -223,3 +223,15 @@ Shared PR URLs use the freshest retained tracking/update/creation evidence.
 Equal-time conflicting states or tracking errors count as unconfirmed. Candidate
 and security totals share the 200,000-candidate output bound; image/group counts
 retain their separate bound.
+
+## Icon actions, 2026-11-07
+
+Surface brief: existing Balemoh operations list and detail workspace, compact action density, native GET navigation. Status and image comparison keep priority; row and detail actions use familiar decorative Heroicons with Goshtoso Link and portal Tooltip. No new motion, theme or dependency. Final PR approval remains a labelled submit action.
+
+| Need | Inspected public API | Decision |
+| --- | --- | --- |
+| Compact action navigation | `link.Link`, `WithTarget`, `WithAttrs`, `WithRootClass`; existing row actions slot | Compose native links with explicit accessible names and 44px minimum targets |
+| Action glyphs | `icon.Icon`, pinned Heroicons eye, arrow-up, external-link, clipboard and refresh symbols | Reuse decorative bundled icons |
+| Pointer and keyboard help | `tooltip.Tooltip`, `WithTrigger`, `WithPortal`; existing source-icon example | Compose unique table/card/candidate-scoped tooltip IDs and explicit descriptions |
+
+List/card actions and detail PR/review/refresh links share the composition. Eligibility, request routes, filter preservation, read grants and manual merge behavior remain unchanged. See the consumer-friction journal for verification and limits.

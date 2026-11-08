@@ -46,7 +46,7 @@ func TestListActionsScopeEachRowAndKeepExistingReviewRoute(t *testing.T) {
 		d          advisory.Item
 		want, deny string
 	}{{a, "/a/request/candidate-a?search=nginx", "pull/15"}, {b, "https://github.com/test/repo/pull/15", "/b/request/"}} {
-		body := rendered(t, ListActions(m.forItem(tc.d)))
+		body := rendered(t, ListActions(m.forItem(tc.d), "table"))
 		if !strings.Contains(body, tc.want) || strings.Contains(body, tc.deny) || strings.Contains(body, "<form") {
 			t.Fatal("wrong row/action scope", body)
 		}
@@ -90,7 +90,7 @@ func TestListReviewLinksRespectExistingAdmissionAndTerminalStates(t *testing.T) 
 		t.Run(tc.name, func(t *testing.T) {
 			m := listActionModel()
 			tc.edit(&m)
-			body := rendered(t, ListActions(m.forItem(m.Detail.Dependency)))
+			body := rendered(t, ListActions(m.forItem(m.Detail.Dependency), "table"))
 			if strings.Contains(body, "/a/request/") != tc.allow {
 				t.Fatal(body)
 			}
@@ -109,7 +109,7 @@ func TestListTrackingFailureNeverClaimsPassingChecks(t *testing.T) {
 			if strings.Contains(body, "Checks passed") == unavailable || strings.Contains(body, "Tracking unavailable") != unavailable {
 				t.Fatal(body)
 			}
-			if !strings.Contains(rendered(t, ListActions(m)), "pull/15") {
+			if !strings.Contains(rendered(t, ListActions(m, "table")), "pull/15") {
 				t.Fatal("retained PR must remain reachable")
 			}
 		}
@@ -125,7 +125,7 @@ func TestListShowsReportedPRWithoutInventingLiveStatusAndDeduplicates(t *testing
 	if !strings.Contains(body, "Reported PR #7") || !strings.Contains(body, "Status not verified") || strings.Contains(body, "Checks passed") {
 		t.Fatal(body)
 	}
-	actions := rendered(t, ListActions(m))
+	actions := rendered(t, ListActions(m, "table"))
 	if strings.Count(actions, `href="`+pr.URL+`"`) != 1 || strings.Contains(actions, "/a/request/") {
 		t.Fatal(actions)
 	}
@@ -139,7 +139,7 @@ func TestListKeepsActiveRequestVisibleWhenCandidateIsFilteredOut(t *testing.T) {
 	if r := m.listRequest(); r == nil || r.ID != "active" {
 		t.Fatal("active group request hidden by a newer terminal record")
 	}
-	body := rendered(t, ListActions(m))
+	body := rendered(t, ListActions(m, "table"))
 	if strings.Contains(body, "/a/request/") || !strings.Contains(body, "View request") {
 		t.Fatal(body)
 	}
@@ -149,7 +149,7 @@ func TestMultipleCandidateReviewActionsNameAndBindEachTarget(t *testing.T) {
 	m := listActionModel()
 	m.Detail.Dependency.Candidates = append(m.Detail.Dependency.Candidates, snapshot.Candidate{ID: "candidate-major", NewValue: new("2.0.0"), UpdateType: "major"})
 	m.RequestLinks["candidate-major"] = "/a/request/candidate-major"
-	body := rendered(t, ListActions(m.forItem(m.Detail.Dependency)))
+	body := rendered(t, ListActions(m.forItem(m.Detail.Dependency), "table"))
 	for _, want := range []string{"Review PR for 1.1.0 · Minor", "Review PR for 2.0.0 · Major", "/a/request/candidate-a", "/a/request/candidate-major"} {
 		if !strings.Contains(body, want) {
 			t.Fatal("ambiguous or missing candidate action", want)
@@ -171,8 +171,8 @@ func TestPRStatePresentationAcrossListAndDetails(t *testing.T) {
 			m := listActionModel()
 			r := requests.Record{Dependency: m.Detail.Dependency.Dependency, Candidate: m.Detail.Dependency.Candidates[0], State: tc.state, PR: &requests.PullRequest{Number: 15, URL: "https://github.com/test/repo/pull/15", Checks: "passing"}}
 			m.Meta.Controller.Requests = []requests.Record{r}
-			detail := rendered(t, RequestStatus(m, r))
-			actions := rendered(t, ListActions(m))
+			detail := rendered(t, RequestStatus(m, r, "detail"))
+			actions := rendered(t, ListActions(m, "table"))
 			status := rendered(t, ListPRStatus(m))
 			for _, body := range []string{detail, actions} {
 				if !strings.Contains(body, "View PR #15") || strings.Contains(body, ">Open PR") {
@@ -206,7 +206,7 @@ func TestDetailUnavailableTrackingSuppressesRetainedPassingChecks(t *testing.T) 
 			m := listActionModel()
 			m.Meta.ControllerAvailable = available
 			r := requests.Record{State: "open", TrackingError: trackingError, PR: &requests.PullRequest{Number: 15, URL: "https://github.com/test/repo/pull/15", Checks: "passing"}}
-			body := rendered(t, RequestStatus(m, r))
+			body := rendered(t, RequestStatus(m, r, "detail"))
 			unavailable := !available || trackingError
 			if strings.Contains(body, "Reported checks passed") == unavailable || strings.Contains(body, "Request tracking unavailable") != unavailable {
 				t.Fatal(body)

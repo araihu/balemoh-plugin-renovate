@@ -1,0 +1,24 @@
+package view
+
+import (
+ "github.com/araihu/goshtoso/components/icon"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
+ "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/tooltip"
+)
+
+templ IconAction(m Model,key,destination,label string,symbol icon.Symbol,external bool) {
+ {{ id:=m.Request.DOMID("action-"+key+"-"+m.Detail.Dependency.ID) }}
+ {{ name:=label+" for "+m.Detail.Dependency.PackageName+" in "+m.Detail.Dependency.PackageFile }}
+ if external {
+ {{ name+=" · opens in a new tab" }}
+ }
+ @tooltip.Tooltip(id,label,tooltip.WithPortal(true),tooltip.WithTrigger(ActionLink(destination,name,id,symbol,external)))
+}
+
+templ ActionLink(destination,name,descriptionID string,symbol icon.Symbol,external bool) {
+ {{ target:="";if external { target="_blank" } }}
+ @link.Link(destination,link.WithTarget(target),link.WithRootClass("image-upgrades-action image-upgrades-icon-action"),link.WithAttrs(templ.Attributes{"aria-label":name,"aria-describedby":descriptionID})) {
+ @icon.Icon(icon.Config{SpriteURL:heroicons.SpriteURL,Symbol:symbol,Size:icon.SizeMD,Decorative:true})
+ }
+}

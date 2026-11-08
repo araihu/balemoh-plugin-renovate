@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"github.com/araihu/goshtoso/components/badge"
-	"github.com/araihu/goshtoso/components/link"
+	"github.com/araihu/goshtoso/components/icon/heroicons"
 )
 
 func ListPRStatus(m Model) templ.Component {
@@ -151,7 +151,7 @@ func ListPRStatus(m Model) templ.Component {
 	})
 }
 
-func ListActions(m Model) templ.Component {
+func ListActions(m Model, scope string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -178,123 +178,36 @@ func ListActions(m Model) templ.Component {
 		}
 		if r := m.listRequest(); r != nil {
 			if r.PR != nil {
-				templ_7745c5c3_Var7 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-					if !templ_7745c5c3_IsBuffer {
-						defer func() {
-							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err == nil {
-								templ_7745c5c3_Err = templ_7745c5c3_BufErr
-							}
-						}()
-					}
-					ctx = templ.InitializeContext(ctx)
-					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("View PR #" + count(r.PR.Number))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/list_actions.templ`, Line: 39, Col: 310}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					return nil
-				})
-				templ_7745c5c3_Err = link.Link(r.PR.URL, link.WithTarget("_blank"), link.WithRootClass("image-upgrades-action"), link.WithAttrs(templ.Attributes{"rel": "noopener noreferrer", "aria-label": "View PR #" + count(r.PR.Number) + " for " + m.Detail.Dependency.PackageName + " in " + m.Detail.Dependency.PackageFile})).Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = IconAction(m, scope+"-pr", r.PR.URL, "View PR #"+count(r.PR.Number), heroicons.Icon16SolidArrowTopRightOnSquare, true).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Var9 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-					if !templ_7745c5c3_IsBuffer {
-						defer func() {
-							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err == nil {
-								templ_7745c5c3_Err = templ_7745c5c3_BufErr
-							}
-						}()
-					}
-					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "View request ")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					return nil
-				})
-				templ_7745c5c3_Err = link.Link(m.StatusURL, link.WithRootClass("image-upgrades-action")).Render(templ.WithChildren(ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = IconAction(m, scope+"-request", m.StatusURL, "View request", heroicons.Icon16SolidClipboardDocumentList, false).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
 		for _, pr := range m.reportedPRs() {
-			templ_7745c5c3_Var10 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs("View reported PR #" + count(pr.Number))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/list_actions.templ`, Line: 45, Col: 322}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = link.Link(pr.URL, link.WithTarget("_blank"), link.WithRootClass("image-upgrades-action"), link.WithAttrs(templ.Attributes{"rel": "noopener noreferrer", "aria-label": "View reported PR #" + count(pr.Number) + " for " + m.Detail.Dependency.PackageName + " in " + m.Detail.Dependency.PackageFile})).Render(templ.WithChildren(ctx, templ_7745c5c3_Var10), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = IconAction(m, scope+"-reported-"+count(pr.Number), pr.URL, "View reported PR #"+count(pr.Number), heroicons.Icon16SolidArrowTopRightOnSquare, true).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		for _, candidate := range m.Detail.Dependency.Candidates {
 			if m.CanReviewAgain(candidate) && m.RequestLinks[candidate.ID] != "" {
-				templ_7745c5c3_Var12 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-					if !templ_7745c5c3_IsBuffer {
-						defer func() {
-							templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-							if templ_7745c5c3_Err == nil {
-								templ_7745c5c3_Err = templ_7745c5c3_BufErr
-							}
-						}()
-					}
-					ctx = templ.InitializeContext(ctx)
-					var templ_7745c5c3_Var13 string
-					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(reviewPRLabel(m.Detail.Dependency, candidate))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/view/list_actions.templ`, Line: 49, Col: 304}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					return nil
-				})
-				templ_7745c5c3_Err = link.Link(m.RequestLinks[candidate.ID], link.WithRootClass("image-upgrades-action"), link.WithAttrs(templ.Attributes{"aria-label": reviewPRLabel(m.Detail.Dependency, candidate) + " for " + m.Detail.Dependency.PackageName + " in " + m.Detail.Dependency.PackageFile})).Render(templ.WithChildren(ctx, templ_7745c5c3_Var12), templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = IconAction(m, scope+"-review-"+candidate.ID, m.RequestLinks[candidate.ID], reviewPRLabel(m.Detail.Dependency, candidate), heroicons.Icon16SolidArrowUp, false).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = DetailLink(m.StatusURL, m.Detail.Dependency).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = IconAction(m, scope+"-details", m.StatusURL, "Details", heroicons.Icon16SolidEye, false).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

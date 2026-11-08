@@ -36,6 +36,7 @@
 }
 
 .image-upgrades-action { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.image-upgrades-icon-action { justify-content: center; min-width: 2.75rem; }
 
 .image-upgrades-coverage-section { display: grid; gap: .75rem; min-width: 0; }
 .image-upgrades-coverage-heading, .image-upgrades-coverage-state { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
@@ -50,9 +51,8 @@
 
 .image-upgrades [data-filter-status]:empty { display: none; }
 
-.image-upgrades-row-actions { display: grid; gap: .25rem; justify-items: end; text-align: right; min-width: 0; }
-.image-upgrades-row-actions a { white-space: normal; overflow-wrap: anywhere; }
-.image-upgrades-mobile .image-upgrades-row-actions { justify-items: start; text-align: left; }
+.image-upgrades-row-actions { display: flex; flex-wrap: wrap; gap: .25rem; justify-content: flex-end; min-width: 0; }
+.image-upgrades-mobile .image-upgrades-row-actions { justify-content: flex-start; }
 
 /* The public Card defaults to max-w-sm; dashboard placement owns the width. */
 .image-upgrades-widget { container-type: inline-size; width: 100%; max-width: none; min-width: 0; }

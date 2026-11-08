@@ -44,7 +44,7 @@ func tagLabel(value, digest *string) string {
 func (m Model) Table() table.Config {
 	rows := []table.Row{}
 	for _, d := range m.List.Items {
-		rows = append(rows, table.Row{ID: d.ID, Cells: map[string]table.Cell{"image": {Component: ImageCell(m, d, "table")}, "git": {Component: Reference(d)}, "proposed": {Component: Proposals(d)}, "assessment": {Component: Assessment(d)}, "pr": {Component: ListPRStatus(m.forItem(d))}}, Actions: ListActions(m.forItem(d))})
+		rows = append(rows, table.Row{ID: d.ID, Cells: map[string]table.Cell{"image": {Component: ImageCell(m, d, "table")}, "git": {Component: Reference(d)}, "proposed": {Component: Proposals(d)}, "assessment": {Component: Assessment(d)}, "pr": {Component: ListPRStatus(m.forItem(d))}}, Actions: ListActions(m.forItem(d), "table")})
 	}
 	return table.Config{ID: m.Request.DOMID("table"), Caption: "Image and Git file groups.", RootClass: "image-upgrades-table", Columns: []table.Column{{Key: "image", Label: "Image / Git file"}, {Key: "git", Label: "Git reference"}, {Key: "proposed", Label: "Renovate candidates"}, {Key: "assessment", Label: "Assessment"}, {Key: "pr", Label: "PR status"}}, Rows: rows}
 }

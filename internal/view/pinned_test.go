@@ -18,7 +18,7 @@ func TestPinnedComparisonAndRetainedStatusShowExactDigests(t *testing.T) {
 		u := snapshot.Candidate{NewValue: tag, NewDigest: &next, UpdateType: "digest"}
 		d.Candidates = []snapshot.Candidate{u}
 		r := requests.Record{Dependency: d.Dependency, Candidate: u, State: "open"}
-		for _, component := range []templ.Component{CandidateSummary(d, u), RequestStatus(Model{}, r), ExactReferences(d), Detail(Model{Detail: advisory.Detail{Dependency: d}})} {
+		for _, component := range []templ.Component{CandidateSummary(d, u), RequestStatus(Model{}, r, "detail"), ExactReferences(d), Detail(Model{Detail: advisory.Detail{Dependency: d}})} {
 			var out bytes.Buffer
 			if err := component.Render(t.Context(), &out); err != nil {
 				t.Fatal(err)
@@ -53,7 +53,7 @@ func TestRetainedPinnedStatusAnnouncesTrackingFailure(t *testing.T) {
 	m := Model{}
 	m.Meta.ControllerAvailable = true
 	var out bytes.Buffer
-	if err := RequestStatus(m, r).Render(t.Context(), &out); err != nil {
+	if err := RequestStatus(m, r, "detail").Render(t.Context(), &out); err != nil {
 		t.Fatal(err)
 	}
 	body := out.String()
