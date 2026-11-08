@@ -276,7 +276,29 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 		}
 		offset = end
 	}
-	if bytes.Count(before, old) != max(r.Dependency.SourceOccurrences, 1) || !bytes.Equal(bytes.ReplaceAll(before, old, next), after) {
+	count := max(r.Dependency.SourceOccurrences, 1)
+	expected := bytes.ReplaceAll(before, old, next)
+	if bytes.Count(before, old) != count {
+		if r.Dependency.Manager != "kubernetes" {
+			return errors.New("PR content differs from approval")
+		}
+		// Match the pinned Kubernetes manager's line-based image selector, including embedded manifests.
+		selector := regexp.MustCompile(`(?m)^[ \t]*-?[ \t]*image:[ \t]*['"]?` + regexp.QuoteMeta(string(old)))
+		matches := selector.FindAllIndex(before, -1)
+		if len(matches) != count {
+			return errors.New("PR content differs from approval")
+		}
+		var content bytes.Buffer
+		offset := 0
+		for _, match := range matches {
+			content.Write(before[offset : match[1]-len(old)])
+			content.Write(next)
+			offset = match[1]
+		}
+		content.Write(before[offset:])
+		expected = content.Bytes()
+	}
+	if !bytes.Equal(expected, after) {
 		return errors.New("PR content differs from approval")
 	}
 	return nil

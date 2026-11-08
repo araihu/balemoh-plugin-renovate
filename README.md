@@ -197,6 +197,11 @@ updates, pinned tag upgrades and digest-only updates in Kubernetes, Docker Compo
 and Dockerfiles. Native post-lookup rules reject an unapproved target digest
 before branch generation. First-time pinning, digest removal, custom/Helm managers
 and ambiguous declarations remain advisory. See [pinned-image scope and proof](docs/specs/spec-002-pinned-image-requests/spec-002-pinned-image-requests.md).
+For mixed Kubernetes/custom-manager files, tracking may replace only the native
+`image:` declarations. Identical `imageName` or other text stays unchanged.
+The complete resulting file must equal the approved replacement, with the exact
+selected occurrence count. Other ambiguous manager combinations remain advisory.
+
 A base change during the external write can create an ambiguous branch; the
 controller reports needs_attention and never automatically repeats that write.
 
