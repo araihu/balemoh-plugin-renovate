@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/araihu/balemoh-plugin-renovate/internal/snapshot"
@@ -23,6 +24,7 @@ type Controller struct {
 	github         github
 	reader, action string
 	execute        func(context.Context, Record) error
+	rebase         func(context.Context, Record, string) error
 }
 
 func New(c Config) (*Controller, error) {
@@ -57,6 +59,7 @@ func New(c Config) (*Controller, error) {
 		}
 	}
 	controller.execute = controller.runEngine
+	controller.rebase = controller.rebasePR
 	return controller, nil
 }
 func (c *Controller) Close() { c.store.close(); c.github.client.CloseIdleConnections() }
@@ -247,8 +250,13 @@ func (c *Controller) observe(ctx context.Context, r Record) Record {
 	}
 	if pr != nil {
 		r.PR = pr
+		if r.State == "needs_attention" && strings.HasPrefix(r.Reason, "rebase_") && pr.State != "merged" && pr.State != "closed" && (r.RebaseHead == "" || pr.HeadSHA != r.RebaseHead) {
+			pr.Checks = "unknown"
+			return r
+		}
 		r.State = pr.State
 		r.Reason = ""
+		r.RebaseHead = ""
 	} else if r.State == "awaiting_pr" {
 		// A successful process is not proof of PR creation. Never replay an unconfirmed write.
 		r.State = "needs_attention"
@@ -294,7 +302,18 @@ func (c *Controller) cycle(ctx context.Context) {
 		if e != nil {
 			return
 		}
-		if r.TrackingError || r.PR != nil || r.State != "queued" || !c.config.WriterEnabled {
+		if r.TrackingError || !c.config.WriterEnabled {
+			continue
+		}
+		if r.PR != nil {
+			if (r.State == "open" || r.State == "draft") && c.config.GeneratedFingerprintFile != "" {
+				if c.updatePRBase(ctx, r) != nil {
+					return
+				}
+			}
+			continue
+		}
+		if r.State != "queued" && !(r.State == "blocked" && r.Reason == "base_changed") {
 			continue
 		}
 		exists, branchErr := c.github.branchExists(ctx, r)
@@ -317,7 +336,7 @@ func (c *Controller) cycle(ctx context.Context) {
 		if e != nil {
 			continue
 		}
-		if base != r.Repository.Commit {
+		if base != r.Repository.Commit && c.github.sameApprovedSource(ctx, r, base) != nil {
 			r.State = "blocked"
 			r.Reason = "base_changed"
 		} else {

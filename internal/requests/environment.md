@@ -3,7 +3,7 @@
 ## Config
 
  - `UPGRADES_REPOSITORY` (**required**, non-empty) - Single allowed GitHub owner/repository. No client-supplied repository is accepted.
- - `UPGRADES_BASE_BRANCH` (default: `main`) - The repository base branch. Execution fails if its commit has changed.
+ - `UPGRADES_BASE_BRANCH` (default: `main`) - The repository base branch. A newer base requires an unchanged approved image file.
  - `UPGRADES_CONTROLLER_SNAPSHOT_FILE` (default: `/snapshots/snapshot.json`) - Normalized snapshot published by the existing read-only collector.
  - `UPGRADES_CONTROLLER_DATA_DIR` (default: `/requests`) - Durable private request directory; requires working advisory flock and atomic rename.
  - `UPGRADES_CONTROLLER_WORK_DIR` (default: `/work`) - Disposable per-execution workspace, separate from durable state.

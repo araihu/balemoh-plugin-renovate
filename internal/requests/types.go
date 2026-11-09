@@ -39,6 +39,7 @@ type Record struct {
 	UpdatedAt      time.Time           `json:"updatedAt"`
 	TrackedAt      *time.Time          `json:"trackedAt,omitempty"`
 	TrackingError  bool                `json:"trackingError"`
+	RebaseHead     string              `json:"rebaseHead,omitempty"`
 	PR             *PullRequest        `json:"pr,omitempty"`
 }
 
@@ -77,6 +78,9 @@ func Supported(d snapshot.Dependency, c snapshot.Candidate) bool {
 }
 
 func (r Record) Validate() error {
+	if r.RebaseHead != "" && (!sha.MatchString(r.RebaseHead) || r.State != "needs_attention" || r.Reason != "rebase_pending") {
+		return errors.New("invalid rebase recovery marker")
+	}
 	states := map[string]bool{"queued": true, "running": true, "awaiting_pr": true, "open": true, "draft": true, "closed": true, "merged": true, "blocked": true, "needs_attention": true}
 	if !identifier.MatchString(r.SnapshotDigest) || !states[r.State] || !Supported(r.Dependency, r.Candidate) || !identifier.MatchString(r.ID) || r.ID != snapshot.ID(r.Repository, r.Dependency.ID, r.Candidate.ID) || r.Branch != "balemoh-renovate/"+r.ID || !sha.MatchString(r.Repository.Commit) || r.Repository.Platform != "github" || r.CreatedAt.IsZero() || r.UpdatedAt.Before(r.CreatedAt) || r.UpdatedAt.After(time.Now().Add(5*time.Minute)) {
 		return errors.New("invalid request record")

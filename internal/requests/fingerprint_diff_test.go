@@ -25,6 +25,7 @@ func TestPRFingerprintAllowsOnlyApprovedImageAndChecksum(t *testing.T) {
 		extra, changedImage, ok                             bool
 	}{
 		{name: "exact", path: artifact, status: "modified", content: after, configured: artifact, base: base, ok: true},
+		{name: "main-inventory-advanced", path: artifact, status: "modified", content: after, configured: artifact, base: base, ok: true},
 		{name: "disabled", path: artifact, status: "modified", content: after, base: base},
 		{name: "wrong-file", path: "other.md", status: "modified", content: after, configured: artifact, base: base},
 		{name: "renamed", path: artifact, status: "renamed", content: after, configured: artifact, base: base},
@@ -51,6 +52,10 @@ func TestPRFingerprintAllowsOnlyApprovedImageAndChecksum(t *testing.T) {
 					_ = json.NewEncoder(w).Encode(files)
 					return
 				}
+				if strings.Contains(r.URL.Path, "/compare/") {
+					_ = json.NewEncoder(w).Encode(map[string]any{"behind_by": 1, "merge_base_commit": map[string]string{"sha": record.Repository.Commit}})
+					return
+				}
 				if strings.Contains(r.URL.Path, "/git/trees/") {
 					mode := tc.mode
 					if mode == "" {
@@ -64,8 +69,10 @@ func TestPRFingerprintAllowsOnlyApprovedImageAndChecksum(t *testing.T) {
 					data = before
 					if r.URL.Query().Get("ref") == head {
 						data = tc.content
-					} else if r.URL.Query().Get("ref") != base {
-						t.Error("artifact compared to frozen image base")
+					} else if tc.name == "main-inventory-advanced" && r.URL.Query().Get("ref") == base {
+						data += "Source files: 3\n"
+					} else if r.URL.Query().Get("ref") != base && r.URL.Query().Get("ref") != record.Repository.Commit {
+						t.Error("unexpected artifact base")
 					}
 				} else if r.URL.Query().Get("ref") == head {
 					data = "image: nginx:1.26.3\n"

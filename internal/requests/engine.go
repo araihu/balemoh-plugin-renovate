@@ -151,6 +151,13 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	if !c.config.WriterEnabled || !Supported(r.Dependency, r.Candidate) {
 		return errEngine
 	}
+	// The receipt's repository commit stays immutable; only this execution uses the newer base.
+	executionBase, e := c.github.base(ctx, r.Repository.Name, r.Repository.BaseBranch)
+	if e != nil || executionBase != r.Repository.Commit && c.github.sameApprovedSource(ctx, r, executionBase) != nil {
+		return errEngine
+	}
+	executionRepository := r.Repository
+	executionRepository.Commit = executionBase
 	token, e := credential.ReadBearerFile(c.config.GitHubWriteTokenFile)
 	if e != nil {
 		return errEngine
@@ -200,7 +207,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	}
 	phase = "provenance"
 	base, e := c.github.base(ctx, r.Repository.Name, r.Repository.BaseBranch)
-	if e != nil || base != r.Repository.Commit {
+	if e != nil || base != executionBase {
 		return errEngine
 	}
 	for _, ref := range []string{"refs/remotes/origin/" + r.Repository.BaseBranch, "refs/heads/" + r.Repository.BaseBranch} {
@@ -225,7 +232,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	id[6], id[8] = id[6]&15|64, id[8]&63|128
 	now := time.Now().UTC()
 	profile, _ := json.Marshal(engineProfile(r, work, false, c.config.GeneratedFingerprintFile))
-	m := snapshot.Metadata{RunID: fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:]), StartedAt: started, CompletedAt: now, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: snapshot.ID(string(profile))}, Repository: r.Repository, DryRun: "full", CheckoutCommit: base, BeforeCommit: base, AfterCommit: base}
+	m := snapshot.Metadata{RunID: fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:]), StartedAt: started, CompletedAt: now, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: snapshot.ID(string(profile))}, Repository: executionRepository, DryRun: "full", CheckoutCommit: base, BeforeCommit: base, AfterCommit: base}
 	s, e := snapshot.Normalize(data, m)
 	if e != nil {
 		return errEngine
@@ -254,7 +261,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	}
 	phase = "post_write"
 	base, e = c.github.base(ctx, r.Repository.Name, r.Repository.BaseBranch)
-	if e != nil || base != r.Repository.Commit {
+	if e != nil || base != executionBase {
 		return errEngine
 	}
 	return nil
