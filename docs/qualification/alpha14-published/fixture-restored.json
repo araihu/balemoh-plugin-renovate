@@ -1,0 +1,22 @@
+{
+  "workflowPermissions": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  },
+  "limitsRestored": true,
+  "restoreCommit": "49b24d58b36e89bf17bf994ffa3d30189dc22c95",
+  "runs": [
+    {
+      "architecture": "amd64",
+      "branch": "qualification/alpha14-published-amd64-20261109-112334",
+      "run": "42608684067",
+      "harnessCommit": "98ce09f80cc3fa536ecc6f28646e66626f6ef88f"
+    },
+    {
+      "architecture": "arm64",
+      "branch": "qualification/alpha14-published-arm64-20261109-112334",
+      "run": "42609720803",
+      "harnessCommit": "98ce09f80cc3fa536ecc6f28646e66626f6ef88f"
+    }
+  ]
+}

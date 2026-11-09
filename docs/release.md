@@ -1,12 +1,12 @@
 # Public artifact delivery
 
-Candidate version: `0.0.1-alpha.14`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Published prerelease version: `0.0.1-alpha.14`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
 Alpha.14 adds recovery across unrelated base commits and safe maintenance of the generated inventory on verified upgrade PRs. See the [release notes](releases/v0.0.1-alpha.14.md) and [recovery contract](specs/upgrade-requests.md#base-recovery-and-inventory-maintenance).
 
 The optional persisted `rebaseHead` field requires compatible plugin, controller and request-backup readers. Build them from the same release commit. Publication must verify the package, controller, backup and App-token binaries in both Linux platform manifests before recording deployment pins. Older readers reject pending records containing this field; do not downgrade while those records exist.
 
-The [real-GitHub candidate qualification](qualification/alpha14-base-recovery/README.md) passed on Linux amd64. The receipt identifies its exact source, package and runtime bytes. This is release preparation. Publication and deployment need their own verified receipts. Earlier alpha qualifications remain historical evidence and do not qualify this candidate. Upgrade merges remain manual.
+The [real-GitHub candidate qualification](qualification/alpha14-base-recovery/README.md) passed on Linux amd64. The receipt identifies its exact source, package and runtime bytes. The [published image](qualification/alpha14-published/README.md) also passed native amd64/arm64 recovery, rebase and pending backup/restore qualification. Deployment remains a separate approved stage. Earlier alpha qualifications remain historical evidence and do not qualify this candidate. Upgrade merges remain manual.
 
 ## Prepared source
 

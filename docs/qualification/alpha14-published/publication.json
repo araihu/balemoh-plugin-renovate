@@ -1,0 +1,21 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:7569f6c4b95c907db1bb0285b7dcfca3b686b19a24c1dc3e2a96b79ef21d3e56",
+  "sourceCommit": "78828978553d59cf0e9035df609c4fcf54f02197",
+  "version": "0.0.1-alpha.14",
+  "manifestDigest": "10a316a2377164b6df90c0464a08a46c9b51d0d81940ca434efefee4ea44b734",
+  "packageDigest": "bf76207b26f2fe10955504be1aae7bd52832435f5e4bfa31e62693d49cf56c3c",
+  "runtimeTools": [
+    "app-token",
+    "request-backup",
+    "controller"
+  ],
+  "platformDigests": {
+    "amd64": "sha256:6ce28f7659163c4a72f32a432ee949456f3e1eb3611249d5686e7645f12b98b7",
+    "arm64": "sha256:4a0d0108a9583126858cb1256dca6463ff13fe49c9aed10204da6b58392023a9"
+  },
+  "anonymousManifestPull": true,
+  "versionAliasVerified": true,
+  "workflowID": 42607364086,
+  "workflowURL": "https://github.com/araihu/balemoh-plugin-renovate/actions/runs/42607364086",
+  "releaseURL": "https://github.com/araihu/balemoh-plugin-renovate/releases/tag/v0.0.1-alpha.14"
+}
