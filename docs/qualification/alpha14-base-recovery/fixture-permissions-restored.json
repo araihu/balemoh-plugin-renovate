@@ -1,0 +1,9 @@
+{
+  "repository": "guilycst/balemoh-renovate-engine-poc-20261101",
+  "workflowRun": "42604715283",
+  "restored": true,
+  "permissions": {
+    "default_workflow_permissions": "read",
+    "can_approve_pull_request_reviews": false
+  }
+}

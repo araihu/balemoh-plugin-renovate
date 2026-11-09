@@ -6,7 +6,7 @@ Alpha.14 adds recovery across unrelated base commits and safe maintenance of the
 
 The optional persisted `rebaseHead` field requires compatible plugin, controller and request-backup readers. Build them from the same release commit. Publication must verify the package, controller, backup and App-token binaries in both Linux platform manifests before recording deployment pins. Older readers reject pending records containing this field; do not downgrade while those records exist.
 
-This is release preparation. Publication and deployment need their own verified receipts. Earlier alpha qualifications remain historical evidence and do not qualify this candidate. Upgrade merges remain manual.
+The [real-GitHub candidate qualification](qualification/alpha14-base-recovery/README.md) passed on Linux amd64. The receipt identifies its exact source, package and runtime bytes. This is release preparation. Publication and deployment need their own verified receipts. Earlier alpha qualifications remain historical evidence and do not qualify this candidate. Upgrade merges remain manual.
 
 ## Prepared source
 
@@ -26,7 +26,7 @@ The publication workflow requests SBOM and provenance from BuildKit. It does not
 
 ## GitOps activation, separate stage
 
-The home-lab runbooks at `k8s/renovate-requests-readonly/README.md` and `k8s/balemoh-renovate-requests/README.md` own activation and rollback. The existing collector, snapshot endpoint and request-tracking controller remain read-only on their current pins. This publication changes none of their deployments. The production writer stays disabled and its dedicated credential stays unmounted.
+The home-lab runbooks at `k8s/renovate-requests-readonly/README.md` and `k8s/balemoh-renovate-requests/README.md` own activation and rollback. Homelab owns its active image pins and writer setting. Source preparation and publication do not change them. Inspect the current manifests and runtime before a separately authorized rollout. Install the compatible plugin and request-backup readers first, then update the controller. Never downgrade a reader while a retained record contains `rebaseHead`.
 
 Dedicated read-only GitHub credential, reader token and CA trust must exist before a real collection. Provision secrets as sealed manifests. Do not reuse or change the current bot token. First validate storage ownership/locking, TLS authorization, one full dry-run collection and actual checkout provenance. Then verify retained snapshot, actual query size, list/detail/coverage/widget and notification baseline before scheduling collection. Real inventory can expose the deferred dense-query byte-budget limit; a failed query is not an empty or up-to-date inventory.
 

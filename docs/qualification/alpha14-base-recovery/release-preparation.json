@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1-alpha.14",
+  "status": "prepared-not-published",
+  "sourceCommit": "78828978553d59cf0e9035df609c4fcf54f02197",
+  "pluginPR": "https://github.com/araihu/balemoh-plugin-renovate/pull/5",
+  "draftReleaseID": 439004238,
+  "qualificationRun": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/actions/runs/42604715283",
+  "qualifiedPlatform": "linux/amd64",
+  "runtimeSHA256": {
+    "/usr/local/bin/image-upgrades-controller": "64f53cfee934729dadf97cb5b56da77784f8eba95d46432fe9dc1118e35f5676",
+    "/usr/local/bin/image-upgrades-request-backup": "f4fc99a9069fee1f66292c579bc124631953543b1d009017c7b0eb239711b55a"
+  },
+  "candidatePackagePins": {
+    "manifestDigest": "10a316a2377164b6df90c0464a08a46c9b51d0d81940ca434efefee4ea44b734",
+    "packageDigest": "bf76207b26f2fe10955504be1aae7bd52832435f5e4bfa31e62693d49cf56c3c"
+  },
+  "rolloutOrder": [
+    "install compatible plugin package",
+    "update request-backup executable",
+    "update controller last"
+  ],
+  "publicationGates": [
+    "CI on immutable release source",
+    "verified amd64 and arm64 package/controller/backup byte receipts",
+    "published image pins from that build"
+  ],
+  "upgradeMerges": "manual",
+  "deployed": false,
+  "published": false
+}
