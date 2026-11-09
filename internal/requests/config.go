@@ -14,7 +14,7 @@ import (
 type Config struct {
 	// Single allowed GitHub owner/repository. No client-supplied repository is accepted.
 	Repository string `env:"UPGRADES_REPOSITORY,required,notEmpty"`
-	// The repository base branch. Execution fails if its commit has changed.
+	// The repository base branch. A newer base requires an unchanged approved image file.
 	BaseBranch string `env:"UPGRADES_BASE_BRANCH" envDefault:"main"`
 	// Normalized snapshot published by the existing read-only collector.
 	SnapshotFile string `env:"UPGRADES_CONTROLLER_SNAPSHOT_FILE" envDefault:"/snapshots/snapshot.json"`

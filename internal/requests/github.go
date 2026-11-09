@@ -181,37 +181,29 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 	if !imageFound {
 		return errors.New("PR does not contain approved image file")
 	}
-	read := func(file, ref string) ([]byte, error) {
-		var body struct {
-			Encoding string `json:"encoding"`
-			Content  string `json:"content"`
-		}
-		if err := g.get(ctx, "/repos/"+r.Repository.Name+"/contents/"+url.PathEscape(file)+"?ref="+url.QueryEscape(ref), &body); err != nil {
-			return nil, err
-		}
-		if body.Encoding != "base64" {
-			return nil, errors.New("file is not bounded Git content")
-		}
-		data, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(body.Content, "\n", ""))
-		if err != nil || len(data) > 1<<20 {
-			return nil, errors.New("file exceeds bound")
-		}
-		return data, nil
-	}
+
 	if fingerprintFound {
 		if !sha.MatchString(base) {
 			return errors.New("PR base unavailable")
 		}
-		before, err := read(g.fingerprintFile, base)
+		before, err := g.file(ctx, r.Repository.Name, g.fingerprintFile, base)
 		if err != nil {
 			return err
 		}
-		after, err := read(g.fingerprintFile, head)
+		after, err := g.file(ctx, r.Repository.Name, g.fingerprintFile, head)
 		if err != nil {
 			return err
 		}
 		if !fingerprintOnly(before, after) {
-			return errors.New("PR fingerprint content differs from approval")
+			// PR files use the merge base, which can lag the current target branch.
+			fork, _, err := g.mergeBase(ctx, r.Repository.Name, base, head)
+			if err != nil {
+				return err
+			}
+			before, err = g.file(ctx, r.Repository.Name, g.fingerprintFile, fork)
+			if err != nil || !fingerprintOnly(before, after) {
+				return errors.New("PR fingerprint content differs from approval")
+			}
 		}
 		var tree struct {
 			Truncated bool `json:"truncated"`
@@ -235,20 +227,28 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 			return errors.New("PR fingerprint is not a bounded regular file")
 		}
 	}
-	before, err := read(r.Dependency.PackageFile, r.Repository.Commit)
+	before, err := g.file(ctx, r.Repository.Name, r.Dependency.PackageFile, r.Repository.Commit)
 	if err != nil {
 		return err
 	}
-	after, err := read(r.Dependency.PackageFile, head)
+	after, err := g.file(ctx, r.Repository.Name, r.Dependency.PackageFile, head)
 	if err != nil {
 		return err
 	}
+	expected, err := approvedImageContent(r, before)
+	if err != nil || !bytes.Equal(expected, after) {
+		return errors.New("PR content differs from approval")
+	}
+	return nil
+}
+
+func approvedImageContent(r Record, before []byte) ([]byte, error) {
 	var identity []string
 	if json.Unmarshal([]byte(r.Dependency.DependencyKey), &identity) != nil || len(identity) != 2 || !Supported(r.Dependency, r.Candidate) {
-		return errors.New("invalid approval identity")
+		return nil, errors.New("invalid approval identity")
 	}
 	if !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./:_-]*$`).MatchString(identity[0]) {
-		return errors.New("invalid source image")
+		return nil, errors.New("invalid source image")
 	}
 	reference := func(tag, digest *string) []byte {
 		value := identity[0]
@@ -272,7 +272,7 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 		// Tag/digest prefixes and embedded repository names are not complete references.
 		delimiter := func(b byte) bool { return strings.ContainsRune(" \t\r\n\"'[]=,", rune(b)) }
 		if (start > 0 && !delimiter(before[start-1])) || (end < len(before) && !delimiter(before[end])) {
-			return errors.New("ambiguous image reference boundary")
+			return nil, errors.New("ambiguous image reference boundary")
 		}
 		offset = end
 	}
@@ -280,13 +280,13 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 	expected := bytes.ReplaceAll(before, old, next)
 	if bytes.Count(before, old) != count {
 		if r.Dependency.Manager != "kubernetes" {
-			return errors.New("PR content differs from approval")
+			return nil, errors.New("PR content differs from approval")
 		}
 		// Match the pinned Kubernetes manager's line-based image selector, including embedded manifests.
 		selector := regexp.MustCompile(`(?m)^[ \t]*-?[ \t]*image:[ \t]*['"]?` + regexp.QuoteMeta(string(old)))
 		matches := selector.FindAllIndex(before, -1)
 		if len(matches) != count {
-			return errors.New("PR content differs from approval")
+			return nil, errors.New("PR content differs from approval")
 		}
 		var content bytes.Buffer
 		offset := 0
@@ -298,11 +298,9 @@ func (g github) verifyDiff(ctx context.Context, r Record, number int, head, base
 		content.Write(before[offset:])
 		expected = content.Bytes()
 	}
-	if !bytes.Equal(expected, after) {
-		return errors.New("PR content differs from approval")
-	}
-	return nil
+	return expected, nil
 }
+
 func (g github) checks(ctx context.Context, repository, head string) (string, error) {
 	var checks struct {
 		Total int `json:"total_count"`
@@ -357,4 +355,77 @@ func (g github) checks(ctx context.Context, repository, head string) (string, er
 		}
 	}
 	return value, nil
+}
+
+func (g github) file(ctx context.Context, repository, file, ref string) ([]byte, error) {
+	var body struct {
+		Encoding string `json:"encoding"`
+		Content  string `json:"content"`
+	}
+	if err := g.get(ctx, "/repos/"+repository+"/contents/"+url.PathEscape(file)+"?ref="+url.QueryEscape(ref), &body); err != nil {
+		return nil, err
+	}
+	if body.Encoding != "base64" {
+		return nil, errors.New("file is not bounded Git content")
+	}
+	data, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(body.Content, "\n", ""))
+	if err != nil || len(data) > 1<<20 {
+		return nil, errors.New("file exceeds bound")
+	}
+	return data, nil
+}
+
+func (g github) mergeBase(ctx context.Context, repository, base, head string) (string, int, error) {
+	var result struct {
+		Behind    int `json:"behind_by"`
+		MergeBase struct {
+			SHA string `json:"sha"`
+		} `json:"merge_base_commit"`
+	}
+	if !sha.MatchString(base) || !sha.MatchString(head) {
+		return "", 0, errors.New("invalid comparison")
+	}
+	err := g.get(ctx, "/repos/"+repository+"/compare/"+base+"..."+head, &result)
+	if err != nil || !sha.MatchString(result.MergeBase.SHA) || result.Behind < 0 {
+		return "", 0, errors.New("comparison unavailable")
+	}
+	return result.MergeBase.SHA, result.Behind, nil
+}
+
+func (g github) regularMode(ctx context.Context, repository, file, ref string) (string, error) {
+	var tree struct {
+		Truncated bool                                `json:"truncated"`
+		Entries   []struct{ Path, Mode, Type string } `json:"tree"`
+	}
+	if err := g.get(ctx, "/repos/"+repository+"/git/trees/"+ref+"?recursive=1", &tree); err != nil {
+		return "", err
+	}
+	if !tree.Truncated {
+		for _, e := range tree.Entries {
+			if e.Path == file && e.Type == "blob" && (e.Mode == "100644" || e.Mode == "100755") {
+				return e.Mode, nil
+			}
+		}
+	}
+	return "", errors.New("image is not a bounded regular file")
+}
+
+func (g github) sameApprovedSource(ctx context.Context, r Record, base string) error {
+	before, err := g.file(ctx, r.Repository.Name, r.Dependency.PackageFile, r.Repository.Commit)
+	if err != nil {
+		return err
+	}
+	after, err := g.file(ctx, r.Repository.Name, r.Dependency.PackageFile, base)
+	if err != nil || !bytes.Equal(before, after) {
+		return errors.New("approved image file changed")
+	}
+	oldMode, err := g.regularMode(ctx, r.Repository.Name, r.Dependency.PackageFile, r.Repository.Commit)
+	if err != nil {
+		return err
+	}
+	mode, err := g.regularMode(ctx, r.Repository.Name, r.Dependency.PackageFile, base)
+	if err != nil || mode != oldMode {
+		return errors.New("approved image mode changed")
+	}
+	return nil
 }

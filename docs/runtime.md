@@ -20,6 +20,14 @@ The engine sets `statusCheckWhen.minimumReleaseAge=never` in both preflight and 
 
 A branch without a verified PR becomes `needs_attention` and is never replayed automatically. Inspect its exact diff and repository state before operator recovery. Keep the branch and request receipt; do not delete either to force a retry. Upgrade PR merges remain manual.
 
+## Base recovery
+
+With the writer enabled, queued and `base_changed` requests can recover across unrelated base commits. The entire selected image file and its mode must still match the immutable approval. The native preflight must still produce the approved target. Verified open PRs can also be maintained against a newer base when the generated fingerprint helper is configured. Only the approved image bytes and the helper's digest line are published, using an exact old-head lease. Upgrade merges stay manual.
+
+A pending maintenance push retains its expected head in `rebaseHead`. Read-only tracking can confirm it after restart; the controller never automatically repeats an uncertain push. Inspect `rebase_pending` or `rebase_blocked` requests in GitHub before operator recovery. See the [recovery contract](specs/upgrade-requests.md#base-recovery-and-inventory-maintenance).
+
+Ship the plugin package, controller and request-backup executable together. Older strict readers reject the optional `rebaseHead` field. Do not downgrade while a retained record contains it. No production recovery or rebase is qualified by local Git tests alone.
+
 ## Request backup
 
 `image-upgrades-request-backup run` reads [generated backup configuration](../internal/requestbackup/environment.md). The deployment supplies an authenticated HTTPS source, its reader credential and CA, isolated Restic repository, Restic binary, host/tag and retention policy. Restic credentials remain third-party environment configuration. Only RESTIC_/AWS_ and relevant runtime environment values are passed to the child process; unrelated GitHub credentials are excluded.
