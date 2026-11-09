@@ -37,3 +37,11 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
 Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+
+## Alpha.14 receipt delivery
+
+The alpha.14 tag and published image are immutable. The release was finalized after an asset upload failed, so its attached files contain only the historical candidate receipts. Published image pins and native qualification receipts are committed under `docs/qualification/alpha14-published/` and linked from the release notes. Do not request the absent `releases/download/v0.0.1-alpha.14/image-pins.json` asset or change the tag to repair delivery.
+
+For later releases, keep the GitHub release in draft, upload all required files with their actual basenames, re-download them and compare bytes, then publish. `gh release upload file#label` changes the display label, not the asset filename. Stop on every upload failure before publication. GitHub permits editing notes on an immutable release, but blocks adding or replacing assets.
+
+See [GitHub immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases) for the asset and tag restrictions.
