@@ -46,6 +46,9 @@ def run():
     assert re.fullmatch(r'qualification/alpha14-[a-z0-9-]+', branch), 'disposable fixture base required'
     source = os.environ['CANDIDATE_SOURCE']
     assert re.fullmatch(r'[a-f0-9]{40}', source)
+    published_image = os.environ.get('QUALIFICATION_IMAGE')
+    if published_image:
+        assert re.fullmatch(r'ghcr.io/araihu/balemoh-plugin-renovate@sha256:[a-f0-9]{64}', published_image), 'immutable owned image required'
     token = os.environ['RENOVATE_TOKEN']
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
@@ -301,7 +304,8 @@ def run():
     branches = {r['name']: r['commit']['sha'] for r in api('/branches?per_page=100')}
     assert all(branches[k] == v for k, v in old_branches.items() if k != branch), 'previous branch changed'
     receipt = {'qualification': 'passed', 'version': package['version'], 'sourceCommit': source,
-        'artifactKind': 'candidate built from PR commit; not a published OCI artifact',
+        'artifactKind': 'published OCI image' if published_image else 'candidate built from PR commit; not a published OCI artifact',
+        'image': published_image, 'platform': 'linux/' + {'x86_64': 'amd64', 'aarch64': 'arm64'}[os.uname().machine],
         'repository': REPOSITORY, 'baseBranch': branch, 'approvedBase': approved_base, 'finalBase': base,
         'fixtureMainUnchanged': True, 'previousPRsUnchanged': True, 'previousBranchesUnchanged': True,
         'credential': 'ephemeral repository-scoped GitHub Actions token; no production credential',
