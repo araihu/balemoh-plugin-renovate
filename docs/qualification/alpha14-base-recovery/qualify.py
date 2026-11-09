@@ -85,7 +85,11 @@ def run():
     def artifact(generation):
         return '# Synthetic inventory\n- Source digest: `' + '0' * 64 + '`\nGeneration: ' + str(generation) + '\n'
 
-    files = {f'k8s/alpha14-{name}.yaml': 'image: ' + OLD + '\n' for name in ['queued', 'blocked', 'changed']}
+    def manifest(name):
+        return ('apiVersion: v1\nkind: Pod\nmetadata:\n  name: alpha14-' + name + '\nspec:\n  containers:\n'
+                '    - name: proxy\n      image: ' + OLD + '\n'
+                '    - name: unselected\n      image: docker.io/library/alpine:3.19.0\n')
+    files = {f'k8s/alpha14-{name}.yaml': manifest(name) for name in ['queued', 'blocked', 'changed']}
     files[ARTIFACT] = artifact(1)
     files['renovate.json'] = json.dumps({'enabled': True, 'dependencyDashboard': False,
         'packageRules': [{'matchPackageNames': ['*'], 'enabled': False}],
@@ -144,7 +148,7 @@ def run():
             (data_dir / (request_id + '.json')).write_bytes(encode(receipt))
             (data_dir / (request_id + '.json')).chmod(0o600)
         if name == 'changed':
-            base = commit(base, {dependency['packageFile']: 'image: ' + OLD + '\n# unapproved source edit\n'},
+            base = commit(base, {dependency['packageFile']: manifest(name) + '# unapproved source edit\n'},
                 'test: change selected source before recovery')
         env = {'PATH': os.environ['PATH'], 'HOME': str(case), 'TMPDIR': '/tmp',
             'UPGRADES_REPOSITORY': REPOSITORY, 'UPGRADES_BASE_BRANCH': branch,
@@ -189,38 +193,6 @@ def run():
             if process is not None and process.poll() is None:
                 process.send_signal(signal.SIGTERM)
                 assert process.wait(timeout=20) == 0, 'controller shutdown failed'
-        def diagnose_preflight(r):
-            work = case / 'diagnostic'
-            work.mkdir(mode=0o700)
-            allow = {'matchPackageNames': ['/^docker\\.io/library/nginx$/'], 'matchFileNames': [dependency['packageFile']],
-                'enabled': True, 'groupName': None, 'groupSlug': None, 'allowedVersions': '/^1\\.26\\.3$/'}
-            guard = "$exists(updateType) and ($not($exists(newDigest)) or newDigest != '" + NEW_DIGEST + "' or updateType != 'minor' or $not($exists(newValue)) or newValue != '1.26.3')"
-            profile = {'platform': 'github', 'repositories': [REPOSITORY], 'autodiscover': False, 'onboarding': False,
-                'requireConfig': 'required', 'dryRun': 'full', 'persistRepoData': True, 'baseDir': str(work),
-                'cacheDir': str(work / 'cache'), 'reportType': 'file', 'reportPath': str(work / 'report.json'),
-                'reportFormatting': False, 'allowScripts': False, 'allowPlugins': False, 'allowedCommands': [],
-                'internalHostAccess': 'block', 'force': {'automerge': False, 'platformAutomerge': False,
-                'dependencyDashboard': False, 'dependencyDashboardApproval': False, 'prCreation': 'immediate',
-                'pruneStaleBranches': False, 'statusCheckWhen': {'minimumReleaseAge': 'never'},
-                'baseBranchPatterns': [branch], 'includePaths': [dependency['packageFile']], 'enabledManagers': ['kubernetes'],
-                'kubernetes': {'managerFilePatterns': ['/^' + re.escape(dependency['packageFile']) + '$/']},
-                'branchPrefix': 'balemoh-renovate/', 'branchTopic': r['id'], 'additionalBranchPrefix': '',
-                'groupName': None, 'groupSlug': None, 'hashedBranchLength': None, 'fetchChangeLogs': 'off', 'pinDigests': True,
-                'packageRules': [{'matchPackageNames': ['*'], 'enabled': False}, allow,
-                    {'matchPackageNames': allow['matchPackageNames'], 'matchFileNames': allow['matchFileNames'], 'matchJsonata': [guard], 'enabled': False}]}}
-            profile_path = work / 'config.json'
-            profile_path.write_bytes(encode(profile))
-            log = work / 'native.log'
-            with log.open('wb') as output:
-                result = subprocess.run(['renovate'], env={**env, 'RENOVATE_TOKEN': token, 'RENOVATE_CONFIG_FILE': str(profile_path), 'LOG_LEVEL': 'warn'},
-                    stdout=output, stderr=output, timeout=180)
-            if (work / 'report.json').exists():
-                report = json.loads((work / 'report.json').read_bytes())
-                diagnostic = {'exitCode': result.returncode, 'globalProblemCount': len(report.get('problems', [])), 'repositories': {}}
-                for key, value in report.get('repositories', {}).items():
-                    diagnostic['repositories'][key] = {'problemLevels': [p.get('level') for p in value.get('problems', [])],
-                        'branches': [{k: b.get(k) for k in ['branchName', 'result', 'upgrades']} for b in value.get('branches', [])]}
-                Path('/out/preflight-diagnostic-' + name + '.json').write_text(json.dumps(diagnostic, indent=2) + '\n')
         def wait_for(predicate, seconds=900):
             until = time.monotonic() + seconds
             while time.monotonic() < until:
@@ -231,8 +203,6 @@ def run():
                     Path('/out/latest-' + name + '.json').write_bytes(encode(r))
                     if predicate(r):
                         return r
-                    if r['state'] == 'blocked' and r.get('reason') == 'plan_not_actionable' and name != 'changed':
-                        diagnose_preflight(r)
                     assert r['state'] not in ['needs_attention', 'blocked'] or name == 'changed' or r.get('reason') in ['base_changed', 'rebase_pending'], 'request rejected: ' + r.get('reason', '')
                 time.sleep(1)
             raise TimeoutError('request observation deadline')
@@ -245,7 +215,7 @@ def run():
             assert {f['filename'] for f in changes} == {dependency['packageFile'], ARTIFACT}, 'unexpected PR files'
             def content(path, at):
                 return base64.b64decode(api('/contents/' + path + '?ref=' + at)['content'])
-            assert content(dependency['packageFile'], head) == ('image: ' + NEW + '\n').encode(), 'approved target changed'
+            assert content(dependency['packageFile'], head) == manifest(name).replace(OLD, NEW).encode(), 'approved target changed'
             generated = content(ARTIFACT, head)
             assert re.sub(rb'- Source digest: `[a-f0-9]{64}`', b'- Source digest: `' + b'0' * 64 + b'`', generated) == artifact(generation).encode(), 'inventory body changed'
             checkout = case / ('verify-' + head)
