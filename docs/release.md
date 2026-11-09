@@ -1,29 +1,12 @@
 # Public artifact delivery
 
-Source manifest version: `0.0.1-alpha.13`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Candidate version: `0.0.1-alpha.14`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Alpha.13 verifies mixed-manager Kubernetes image diffs without attributing another manager's declarations to the selected upgrade. See [alpha.13 release notes](releases/v0.0.1-alpha.13.md). The missing-PR tracking correction on this integration branch is unpublished and is not part of the immutable alpha.13 artifact. Publishing it requires a new version and separate deployment approval.
+Alpha.14 adds recovery across unrelated base commits and safe maintenance of the generated inventory on verified upgrade PRs. See the [release notes](releases/v0.0.1-alpha.14.md) and [recovery contract](specs/upgrade-requests.md#base-recovery-and-inventory-maintenance).
 
-Alpha.11 introduced icon actions with tooltips in upgrade lists and details. Native links keep image/candidate-specific accessible names, keyboard help, 44px targets and distinct responsive IDs. The final PR submission keeps its explicit text. See [release notes](releases/v0.0.1-alpha.11.md).
+The optional persisted `rebaseHead` field requires compatible plugin, controller and request-backup readers. Build them from the same release commit. Publication must verify the package, controller, backup and App-token binaries in both Linux platform manifests before recording deployment pins. Older readers reject pending records containing this field; do not downgrade while those records exist.
 
-Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Its approved homelab cutover and recovered PR #861 are recorded in [homelab deployment PR #862](https://github.com/guilycst/home-lab/pull/862). Alpha.11 left this engine profile, release-age eligibility, credentials and manual merges unchanged.
-
-The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence.
-
-Alpha.7 introduced the overview card, list PR states and candidate-review links.
-Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence
-for those unchanged interfaces. Alpha.8 satisfied its separate publication and shipped-writer qualification gates; those receipts remain historical.
-
-Alpha.6 introduced pinned-image requests, notification type selection,
-collection diagnostics, coverage tables and automatic checkbox filters. Its
-[source qualification](qualification/alpha6-ui/README.md) remains historical
-release evidence.
-
-The controller defaults to writer disabled. Writes require an owned, diff-verified PR; missing PRs require review and never replay automatically. Snapshot v1 and the pinned native engine remain unchanged. Empty update lists still do not prove that images are up to date.
-
-Alpha.6 [published-artifact writer qualification passed](qualification/alpha6-writer/README.md) for pinned Kubernetes tag+digest, Dockerfile digest and untagged Compose updates. Each case verified an exact selected-file PR, real PR-triggered CI, duplicate admission, restart and backup/restore. The wrong-digest selection created no branch or PR. That alpha.6 HMG qualification enabled writes only through a private-fixture connection; it is not a statement of current homelab activation.
-
-Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. The initial GITHUB_TOKEN fixture had `unknown` checks; a [separate fixture-only PAT proof](qualification/alpha5-pr-ci/README.md) now qualifies automatic PR-triggered CI and exact-head passing tracking after restart. Homelab production workflows remain a separate rollout gate. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. At that historical alpha.5 qualification stage, production was read-only and the hosted bot remained unchanged. Current deployment pins and writer ownership belong to homelab manifests and operational evidence; upgrade PR merges remain manual.
+This is release preparation. Publication and deployment need their own verified receipts. Earlier alpha qualifications remain historical evidence and do not qualify this candidate. Upgrade merges remain manual.
 
 ## Prepared source
 
@@ -53,4 +36,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 obtained its own successful publication receipt and qualified the shipped writer in the isolated repository. Those historical receipts do not qualify later source corrections. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
