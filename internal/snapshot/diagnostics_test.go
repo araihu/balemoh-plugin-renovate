@@ -60,11 +60,12 @@ func TestDiagnosticLimitsAndLegacyFallback(t *testing.T) {
 	if _, err := Normalize(fixture(t), metadata(), strings.NewReader(strings.Repeat("x", (1<<20)+1))); err == nil {
 		t.Fatal("oversized diagnostic line accepted")
 	}
-	a, err := Normalize(fixture(t), metadata())
+	m := metadata()
+	a, err := Normalize(fixture(t), m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := Normalize(fixture(t), metadata(), strings.NewReader("not JSON\n{\"msg\":\"new native message\"}\n"))
+	b, err := Normalize(fixture(t), m, strings.NewReader("not JSON\n{\"msg\":\"new native message\"}\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
