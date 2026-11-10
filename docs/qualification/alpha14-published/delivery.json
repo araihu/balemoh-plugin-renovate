@@ -1,0 +1,11 @@
+{
+  "release": "v0.0.1-alpha.14",
+  "releaseImmutable": true,
+  "publishedReceiptAssetsAttached": false,
+  "existingAssets": "historical candidate receipts",
+  "publishedReceiptCommit": "d4c2c9523afedf2e58ff7febc68af3b71e304a38",
+  "receiptURL": "https://raw.githubusercontent.com/araihu/balemoh-plugin-renovate/d4c2c9523afedf2e58ff7febc68af3b71e304a38/docs/qualification/alpha14-published/image-pins.json",
+  "anonymousReceiptReadVerified": true,
+  "releaseNotesLinkPublishedReceipts": true,
+  "tagOrImageReplaced": false
+}

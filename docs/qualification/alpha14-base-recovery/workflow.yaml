@@ -1,0 +1,70 @@
+name: Isolated alpha.14 base recovery
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact candidate source commit from the plugin PR
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: isolated-renovate-engine
+  cancel-in-progress: false
+jobs:
+  qualification:
+    if: github.repository == 'guilycst/balemoh-renovate-engine-poc-20261101' && startsWith(github.ref, 'refs/heads/qualification/alpha14-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      checks: read
+      statuses: write
+    env:
+      GOWORK: 'off'
+    steps:
+      - name: Validate source identity
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: '[[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: araihu/balemoh-plugin-renovate
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - name: Build one compatible candidate
+        run: |
+          set -euo pipefail
+          make package
+          docker build --build-arg TARGETARCH=amd64 -t alpha14-candidate .
+          mkdir -p "$RUNNER_TEMP/alpha14-output"
+          chmod 0777 "$RUNNER_TEMP/alpha14-output"
+          docker inspect alpha14-candidate --format '{{.Id}}' > "$RUNNER_TEMP/alpha14-output/candidate-image-id.txt"
+          go run ./cmd/package-info dist/package > "$RUNNER_TEMP/alpha14-output/package-pins.json"
+          sha256sum dist/request-controller-amd64 dist/request-backup-amd64 > "$RUNNER_TEMP/alpha14-output/runtime-sha256.txt"
+          git diff --exit-code
+      - name: Exercise real GitHub recovery, PR maintenance and pending backup
+        env:
+          RENOVATE_TOKEN: ${{ github.token }}
+          CANDIDATE_SOURCE: ${{ inputs.source_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,uid=12021,gid=12021,mode=1770,size=3g \
+            --env RENOVATE_TOKEN --env GITHUB_REPOSITORY --env GITHUB_REF_NAME --env GITHUB_SHA \
+            --env CANDIDATE_SOURCE --env RUN_URL \
+            --mount "type=bind,source=$PWD/docs/qualification/alpha14-base-recovery/qualify.py,target=/qualify.py,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP/alpha14-output,target=/out" \
+            --entrypoint python3 alpha14-candidate /qualify.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: alpha14-base-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/alpha14-output/
+          retention-days: 30
+          if-no-files-found: error

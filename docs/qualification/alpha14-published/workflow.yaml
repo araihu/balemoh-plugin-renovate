@@ -1,0 +1,91 @@
+name: Isolated alpha.14 published image
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Verified immutable publication index
+        required: true
+        type: string
+      source_sha:
+        description: Published image source commit
+        required: true
+        type: string
+      harness_sha:
+        description: Exact qualification harness commit
+        required: true
+        type: string
+      architecture:
+        description: Native Linux runner architecture
+        required: true
+        type: choice
+        options: [amd64, arm64]
+permissions: {}
+concurrency:
+  group: isolated-renovate-engine
+  cancel-in-progress: false
+jobs:
+  qualification:
+    if: github.repository == 'guilycst/balemoh-renovate-engine-poc-20261101' && startsWith(github.ref, 'refs/heads/qualification/alpha14-')
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      checks: read
+      statuses: write
+    env:
+      GOWORK: 'off'
+    steps:
+      - name: Validate immutable inputs
+        env:
+          IMAGE: ${{ inputs.image }}
+          SOURCE: ${{ inputs.source_sha }}
+          HARNESS: ${{ inputs.harness_sha }}
+        run: |
+          [[ "$IMAGE" =~ ^ghcr.io/araihu/balemoh-plugin-renovate@sha256:[a-f0-9]{64}$ ]]
+          [[ "$SOURCE" =~ ^[a-f0-9]{40}$ ]]
+          [[ "$HARNESS" =~ ^[a-f0-9]{40}$ ]]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: araihu/balemoh-plugin-renovate
+          ref: ${{ inputs.harness_sha }}
+          persist-credentials: false
+      - name: Inspect the actual published platform
+        env:
+          IMAGE: ${{ inputs.image }}
+          ARCH: ${{ inputs.architecture }}
+          SOURCE: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          case "$ARCH:$(uname -m)" in amd64:x86_64|arm64:aarch64) ;; *) exit 1 ;; esac
+          mkdir -p "$RUNNER_TEMP/alpha14-output"
+          chmod 0777 "$RUNNER_TEMP/alpha14-output"
+          docker pull --platform "linux/$ARCH" "$IMAGE"
+          docker inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' | grep -Fx "$SOURCE"
+          docker image inspect "$IMAGE" --format '{{json .}}' > "$RUNNER_TEMP/alpha14-output/platform-inspect.json"
+          docker run --rm --network none --platform "linux/$ARCH" --entrypoint sha256sum "$IMAGE" \
+            /usr/local/bin/image-upgrades-controller /usr/local/bin/image-upgrades-request-backup \
+            > "$RUNNER_TEMP/alpha14-output/runtime-sha256.txt"
+      - name: Exercise the shipped controller and backup without rebuilding
+        env:
+          RENOVATE_TOKEN: ${{ github.token }}
+          QUALIFICATION_IMAGE: ${{ inputs.image }}
+          CANDIDATE_SOURCE: ${{ inputs.source_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,uid=12021,gid=12021,mode=1770,size=3g \
+            --env RENOVATE_TOKEN --env GITHUB_REPOSITORY --env GITHUB_REF_NAME --env GITHUB_SHA \
+            --env CANDIDATE_SOURCE --env QUALIFICATION_IMAGE --env RUN_URL \
+            --mount "type=bind,source=$PWD/docs/qualification/alpha14-base-recovery/qualify.py,target=/qualify.py,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP/alpha14-output,target=/out" \
+            --entrypoint python3 "$QUALIFICATION_IMAGE" /qualify.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: alpha14-published-${{ inputs.architecture }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/alpha14-output/
+          retention-days: 30
+          if-no-files-found: error

@@ -2,6 +2,7 @@ package requests
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
@@ -31,14 +32,20 @@ func fingerprintOnly(before, after []byte) bool {
 
 // RefreshFingerprint hashes Git-visible files without executing repository code.
 func RefreshFingerprint(name string) error {
+	return refreshFingerprint(context.Background(), "", name, nil)
+}
+
+func refreshFingerprint(ctx context.Context, directory, name string, env []string) error {
 	if !validFingerprintPath(name) {
 		return errors.New("invalid fingerprint path")
 	}
-	directory, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	locate := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	locate.Dir, locate.Env = directory, env
+	location, err := locate.Output()
 	if err != nil {
 		return errors.New("fingerprint requires Git worktree")
 	}
-	root, err := os.OpenRoot(strings.TrimSpace(string(directory)))
+	root, err := os.OpenRoot(strings.TrimSpace(string(location)))
 	if err != nil {
 		return err
 	}
@@ -56,8 +63,8 @@ func RefreshFingerprint(name string) error {
 	if err != nil || len(before) > 1<<20 || len(fingerprintLine.FindAll(before, -1)) != 1 {
 		return errors.New("invalid fingerprint artifact")
 	}
-	command := exec.Command("git", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "ls-files", "--cached", "--others", "--exclude-standard", "-z")
-	command.Dir = root.Name()
+	command := exec.CommandContext(ctx, "git", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "ls-files", "--cached", "--others", "--exclude-standard", "-z")
+	command.Dir, command.Env = root.Name(), env
 	raw, err := command.Output()
 	if err != nil || len(raw) > 4<<20 {
 		return errors.New("fingerprint file listing unavailable")

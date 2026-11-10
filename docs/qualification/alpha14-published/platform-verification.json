@@ -1,0 +1,33 @@
+{
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:7569f6c4b95c907db1bb0285b7dcfca3b686b19a24c1dc3e2a96b79ef21d3e56",
+  "sourceCommit": "78828978553d59cf0e9035df609c4fcf54f02197",
+  "version": "0.0.1-alpha.14",
+  "platforms": {
+    "amd64": {
+      "platformDigest": "sha256:6ce28f7659163c4a72f32a432ee949456f3e1eb3611249d5686e7645f12b98b7",
+      "packagePins": {
+        "manifestDigest": "10a316a2377164b6df90c0464a08a46c9b51d0d81940ca434efefee4ea44b734",
+        "packageDigest": "bf76207b26f2fe10955504be1aae7bd52832435f5e4bfa31e62693d49cf56c3c"
+      },
+      "runtimeSHA256": {
+        "controller": "64f53cfee934729dadf97cb5b56da77784f8eba95d46432fe9dc1118e35f5676",
+        "request-backup": "f4fc99a9069fee1f66292c579bc124631953543b1d009017c7b0eb239711b55a",
+        "app-token": "f245f96354add3bffc3650aabc4ea8b6fa1dad6395b5afd06c7a23529457999d"
+      }
+    },
+    "arm64": {
+      "platformDigest": "sha256:4a0d0108a9583126858cb1256dca6463ff13fe49c9aed10204da6b58392023a9",
+      "packagePins": {
+        "manifestDigest": "10a316a2377164b6df90c0464a08a46c9b51d0d81940ca434efefee4ea44b734",
+        "packageDigest": "bf76207b26f2fe10955504be1aae7bd52832435f5e4bfa31e62693d49cf56c3c"
+      },
+      "runtimeSHA256": {
+        "controller": "cc69b481cbbef24e15195817cebebc18c20bad87df12af15f35b9a3bf0dc4c3a",
+        "request-backup": "62d05a1cac1ca6e94d9bab8f50ece723500c26af6b625480eed74f62dfc31021",
+        "app-token": "a892b2173c94a13538dfb84f24980ebe913057af30eaea163849c321091b941c"
+      }
+    }
+  },
+  "publishedBytesExtracted": true,
+  "rebuiltProductBinaries": false
+}

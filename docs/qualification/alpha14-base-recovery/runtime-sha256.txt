@@ -1,0 +1,2 @@
+64f53cfee934729dadf97cb5b56da77784f8eba95d46432fe9dc1118e35f5676  dist/request-controller-amd64
+f4fc99a9069fee1f66292c579bc124631953543b1d009017c7b0eb239711b55a  dist/request-backup-amd64
