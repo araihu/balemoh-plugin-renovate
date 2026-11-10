@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -214,6 +215,31 @@ func rebaseCommit(ctx context.Context, r Record, base, fork, remote, directory, 
 	}
 	if _, err = git("add", "--", image, fingerprint); err != nil {
 		return "", err
+	}
+	stagedImage, err := git("show", ":"+image)
+	if err != nil || !bytes.Equal(stagedImage, upgraded) {
+		return "", errors.New("staging changed approved image bytes")
+	}
+	stagedFingerprint, err := git("show", ":"+fingerprint)
+	if err != nil || !bytes.Equal(stagedFingerprint, after) {
+		return "", errors.New("staging changed fingerprint bytes")
+	}
+	// Validate a fresh index checkout; an existing worktree can hide Git attribute conversions.
+	checkout, err := os.MkdirTemp(filepath.Dir(directory), "rebase-check-")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(checkout)
+	if _, err = git("checkout-index", "--all", "--force", "--prefix="+checkout+string(os.PathSeparator)); err != nil {
+		return "", err
+	}
+	checkoutEnv := append(append([]string{}, env...), "GIT_DIR="+filepath.Join(directory, ".git"), "GIT_WORK_TREE="+checkout)
+	if err = refreshFingerprint(ctx, checkout, fingerprint, checkoutEnv); err != nil {
+		return "", err
+	}
+	checkedFingerprint, err := os.ReadFile(filepath.Join(checkout, fingerprint))
+	if err != nil || !bytes.Equal(checkedFingerprint, stagedFingerprint) {
+		return "", errors.New("staged fingerprint is not reproducible")
 	}
 	changed, err := git("diff", "--cached", "--name-only", base, "--")
 	if err != nil {

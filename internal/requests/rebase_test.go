@@ -2,6 +2,7 @@ package requests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestRebaseCommitAndLeaseUseRealGit(t *testing.T) {
-	for _, kind := range []string{"exact", "pinned", "wrong-target", "wrong-digest", "concurrent-head", "changed-source", "changed-mode", "extra-native-edit", "extra-native-file", "fingerprint-edit"} {
+	for _, kind := range []string{"exact", "pinned", "wrong-target", "wrong-digest", "concurrent-head", "changed-source", "changed-mode", "extra-native-edit", "extra-native-file", "fingerprint-edit", "attributes-clean-crlf", "attributes-smudge-crlf", "attributes-noop"} {
 		t.Run(kind, func(t *testing.T) {
 			c, s := setup(t)
 			r, _ := c.Submit(t.Context(), s)
@@ -51,6 +52,10 @@ func TestRebaseCommitAndLeaseUseRealGit(t *testing.T) {
 				r.Candidate.ID = snapshot.ID(r.Dependency.ID, r.Candidate.NewValue, r.Candidate.NewDigest, r.Candidate.UpdateType)
 				before = strings.ReplaceAll(before, "nginx:1.25.3", "nginx:1.25.3@"+*r.Dependency.CurrentDigest)
 				upgraded = "imageName: nginx:1.25.3@" + *r.Dependency.CurrentDigest + "\nimage: nginx:1.26.3@" + *r.Candidate.NewDigest + "\n"
+			}
+			if kind == "attributes-clean-crlf" {
+				before = strings.ReplaceAll(before, "\n", "\r\n")
+				upgraded = strings.ReplaceAll(upgraded, "\n", "\r\n")
 			}
 			write(r.Dependency.PackageFile, before)
 			write(fingerprint, "# Inventory\n- Source digest: `"+strings.Repeat("a", 64)+"`\nSource files: 2\n")
@@ -95,12 +100,27 @@ func TestRebaseCommitAndLeaseUseRealGit(t *testing.T) {
 					t.Fatal(e)
 				}
 			}
-			git("add", ".")
+			if strings.HasPrefix(kind, "attributes-") {
+				ending := "lf"
+				if kind == "attributes-smudge-crlf" {
+					ending = "crlf"
+				}
+				write(".gitattributes", "*.yaml text eol="+ending+"\n")
+				git("add", "--", "notes.md", fingerprint, ".gitattributes")
+			} else {
+				git("add", ".")
+			}
 			git("commit", "-m", "main advances")
 			base := git("rev-parse", "HEAD")
+			if strings.HasPrefix(kind, "attributes-") {
+				blob, err := rebaseGit(t.Context(), dir, env, "show", base+":"+r.Dependency.PackageFile)
+				if err != nil || !bytes.Equal(blob, []byte(before)) {
+					t.Fatal("attribute-only base changed the approved blob", err)
+				}
+			}
 			work := t.TempDir()
 			head, err := rebaseCommit(t.Context(), r, base, approved, dir, work, fingerprint, env)
-			positive := kind == "exact" || kind == "pinned" || kind == "concurrent-head"
+			positive := kind == "exact" || kind == "pinned" || kind == "concurrent-head" || kind == "attributes-noop"
 			if (err == nil) != positive {
 				t.Fatalf("acceptance=%v want positive=%t", err, positive)
 			}
@@ -118,8 +138,9 @@ func TestRebaseCommitAndLeaseUseRealGit(t *testing.T) {
 			if out("rev-parse", "HEAD^") != base || out("show", "HEAD:notes.md") != "new main content" {
 				t.Fatal("new main content lost")
 			}
-			if out("show", "HEAD:"+r.Dependency.PackageFile) != strings.TrimSpace(upgraded) {
-				t.Fatal("image file changed")
+			imageBlob, err := rebaseGit(t.Context(), work, env, "show", "HEAD:"+r.Dependency.PackageFile)
+			if err != nil || !bytes.Equal(imageBlob, []byte(upgraded)) {
+				t.Fatal("approved image bytes changed", err)
 			}
 			beforeHash := out("show", "HEAD:"+fingerprint)
 			if e := refreshFingerprint(t.Context(), work, fingerprint, env); e != nil {
@@ -162,5 +183,41 @@ func TestRebaseMarkerSurvivesBackupValidation(t *testing.T) {
 	r.State = "queued"
 	if r.Validate() == nil {
 		t.Fatal("pending write queued for replay")
+	}
+}
+
+func TestMissingPRRetainsPendingRebaseMarker(t *testing.T) {
+	c, selection := setup(t)
+	record, err := c.Submit(t.Context(), selection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pr, present := githubFixture(t, c, record)
+	*present = true
+	c.cycle(t.Context())
+	pending := c.store.list()[0]
+	pending.State, pending.Reason, pending.RebaseHead = "needs_attention", "rebase_pending", strings.Repeat("e", 40)
+	if err := c.store.save(pending); err != nil {
+		t.Fatal(err)
+	}
+	writes := 0
+	c.execute = func(context.Context, Record) error { writes++; return nil }
+	c.rebase = func(context.Context, Record, string) error { writes++; return nil }
+	*present = false
+	c.cycle(t.Context())
+	got := c.store.list()[0]
+	if got.State != "needs_attention" || got.Reason != "rebase_pending" || got.RebaseHead != pending.RebaseHead || !got.TrackingError || got.PR.Checks != "unknown" || writes != 0 {
+		t.Fatalf("pending publication lost or replayed: %+v writes=%d", got, writes)
+	}
+	data, _ := json.Marshal(got)
+	if _, err := backupRecord(data, got.Repository.Name); err != nil {
+		t.Fatal("pending marker no longer backup compatible", err)
+	}
+	*present = true
+	pr.Head.SHA = pending.RebaseHead
+	c.cycle(t.Context())
+	confirmed := c.store.list()[0]
+	if confirmed.State != "open" || confirmed.RebaseHead != "" || confirmed.Reason != "" || confirmed.TrackingError || confirmed.PR.Checks != "passing" || writes != 0 {
+		t.Fatalf("expected head not confirmed read-only: %+v writes=%d", confirmed, writes)
 	}
 }
