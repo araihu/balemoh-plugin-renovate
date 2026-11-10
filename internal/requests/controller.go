@@ -236,6 +236,12 @@ func (c *Controller) Run(ctx context.Context) {
 }
 func (c *Controller) observe(ctx context.Context, r Record) Record {
 	pr, err := c.github.pull(ctx, r)
+	if err == nil && pr == nil && r.PR != nil {
+		err = errors.New("previous PR association unavailable")
+		if r.State != "needs_attention" {
+			r.State, r.Reason = "needs_attention", "pr_observation_unavailable"
+		}
+	}
 	now := time.Now().UTC()
 	r.TrackedAt = &now
 	r.UpdatedAt = now

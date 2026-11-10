@@ -1,10 +1,12 @@
 # Public artifact delivery
 
-Plugin version: `0.0.1-alpha.11`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
+Source manifest version: `0.0.1-alpha.13`, using SDK `v0.0.1-alpha.4`, Goshtoso `v0.4.4` and Renovate `44.197.0`.
 
-Alpha.11 uses icon actions with tooltips in upgrade lists and details. Native links keep image/candidate-specific accessible names, keyboard help, 44px targets and distinct responsive IDs. The final PR submission keeps its explicit text. See [release notes](releases/v0.0.1-alpha.11.md).
+Alpha.13 verifies mixed-manager Kubernetes image diffs without attributing another manager's declarations to the selected upgrade. See [alpha.13 release notes](releases/v0.0.1-alpha.13.md). The missing-PR tracking correction on this integration branch is unpublished and is not part of the immutable alpha.13 artifact. Publishing it requires a new version and separate deployment approval.
 
-Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Its approved homelab cutover and recovered PR #861 are recorded in [homelab deployment PR #862](https://github.com/guilycst/home-lab/pull/862). Alpha.11 leaves this engine profile, release-age eligibility, credentials and manual merges unchanged.
+Alpha.11 introduced icon actions with tooltips in upgrade lists and details. Native links keep image/candidate-specific accessible names, keyboard help, 44px targets and distinct responsive IDs. The final PR submission keeps its explicit text. See [release notes](releases/v0.0.1-alpha.11.md).
+
+Alpha.10 skips publishing Renovate's optional release-age commit status, keeping the writer's status permission read-only. Its approved homelab cutover and recovered PR #861 are recorded in [homelab deployment PR #862](https://github.com/guilycst/home-lab/pull/862). Alpha.11 left this engine profile, release-age eligibility, credentials and manual merges unchanged.
 
 The alpha.8 pair was published and qualified in the isolated repository. Its [writer qualification](qualification/alpha8-writer/README.md) remains historical evidence.
 
@@ -19,9 +21,9 @@ release evidence.
 
 The controller defaults to writer disabled. Writes require an owned, diff-verified PR; missing PRs require review and never replay automatically. Snapshot v1 and the pinned native engine remain unchanged. Empty update lists still do not prove that images are up to date.
 
-Alpha.6 [published-artifact writer qualification passed](qualification/alpha6-writer/README.md) for pinned Kubernetes tag+digest, Dockerfile digest and untagged Compose updates. Each case verified an exact selected-file PR, real PR-triggered CI, duplicate admission, restart and backup/restore. The wrong-digest selection created no branch or PR. HMG enables writes only through a separate private-fixture connection; the real homelab connection remains read-only.
+Alpha.6 [published-artifact writer qualification passed](qualification/alpha6-writer/README.md) for pinned Kubernetes tag+digest, Dockerfile digest and untagged Compose updates. Each case verified an exact selected-file PR, real PR-triggered CI, duplicate admission, restart and backup/restore. The wrong-digest selection created no branch or PR. That alpha.6 HMG qualification enabled writes only through a private-fixture connection; it is not a statement of current homelab activation.
 
-Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. The initial GITHUB_TOKEN fixture had `unknown` checks; a [separate fixture-only PAT proof](qualification/alpha5-pr-ci/README.md) now qualifies automatic PR-triggered CI and exact-head passing tracking after restart. Homelab production workflows remain a separate rollout gate. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. Production currently runs the alpha.5 image read-only. The hosted Renovate bot stays unchanged, production writer stays disabled, and upgrade PR merges remain manual.
+Alpha.5 publication and [isolated writer qualification passed](qualification/alpha5-writer/README.md). The shipped controller opened exactly one selected-file PR and retained verified tracking after restart. The initial GITHUB_TOKEN fixture had `unknown` checks; a [separate fixture-only PAT proof](qualification/alpha5-pr-ci/README.md) now qualifies automatic PR-triggered CI and exact-head passing tracking after restart. Homelab production workflows remain a separate rollout gate. Alpha.4 remains [unqualified after its preflight failure](qualification/alpha4-writer/README.md), with its immutable tag unchanged. At that historical alpha.5 qualification stage, production was read-only and the hosted bot remained unchanged. Current deployment pins and writer ownership belong to homelab manifests and operational evidence; upgrade PR merges remain manual.
 
 ## Prepared source
 

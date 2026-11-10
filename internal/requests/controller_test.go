@@ -543,3 +543,43 @@ func TestAdmissionReservesBoundedCatalogCapacity(t *testing.T) {
 		t.Fatal("oversized catalog admitted")
 	}
 }
+
+func TestRetainedPRMissingFromScopedLookupInvalidatesEvidence(t *testing.T) {
+	for _, state := range []string{"open", "draft", "closed"} {
+		t.Run(state, func(t *testing.T) {
+			c, selection := setup(t)
+			record, err := c.Submit(t.Context(), selection)
+			if err != nil {
+				t.Fatal(err)
+			}
+			pr, present := githubFixture(t, c, record)
+			*present = true
+			pr.Draft = state == "draft"
+			if state == "closed" {
+				pr.State = "closed"
+			}
+			writes := 0
+			c.execute = func(context.Context, Record) error { writes++; return nil }
+			c.cycle(t.Context())
+			verified := c.store.list()[0]
+			if verified.State != state || verified.PR == nil || verified.PR.Checks != "passing" || verified.TrackingError {
+				t.Fatalf("initial association unavailable: %+v", verified)
+			}
+			// Retargeting or losing the owned head/base association produces an empty scoped lookup.
+			*present = false
+			for range 2 {
+				c.cycle(t.Context())
+				got := c.store.list()[0]
+				if got.State != "needs_attention" || got.Reason != "pr_observation_unavailable" || !got.TrackingError || got.PR == nil || got.PR.Checks != "unknown" || got.PR.Number != verified.PR.Number || writes != 0 {
+					t.Fatalf("missing association retained fresh evidence or replayed writer: %+v writes=%d", got, writes)
+				}
+			}
+			*present = true
+			c.cycle(t.Context())
+			recovered := c.store.list()[0]
+			if recovered.State != state || recovered.TrackingError || recovered.Reason != "" || recovered.PR.Checks != "passing" || writes != 0 {
+				t.Fatalf("read-only association recovery failed: %+v writes=%d", recovered, writes)
+			}
+		})
+	}
+}
