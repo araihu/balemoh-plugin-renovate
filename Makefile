@@ -20,10 +20,11 @@ package: generate
 	done
 	cp plugin.json dist/package/
 	cp schemas/*.json dist/package/schemas/
-	cp assets/*.css dist/package/assets/
+	cp assets/*.css assets/*.js dist/package/assets/
 	go run ./cmd/package-info dist/package
 
 test: generate
+	node --test assets/filters.test.mjs
 	go test -race ./...
 	go vet ./...
 

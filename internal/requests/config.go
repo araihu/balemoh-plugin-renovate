@@ -36,6 +36,8 @@ type Config struct {
 	GitHubWriteTokenFile string `env:"UPGRADES_CONTROLLER_GITHUB_WRITE_TOKEN_FILE"`
 	// Disabled by default. Enabling requires a separate writer handover and credential.
 	WriterEnabled bool `env:"UPGRADES_CONTROLLER_WRITER_ENABLED" envDefault:"false"`
+	// Optional Markdown fingerprint artifact. Only its Source digest line may change.
+	GeneratedFingerprintFile string `env:"UPGRADES_CONTROLLER_GENERATED_FINGERPRINT_FILE"`
 	// Maximum accepted collection age in seconds.
 	MaxSnapshotAgeSeconds int `env:"UPGRADES_CONTROLLER_MAX_SNAPSHOT_AGE_SECONDS" envDefault:"3600"`
 	// HTTPS certificate path.
@@ -53,6 +55,7 @@ func Parse(values map[string]string) (Config, error) {
 	if !regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`).MatchString(c.Repository) || c.Repository == "../.." ||
 		!regexp.MustCompile(`^[A-Za-z0-9_-]+(?:\[bot\])?$`).MatchString(c.PRAuthor) ||
 		strings.TrimSpace(c.BaseBranch) == "" || strings.HasPrefix(c.BaseBranch, "-") || strings.ContainsAny(c.BaseBranch, "\r\n\t ~^:?*[\\") || strings.Contains(c.BaseBranch, "..") ||
+		c.GeneratedFingerprintFile != "" && !validFingerprintPath(c.GeneratedFingerprintFile) ||
 		c.MaxSnapshotAgeSeconds < 60 || c.MaxSnapshotAgeSeconds > 43200 || c.DataDir == c.WorkDir {
 		return Config{}, errors.New("invalid request controller environment")
 	}

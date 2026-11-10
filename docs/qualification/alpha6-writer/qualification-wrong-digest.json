@@ -1,0 +1,13 @@
+{
+  "qualification": "passed",
+  "case": "wrong-digest",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:22d0c77a2d44e2dcc3776f52c210c7f3bcfbacb69902b416f460f44b95a6e467",
+  "sourceCommit": "f0108bea8b4223a7f0bb2f9f8a52d00af247737f",
+  "version": "0.0.1-alpha.6",
+  "reason": "plan_not_actionable",
+  "newPRs": 0,
+  "newBranches": 0,
+  "inventoryUnchanged": true,
+  "dashboard": false,
+  "automerge": false
+}

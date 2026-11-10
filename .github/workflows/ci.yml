@@ -34,4 +34,4 @@ jobs:
       - name: Verify the pinned Renovate profile and report projection
         run: |
           docker pull "$(awk '$1 == "FROM" { print $2; exit }' Dockerfile)"
-          go test -tags container ./internal/runner -count=1
+          go test -tags container ./internal/runner ./internal/requests -count=1

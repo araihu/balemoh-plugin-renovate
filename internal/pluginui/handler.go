@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/araihu/balemoh-plugin-renovate/internal/advisory"
@@ -33,7 +34,8 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	}
 	current, _ := r.PageURL(h.Manifest, "current", nil)
 	coverage, _ := r.PageURL(h.Manifest, "coverage", nil)
-	f := advisory.Filter{Search: r.Query.Get("search"), Repository: r.Query.Get("repository"), Assessment: r.Query.Get("assessment"), UpdateType: r.Query.Get("updateType"), Workflow: r.Query.Get("workflow"), Cursor: r.Query.Get("cursor"), Revision: r.Query.Get("revision"), Limit: 50}
+	fragment, _ := r.FragmentURL(h.Manifest, "results")
+	f := advisory.Filter{Search: r.Query.Get("search"), Repository: r.Query.Get("repository"), Assessment: querySelection(r.Query, "assessment"), UpdateType: querySelection(r.Query, "updateType"), Workflow: querySelection(r.Query, "workflow"), Cursor: r.Query.Get("cursor"), Revision: r.Query.Get("revision"), Limit: 50}
 	if !r.Query.Has("assessment") {
 		f.Assessment = "updates_found"
 	}
@@ -67,9 +69,18 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	if len(f.Repository) <= 256 {
 		resetFilter.Repository = f.Repository
 	}
-	model := view.Model{Request: r, Filter: f, CurrentURL: current, BackURL: appendQuery(current, q), RestartURL: restart, ResetURL: appendQuery(current, filterQuery(resetFilter)), CoverageURL: appendQuery(coverage, q), Services: map[string]ui.ServiceIdentity{}, Links: map[string]string{}}
+	model := view.Model{Request: r, Filter: f, CurrentURL: current, ResultsURL: fragment, BackURL: appendQuery(current, q), RestartURL: restart, ResetURL: appendQuery(current, filterQuery(resetFilter)), CoverageURL: appendQuery(coverage, q), Services: map[string]ui.ServiceIdentity{}, Links: map[string]string{}, RequestLinks: map[string]string{}}
 
-	if r.ContributionID == "detail" {
+	if r.ContributionType == "widget" {
+		input, _ := json.Marshal(advisory.Filter{Repository: f.Repository, UpdateType: f.UpdateType, Assessment: f.Assessment})
+		result, err = host.Query(ctx, "upgrades.summary", input)
+		if err == nil {
+			err = json.Unmarshal(result.Data, &model.Summary)
+			model.Meta = model.Summary.Meta
+			model.Result = result
+			component = view.Widget(model)
+		}
+	} else if r.ContributionID == "detail" {
 		input, _ := json.Marshal(map[string]string{"dependencyId": r.PathParams["dependency-id"]})
 		result, err = host.Query(ctx, "upgrades.get", input)
 		var data advisory.Detail
@@ -113,15 +124,17 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 					link += "?" + q.Encode()
 				}
 				model.Links[item.ID] = link
+				for _, candidate := range item.Candidates {
+					href, _ := r.PageURL(h.Manifest, "request", map[string]string{"dependency-id": item.ID, "candidate-id": candidate.ID})
+					model.RequestLinks[candidate.ID] = appendQuery(href, q)
+				}
 			}
 			next := q.Clone()
 			next.Set("cursor", data.NextCursor)
 			next.Set("revision", data.Revision)
 			model.NextURL = current + "?" + next.Encode()
 
-			if r.ContributionType == "widget" {
-				component = view.Widget(model)
-			} else if r.Mode == "fragment" && r.Region == "results" {
+			if r.Mode == "fragment" && r.Region == "results" {
 				component = view.Results(model)
 			} else {
 				component = view.Current(model)
@@ -150,16 +163,30 @@ func (h Handler) Handle(ctx context.Context, r ui.Request, host ui.HostServices)
 	}
 	response, e := render.Component(ctx, "Image upgrades", component)
 	response.Status = status
-	response.AssetIDs = []string{"layout"}
+	if page, ok := h.Manifest.Page(r.ContributionID); ok {
+		response.Title, response.Description = page.Title, page.Description
+	}
+	response.AssetIDs = []string{"layout", "filters"}
 	if r.Mode == "fragment" {
 		response.Kind = "fragment"
 	}
 	return response, e
 }
+func querySelection(q url.Values, key string) string {
+	values := []string{}
+	for _, value := range q[key] {
+		if value != "" {
+			values = append(values, value)
+		}
+	}
+	return strings.Join(values, ",")
+}
 func filterQuery(f advisory.Filter) url.Values {
 	q := url.Values{}
-	q.Set("assessment", f.Assessment)
-	for k, v := range map[string]string{"search": f.Search, "repository": f.Repository, "assessment": f.Assessment, "updateType": f.UpdateType, "workflow": f.Workflow} {
+	for k, v := range map[string]string{"assessment": f.Assessment, "updateType": f.UpdateType, "workflow": f.Workflow} {
+		q[k] = strings.Split(v, ",")
+	}
+	for k, v := range map[string]string{"search": f.Search, "repository": f.Repository} {
 		if v != "" {
 			q.Set(k, v)
 		}

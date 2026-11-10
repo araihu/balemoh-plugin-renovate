@@ -1,14 +1,14 @@
 # Balemoh Renovate
 
 
-[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The prepared alpha.3 tools require a new image publication before GitOps activation.
-Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The source manifest declares `0.0.1-alpha.13` and requires SDK `v0.0.1-alpha.4`. [Release notes](docs/releases/v0.0.1-alpha.13.md) distinguish the immutable published artifact from unpublished integration fixes.
+Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes an overview widget with upgrade-type, security-flag and tracked-PR counts, a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
 
-Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. The existing hosted Renovate bot remains the production writer until a separate handover. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
+Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. Each deployment owns its writer handover and image pins. Source integration does not change either. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
 
 ## Build and test
 
-Requires Go 1.27, Python 3 and Docker for container builds.
+Requires Go 1.27, Node.js 20 or newer, Python 3 and Docker for container builds.
 
 ```sh
 make test
@@ -71,11 +71,52 @@ Optional mapping string example:
 
 Use exact derived IDs. Do not infer runtime identity from image or file names. Up to 256 mappings and 64 distinct services are accepted. The host service grant is separate. Add the same `serviceId` to the BFF installation's `serviceIDs` array. Obtain service IDs from the host catalog and dependency IDs from `upgrades.list` or `upgrades.get`; compare the intended repository, manager, file and declaration before saving a mapping. If a group covers several services, leave it unmapped in this version.
 
-Mapped groups show the host's current service name and icon in the list, detail and summary widget. Sprite icons use Goshtoso's public `icon.Icon`; image icons use the validated same-origin host URL. Both are decorative beside the name. Hidden, missing, ungranted or unavailable catalog entries fall back to the image/file presentation. Name and icon changes never change dependency or candidate IDs. No image-name matching or runtime-version claim is made.
+Mapped groups show the host's current service name and icon in the list and detail views. The overview widget shows repository-level counts and does not resolve service mappings. Sprite icons use Goshtoso's public `icon.Icon`; image icons use the validated same-origin host URL. Both are decorative beside the name. Hidden, missing, ungranted or unavailable catalog entries fall back to the image/file presentation. Name and icon changes never change dependency or candidate IDs. No image-name matching or runtime-version claim is made.
 
 The detail route parameter is `dependency-id` because SDK route parameters require lowercase local identifiers; query input remains `dependencyId`.
 
+## Understanding collection results
+
+No candidates reported means Renovate returned an empty update list. It does not prove the image is up to date. Lookup unconfirmed means Renovate skipped a lookup or reported a warning. Conflicting declarations prevent reliable attribution to an image/file group. The No conclusive result filter includes all of these source-unknown states.
+
+Collection coverage shows repository-wide counts, independent of list filters and pagination. The warning counts groups needing review separately from empty reports. Source records without a reliable identity are counted separately, because they cannot be called distinct images. Empty reports alone do not trigger an amber warning. This presentation does not change the source assessment, notifications or PR request eligibility.
+
+The coverage page uses tables for group outcomes and warning causes. Help buttons
+explain terms on click or keyboard activation. A stale collection stays marked as
+stale; its findings remain visible. Scope and producer evidence are collapsed.
+
+| Outcome | Meaning |
+| --- | --- |
+| Candidates reported | At least one upgrade candidate was returned. |
+| No candidates reported | Empty update list. This is not evidence that the image is up to date. |
+| Lookup unconfirmed | A lookup was skipped or returned a warning. The causes table shows the captured reason and next step. |
+| Conflicting declarations | The same image/file group has disagreeing source records. |
+| Outside upgrade scope | Disabled declarations or image tags inherited from Helm charts. These are not lookup failures. |
+
+Counts cover the whole repository. Each image/file group contributes once to its
+outcome and once to its captured lookup cause, if any. Unidentified declarations
+are reported separately and do not count as distinct image groups. The collector
+publishes fixed cause labels, never raw registry responses.
+
+Empty unnamed Helm overrides and unresolved Dockerfile build arguments are outside
+explicit-image counts. Named inherited chart images remain excluded groups; the
+plugin does not guess the chart's resolved image version. The collection's scope
+text retains the actual placeholder counts under technical details.
+
+[Native qualification and warning investigation](docs/qualification/empty-results-2026-11-04.md) records the empty-result counterexamples and the reproduced causes behind the 17 HMG warning groups.
+
 ## Candidate notifications
+
+When notifications are enabled, ordinary notices default to `major`, `minor` and `patch`. Configure `notificationUpdateTypes` on the plugin connection to replace that selection. `digest`, `pinDigest` and `pin` are opt-in. An empty array selects security-flag notices only. Security flags bypass the type filter, but `notificationsEnabled: false` disables all publishing. This setting does not filter the image list or change PR request eligibility.
+
+```json
+{
+  "notificationsEnabled": true,
+  "notificationUpdateTypes": ["major", "minor", "patch", "digest"]
+}
+```
+
+Changing the connection configuration establishes a new silent baseline. Enabling another type does not send a backlog of existing candidates.
 
 The first validated observation and the first observation after a collection failure/age gap establish silent baselines. New candidates in later current observations produce `info` notifications. Partial coverage does not suppress a proven candidate. Unassessed/excluded groups, stale data and failed collection never notify. Repeated polls and reappearing candidates do not notify again during the backend session.
 
@@ -116,9 +157,10 @@ The optional `-notifications` fixture mode starts with one candidate withheld, t
 
 The optional `upgrades.request` action needs both an explicit named grant and
 `data.action/v1`. Configure `controllerURL` with a private HTTPS origin and the
-API-only secrets `controller-read-token`, `controller-action-token` and optional
-`controller-ca`, base64 DER. Read/action bearers must differ. Neither GitHub nor
-controller credentials reach the BFF.
+API-only `controller-read-token` secret for PR tracking. `controller-ca` is
+optional base64 DER trust. Read-only tracking needs no action token. Submission
+also requires `controller-action-token`, distinct from the read token. Neither
+GitHub nor controller credentials reach the BFF.
 
 The UI shows a confirmation page for supported tag upgrades, submits immutable
 selection IDs and the retained snapshot digest, then redirects to the durable
@@ -134,13 +176,32 @@ false. Enabling it requires a dedicated repository-scoped engine credential,
 read-only PR/checks/status credential and exact expected PR author. The reader
 and writer credentials are reread from files to support refreshed tokens.
 
-One worker performs full-dry-run preflight, verifies the exact file/package/tag
+One worker performs full-dry-run preflight, verifies the exact file/package/tag/digest
 and approved base, then invokes pinned Renovate with the same scope. Dashboard,
 automerge, platform automerge and pruning are disabled. Existing repository
 policy remains required. No hosted bot dashboard edit is involved.
 
-Initial requests support unpinned tag major/minor/patch upgrades in Kubernetes,
-Docker Compose and Dockerfiles. Digest/pin/custom/Helm upgrades remain advisory.
+For repositories with a generated Markdown source fingerprint, set
+`UPGRADES_CONTROLLER_GENERATED_FINGERPRINT_FILE` to its repository-relative path.
+The pinned engine then runs a fixed helper shipped in the controller to hash
+Git-visible paths, modes and contents and refresh only the `Source digest` line.
+It does not execute repository scripts. The request review discloses this file,
+and tracking rejects changes to any other artifact content or unapproved image.
+Leave the setting empty for the original image-only behavior. This helper matches
+the homelab inventory fingerprint contract; it does not regenerate topology or
+counts. CI must still validate the full artifact. Back up retained requests and
+upgrade the UI, controller and backup tool together before enabling this setting.
+
+Requests support unpinned tag major/minor/patch upgrades, tagged SHA-256 digest
+updates, pinned tag upgrades and digest-only updates in Kubernetes, Docker Compose
+and Dockerfiles. Native post-lookup rules reject an unapproved target digest
+before branch generation. First-time pinning, digest removal, custom/Helm managers
+and ambiguous declarations remain advisory. See [pinned-image scope and proof](docs/specs/spec-002-pinned-image-requests/spec-002-pinned-image-requests.md).
+For mixed Kubernetes/custom-manager files, tracking may replace only the native
+`image:` declarations. Identical `imageName` or other text stays unchanged.
+The complete resulting file must equal the approved replacement, with the exact
+selected occurrence count. Other ambiguous manager combinations remain advisory.
+
 A base change during the external write can create an ambiguous branch; the
 controller reports needs_attention and never automatically repeats that write.
 

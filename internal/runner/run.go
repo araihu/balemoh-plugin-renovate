@@ -73,7 +73,7 @@ func Run(ctx context.Context, c Config) (result error) {
 	}
 	// Configuration from the invoking environment cannot enable writer mode.
 	environment := append([]string{}, c.commandEnvironment...)
-	environment = append(environment, "RENOVATE_CONFIG_FILE="+configPath, "RENOVATE_TOKEN="+token, "LOG_LEVEL=warn")
+	environment = append(environment, "RENOVATE_CONFIG_FILE="+configPath, "RENOVATE_TOKEN="+token, "LOG_LEVEL=debug", "LOG_FORMAT=json")
 	phase = "scan"
 	started := time.Now().UTC()
 	command := exec.CommandContext(ctx, "renovate")
@@ -132,7 +132,12 @@ func Run(ctx context.Context, c Config) (result error) {
 	runID := fmt.Sprintf("%x-%x-%x-%x-%x", uuid[:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 	m := snapshot.Metadata{RunID: runID, StartedAt: started, CompletedAt: completed, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: policyHash}, Repository: snapshot.Repository{Platform: "github", Name: c.Repository, BaseBranch: c.BaseBranch, Commit: before}, ExitCode: 0, DryRun: "full", CheckoutCommit: before, BeforeCommit: before, AfterCommit: after}
 	phase = "normalize"
-	s, err := snapshot.Normalize(report, m)
+	diagnostics, err := os.Open(filepath.Join(work, "run.log"))
+	if err != nil {
+		return ErrRun
+	}
+	defer diagnostics.Close()
+	s, err := snapshot.Normalize(report, m, diagnostics)
 	if err != nil {
 		return ErrRun
 	}

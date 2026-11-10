@@ -12,34 +12,22 @@
       "maxLength": 256
     },
     "assessment": {
-      "enum": [
-        "",
-        "updates_found",
-        "no_candidate",
-        "excluded",
-        "unknown"
-      ]
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^((updates_found|no_candidate|excluded|unknown)(,(updates_found|no_candidate|excluded|unknown)){0,3})?$",
+      "description": "Comma-separated selections, OR within this filter. Empty matches all. Duplicates are rejected."
     },
     "updateType": {
-      "enum": [
-        "",
-        "major",
-        "minor",
-        "patch",
-        "digest",
-        "pinDigest",
-        "pin",
-        "unknown"
-      ]
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^((major|minor|patch|digest|pinDigest|pin|unknown)(,(major|minor|patch|digest|pinDigest|pin|unknown)){0,6})?$",
+      "description": "Comma-separated selections, OR within this filter. Empty matches all. Duplicates are rejected."
     },
     "workflow": {
-      "enum": [
-        "",
-        "pr_open",
-        "branch_only",
-        "none_observed",
-        "unknown"
-      ]
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^((pr_open|branch_only|none_observed|unknown)(,(pr_open|branch_only|none_observed|unknown)){0,3})?$",
+      "description": "Comma-separated selections, OR within this filter. Empty matches all. Duplicates are rejected."
     },
     "cursor": {
       "type": "string",

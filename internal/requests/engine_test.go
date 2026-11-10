@@ -13,7 +13,7 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	read, write := engineProfile(r, "/work/test", false), engineProfile(r, "/work/test", true)
+	read, write := engineProfile(r, "/work/test", false, ""), engineProfile(r, "/work/test", true, "")
 	if read["dryRun"] != "full" || write["dryRun"] != nil {
 		t.Fatal("incorrect writer mode")
 	}
@@ -24,6 +24,14 @@ func TestEngineScopeAndPreflightRejectOtherChanges(t *testing.T) {
 		t.Fatal("writer changed the approved scope")
 	}
 	force := write["force"].(map[string]any)
+	if force["statusCheckWhen"].(map[string]any)["minimumReleaseAge"] != "never" {
+		t.Fatal("release-age status publication requires ungranted status write access")
+	}
+	for _, key := range []string{"minimumReleaseAge", "minimumReleaseAgeBehaviour", "internalChecksFilter", "ignoreTests"} {
+		if _, overridden := force[key]; overridden {
+			t.Fatal("repository eligibility or check policy overridden", key)
+		}
+	}
 	for _, key := range []string{"automerge", "platformAutomerge", "dependencyDashboard", "dependencyDashboardApproval", "pruneStaleBranches"} {
 		if force[key] != false {
 			t.Fatal("unsafe override", key)
@@ -139,5 +147,54 @@ func TestControllerEnvironmentIsDisabledByDefaultAndFailClosed(t *testing.T) {
 	values["UPGRADES_CONTROLLER_WRITER_ENABLED"] = "nonsense-sensitive-sentinel"
 	if _, e := Parse(values); e == nil || strings.Contains(e.Error(), "sensitive-sentinel") {
 		t.Fatal("invalid environment leaked or accepted")
+	}
+}
+
+func TestFullDryRunTimestampOptionalWarnings(t *testing.T) {
+	c, selection := setup(t)
+	r, err := c.Submit(t.Context(), selection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	warnings := []map[string]any{
+		{"name": "renovate", "level": 40, "msg": "Some release(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information"},
+		{"name": "renovate", "level": 40, "msg": "Some upgrade(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information"},
+	}
+	for _, tc := range []struct {
+		name     string
+		problems any
+		global   bool
+		wantOK   bool
+	}{
+		{"optional release timestamp", warnings[:1], false, true},
+		{"optional upgrade timestamp", warnings[1:], false, true},
+		{"both optional warnings", warnings, false, true},
+		{"unknown warning", []map[string]any{{"name": "renovate", "level": 40, "msg": "Package lookup failures"}}, false, false},
+		{"mixed warnings", append(append([]map[string]any{}, warnings...), map[string]any{"name": "renovate", "level": 40, "msg": "Package lookup failures"}), false, false},
+		{"error level", []map[string]any{{"name": "renovate", "level": 50, "msg": warnings[0]["msg"]}}, false, false},
+		{"different reporter", []map[string]any{{"name": "other", "level": 40, "msg": warnings[0]["msg"]}}, false, false},
+		{"changed policy", []map[string]any{{"name": "renovate", "level": 40, "msg": strings.ReplaceAll(warnings[0]["msg"].(string), "timestamp-optional", "timestamp-required")}}, false, false},
+		{"malformed problem", []any{nil}, false, false},
+		{"global warning", warnings, true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := map[string]any{"branches": []any{map[string]any{"branchName": r.Branch, "result": "no-work", "upgrades": []any{map[string]any{"packageFile": r.Dependency.PackageFile, "packageName": r.Dependency.PackageName, "currentValue": r.Dependency.CurrentValue, "newValue": r.Candidate.NewValue}}}}}
+			plan := map[string]any{"repositories": map[string]any{r.Repository.Name: repo}}
+			if tc.global {
+				plan["problems"] = tc.problems
+			} else {
+				repo["problems"] = tc.problems
+			}
+			data, _ := json.Marshal(plan)
+			if got := verifyFullDryRunPlan(data, r) == nil; got != tc.wantOK {
+				t.Fatalf("plan accepted=%v, want %v", got, tc.wantOK)
+			}
+			if tc.wantOK {
+				wrong := strings.ReplaceAll(string(data), r.Branch, "renovate/unapproved")
+				if verifyFullDryRunPlan([]byte(wrong), r) == nil {
+					t.Fatal("warning exception admitted a different branch")
+				}
+			}
+		})
 	}
 }

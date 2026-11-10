@@ -12,6 +12,14 @@ Run `image-upgrades-app-token run` in a native sidecar. Mount the private App Se
 
 Required and default environment values come from [generated App configuration](../internal/tracking/environment.md). Repository and registration identity are deployment inputs. There is no hardcoded homelab owner, repository or App slug in runtime code. Environment documentation uses envdoc's Markdown format, which omits Go field types.
 
+## Writer credential
+
+The native Renovate engine needs Contents and Pull requests read/write, plus Issues, Metadata and Commit statuses read access for its single repository. Commit-status reads are required when it observes the branch after pushing; lacking this permission can leave an owned branch without a PR. The controller's separate tracking App does not supply credentials to the native engine.
+
+The engine sets `statusCheckWhen.minimumReleaseAge=never` in both preflight and write profiles. This skips publishing the optional `renovate/stability-days` commit status, which requires status write access. Repository release-age eligibility and internal checks remain active; deferred native plans still fail preflight.
+
+A branch without a verified PR becomes `needs_attention` and is never replayed automatically. Inspect its exact diff and repository state before operator recovery. Keep the branch and request receipt; do not delete either to force a retry. Upgrade PR merges remain manual.
+
 ## Request backup
 
 `image-upgrades-request-backup run` reads [generated backup configuration](../internal/requestbackup/environment.md). The deployment supplies an authenticated HTTPS source, its reader credential and CA, isolated Restic repository, Restic binary, host/tag and retention policy. Restic credentials remain third-party environment configuration. Only RESTIC_/AWS_ and relevant runtime environment values are passed to the child process; unrelated GitHub credentials are excluded.

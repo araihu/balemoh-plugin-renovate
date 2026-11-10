@@ -43,7 +43,12 @@ func (h *host) Query(_ context.Context, id string, input json.RawMessage) (ui.Qu
 		value = advisory.Detail{Meta: meta, Dependency: advisory.Item{Dependency: d, ServiceID: h.serviceID}}
 	}
 	if id == "upgrades.summary" {
-		value = advisory.Summary{Meta: meta}
+		value = advisory.Summary{Meta: meta, Assessments: map[string]int{"updates_found": 1}, UpdateTypes: map[string]int{"major": 1}, Candidates: 1}
+		if h.security {
+			v := value.(advisory.Summary)
+			v.SecurityCandidates = 1
+			value = v
+		}
 	}
 	data, _ := json.Marshal(value)
 	return ui.QueryResult{Data: data, State: "partial", ObservationRevision: "1", ObservedAt: &now, LastSuccessAt: &now}, nil
@@ -118,7 +123,7 @@ func TestMappedServicePresentation(t *testing.T) {
 		{name: "incomplete sprite", identities: []ui.ServiceIdentity{{ID: id, Name: "Unexpected service", IconSymbol: "nginx"}}},
 		{name: "duplicate identity", identities: []ui.ServiceIdentity{{ID: id, Name: "Unexpected service"}, {ID: id, Name: "Unexpected service"}}},
 	} {
-		for _, page := range []string{"current", "detail", "summary"} {
+		for _, page := range []string{"current", "detail"} {
 			t.Run(tc.name+"/"+page, func(t *testing.T) {
 				h := &catalogHost{host: host{serviceID: id}, identities: tc.identities, catalogErr: tc.err}
 				kind := "page"

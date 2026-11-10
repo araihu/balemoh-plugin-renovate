@@ -5,45 +5,50 @@ import (
  "github.com/araihu/balemoh-plugin-renovate/internal/requests"
  "github.com/araihu/goshtoso/components/alert"
  "github.com/araihu/goshtoso/components/form"
- "github.com/araihu/goshtoso/components/link"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
  "github.com/araihu/goshtoso/components/pageheader"
  "github.com/araihu/goshtoso/components/panel"
 )
 
 templ UpgradeAction(m Model,u snapshot.Candidate) {
  if existing:=m.RequestFor(u.ID);existing!=nil {
- @RequestStatus(m,*existing)
+ @RequestStatus(m,*existing,"detail-"+u.ID)
  if m.CanReviewAgain(u) {
- @link.Link(m.RequestLinks[u.ID]){ Review a new request }
+ @IconAction(m,"detail-new-"+u.ID,m.RequestLinks[u.ID],"Review a new request",heroicons.Icon16SolidArrowUp,false)
  }
  } else if active:=m.OtherActiveRequest(u.ID);u.PR==nil && active!=nil {
  <p>Another candidate for this image and file already has an active request.</p>
- @RequestStatus(m,*active)
+ @RequestStatus(m,*active,"detail-"+u.ID)
  } else if u.PR==nil && m.CanRequest(u) {
- @link.Link(m.RequestLinks[u.ID]){ Review PR request }
+ @IconAction(m,"detail-review-"+u.ID,m.RequestLinks[u.ID],reviewPRLabel(m.Detail.Dependency,u),heroicons.Icon16SolidArrowUp,false)
  } else if u.PR==nil && m.Meta.ControllerAvailable && !m.Meta.Controller.Enabled {
  <p>PR requests are disabled pending writer migration.</p>
  } else if u.PR==nil && m.Meta.ControllerAvailable && m.Meta.Controller.Enabled {
- <p>This candidate is currently advisory only. Requests support unpinned tag upgrades in Kubernetes, Docker Compose and Dockerfile declarations.</p>
+ <p>This candidate is currently advisory only. Requests support tag upgrades and SHA-256 digest updates in Kubernetes, Docker Compose and Dockerfile declarations. First-time pinning and ambiguous references remain advisory.</p>
  }
 }
 
-templ RequestStatus(m Model,r requests.Record) {
+templ RequestStatus(m Model,r requests.Record,scope string) {
  <section aria-label="Upgrade request status" class="image-upgrades-cell">
  <h3 class="text-lg font-semibold">{ requestState(r.State) }</h3>
  if !m.Meta.ControllerAvailable || r.TrackingError {
  @alert.Alert(alert.Config{Title:"Request tracking unavailable",Description:"Showing the last retained status. Check GitHub before taking any action.",Tone:alert.ToneWarning})
  }
- <p>Approved Git reference: { *r.Dependency.CurrentValue }. Requested candidate: { *r.Candidate.NewValue }.</p>
+ <div class="image-upgrades-reference-pair">
+ <dl class="image-upgrades-reference"><div><dt>Approved Git reference</dt><dd>@ReferenceValue(r.Dependency.CurrentValue,r.Dependency.CurrentDigest,true)</dd></div></dl>
+ <dl class="image-upgrades-reference"><div><dt>Requested candidate</dt><dd>@ReferenceValue(r.Candidate.NewValue,r.Candidate.NewDigest,true)</dd></div></dl>
+ </div>
  if r.PR!=nil {
- @link.Link(r.PR.URL,link.WithTarget("_blank"),link.WithAttrs(templ.Attributes{"rel":"noopener noreferrer"})){ Open upgrade pull request }
- <p>{ checksLabel(r.PR.Checks) }</p>
+ @IconAction(m,scope+"-pr",r.PR.URL,"View PR #"+count(r.PR.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
+ <p>{ m.requestChecks(r,false) }</p>
  }
  if r.TrackedAt!=nil {
  <p>Last checked: <time datetime={ r.TrackedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ r.TrackedAt.UTC().Format("02 Jan 2006 15:04 UTC") }</time></p>
  }
- <p>Review and merge the PR manually in GitHub.</p>
- @link.Link(m.StatusURL){ Refresh request status }
+ if guidance:=requestGuidance(r.State);guidance!="" {
+ <p>{ guidance }</p>
+ }
+ @IconAction(m,scope+"-refresh",m.StatusURL,"Refresh request status",heroicons.Icon16SolidArrowPath,false)
  </section>
 }
 
@@ -57,7 +62,7 @@ templ RequestUpgrade(m Model) {
  }
  @panel.Panel(panel.Config{Header:SectionTitle(m.Detail.Dependency.PackageName),Body:RequestReview(m)})
  if existing:=m.RequestFor(m.Selected.ID);existing!=nil {
- @RequestStatus(m,*existing)
+ @RequestStatus(m,*existing,"request-review")
  }
  if m.CanReviewAgain(m.Selected) {
  @form.Form(form.Config{ID:m.Request.DOMID("request-form"),Action:m.ActionURL,Method:"post",RootAttrs:templ.Attributes{"x-data":"{ submitting: false }","@submit":"submitting = true","@pageshow.window":"submitting = false"},Footer:&form.FooterConfig{SubmitLabel:"Request pull request",CancelLabel:"Cancel",CancelHref:m.BackURL,SubmitDisabled:"submitting"}}) {
@@ -79,5 +84,10 @@ templ RequestReview(m Model) {
  <div><dt>Matching declarations</dt><dd>{ count(max(m.Detail.Dependency.SourceOccurrences,1)) }</dd></div>
  </dl>
  @CandidateSummary(m.Detail.Dependency,m.Selected)
- <p>The request covers this image and Git file group. Other files and images are outside this approval.</p>
+ <p>The request covers this image and Git file group.</p>
+ if m.Meta.Controller.GeneratedFingerprintFile!="" {
+ <p>The generated fingerprint in <code class="image-upgrades-exact">{ m.Meta.Controller.GeneratedFingerprintFile }</code> will also be refreshed. Other content remains outside this approval.</p>
+ } else {
+ <p>Other files and images are outside this approval.</p>
+ }
 }

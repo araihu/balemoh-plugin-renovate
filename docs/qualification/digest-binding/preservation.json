@@ -1,0 +1,24 @@
+{
+  "observedAt": "2026-11-03T14:33:03Z",
+  "image": "ghcr.io/araihu/balemoh-plugin-renovate@sha256:8a5fdb21078f1fcb64db4d4b42e9166128750df2b2e214cfeb778e1d0b52f07a",
+  "writerEnabled": false,
+  "writerCredentialMounted": false,
+  "collectorSpecUnchanged": true,
+  "collectorCredentialUnchanged": true,
+  "hostApplicationUnchanged": true,
+  "hostedBotPolicyBlobUnchanged": "953d062f5b1cf1a0707fedb6ffb02f0c69e16ec3",
+  "productionPVCUnchanged": true,
+  "upgradePRMergesPerformed": 0,
+  "engineAutomerge": false,
+  "dashboardMutationsPerformedByThisTask": 0,
+  "dashboardLastEdit": {
+    "updatedAt": "2026-11-03T14:02:51Z",
+    "lastEditedAt": "2026-11-03T14:02:51Z",
+    "editor": {
+      "login": "renovate"
+    }
+  },
+  "applicationHealth": "Healthy",
+  "applicationSync": "Synced",
+  "note": "Hosted Renovate edited its own dashboard during observation. This task made no hosted-bot, production manifest or dashboard changes."
+}

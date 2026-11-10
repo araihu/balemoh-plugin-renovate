@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"syscall"
@@ -20,28 +21,50 @@ import (
 
 var errEngine = errors.New("Renovate execution not confirmed")
 
-func engineProfile(r Record, work string, write bool) map[string]any {
+func engineProfile(r Record, work string, write bool, fingerprintFile string) map[string]any {
 	var dryRun any = "full"
 	if write {
 		dryRun = nil
 	}
-	allow := map[string]any{"matchPackageNames": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageName) + "$/"}, "matchFileNames": []string{r.Dependency.PackageFile}, "enabled": true, "allowedVersions": "/^" + regexp.QuoteMeta(*r.Candidate.NewValue) + "$/", "groupName": nil, "groupSlug": nil}
+	allow := map[string]any{"matchPackageNames": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageName) + "$/"}, "matchFileNames": []string{r.Dependency.PackageFile}, "enabled": true, "groupName": nil, "groupSlug": nil}
+	if r.Candidate.NewValue != nil {
+		allow["allowedVersions"] = "/^" + regexp.QuoteMeta(*r.Candidate.NewValue) + "$/"
+	}
 	var identity []string
 	if json.Unmarshal([]byte(r.Dependency.DependencyKey), &identity) == nil && len(identity) == 2 && identity[1] != "" {
 		allow["matchDepTypes"] = []string{identity[1]}
 	}
-	return map[string]any{
+	rules := []any{map[string]any{"matchPackageNames": []string{"*"}, "enabled": false}, allow}
+	if r.Candidate.NewDigest != nil {
+		tagMismatch := "$exists(newValue)"
+		if r.Candidate.NewValue != nil {
+			tagMismatch = "$not($exists(newValue)) or newValue != '" + *r.Candidate.NewValue + "'"
+		}
+		// Native post-lookup rules disable mismatches before branch generation or writes.
+		expression := "$exists(updateType) and ($not($exists(newDigest)) or newDigest != '" + *r.Candidate.NewDigest + "' or updateType != '" + r.Candidate.UpdateType + "' or " + tagMismatch + ")"
+		rules = append(rules, map[string]any{"matchPackageNames": allow["matchPackageNames"], "matchFileNames": allow["matchFileNames"], "matchJsonata": []string{expression}, "enabled": false})
+	}
+	profile := map[string]any{
 		"platform": "github", "repositories": []string{r.Repository.Name}, "autodiscover": false, "onboarding": false, "requireConfig": "required",
 		"dryRun": dryRun, "persistRepoData": true, "baseDir": work, "cacheDir": filepath.Join(work, "cache"), "reportType": "file", "reportPath": filepath.Join(work, "report.json"), "reportFormatting": false,
 		"allowScripts": false, "allowPlugins": false, "allowedCommands": []string{}, "internalHostAccess": "block",
 		"force": map[string]any{"automerge": false, "platformAutomerge": false, "dependencyDashboard": false, "dependencyDashboardApproval": false, "prCreation": "immediate", "pruneStaleBranches": false,
+			// Keep release-age gating without publishing a status using the read-only status grant.
+			"statusCheckWhen":    map[string]any{"minimumReleaseAge": "never"},
 			"baseBranchPatterns": []string{r.Repository.BaseBranch}, "includePaths": []string{r.Dependency.PackageFile}, "enabledManagers": []string{r.Dependency.Manager},
 			"kubernetes":   map[string]any{"managerFilePatterns": []string{"/^" + regexp.QuoteMeta(r.Dependency.PackageFile) + "$/"}},
 			"branchPrefix": "balemoh-renovate/", "branchTopic": r.ID, "additionalBranchPrefix": "", "groupName": nil, "groupSlug": nil, "hashedBranchLength": nil,
-			"fetchChangeLogs": "off", "pinDigests": false,
-			"packageRules": []any{map[string]any{"matchPackageNames": []string{"*"}, "enabled": false}, allow},
+			"fetchChangeLogs": "off", "pinDigests": r.Candidate.NewDigest != nil,
+			"packageRules": rules,
 		},
 	}
+	if fingerprintFile != "" {
+		command := "/usr/local/bin/image-upgrades-controller refresh-fingerprint " + fingerprintFile
+		profile["allowShellExecutorForPostUpgradeCommands"] = false
+		profile["allowedCommands"] = []string{"^" + regexp.QuoteMeta(command) + "$"}
+		profile["force"].(map[string]any)["postUpgradeTasks"] = map[string]any{"commands": []string{command}, "executionMode": "branch", "fileFilters": []string{fingerprintFile}, "workingDirTemplate": "", "dataFileTemplate": "", "installTools": map[string]string{}}
+	}
+	return profile
 }
 
 func verifyFullDryRunPlan(data []byte, r Record) error {
@@ -53,12 +76,14 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 				Name     string `json:"branchName"`
 				Result   string `json:"result"`
 				Upgrades []struct {
-					File    string  `json:"packageFile"`
-					Name    string  `json:"depName"`
-					Package string  `json:"packageName"`
-					Current *string `json:"currentValue"`
-					Value   *string `json:"newValue"`
-					Digest  *string `json:"newDigest"`
+					File          string  `json:"packageFile"`
+					Name          string  `json:"depName"`
+					Package       string  `json:"packageName"`
+					Current       *string `json:"currentValue"`
+					Value         *string `json:"newValue"`
+					Digest        *string `json:"newDigest"`
+					CurrentDigest *string `json:"currentDigest"`
+					Type          string  `json:"updateType"`
 				} `json:"upgrades"`
 			} `json:"branches"`
 		} `json:"repositories"`
@@ -67,8 +92,25 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 		return errEngine
 	}
 	repo, ok := native.Repositories[r.Repository.Name]
-	if !ok || len(repo.Problems) > 0 || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
+	if !ok || len(repo.Branches) != 1 || repo.Branches[0].Name != r.Branch {
 		return errEngine
+	}
+	for _, raw := range repo.Problems {
+		var problem struct {
+			Name  string `json:"name"`
+			Level int    `json:"level"`
+			Msg   string `json:"msg"`
+		}
+		if json.Unmarshal(raw, &problem) != nil || problem.Name != "renovate" || problem.Level != 40 {
+			return errEngine
+		}
+		// These pinned-engine warnings explicitly preserve timestamp-optional policy.
+		switch problem.Msg {
+		case "Some release(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information",
+			"Some upgrade(s) did not have a releaseTimestamp, but as we're running with minimumReleaseAgeBehaviour=timestamp-optional, proceeding. See debug logs for more information":
+		default:
+			return errEngine
+		}
 	}
 	// Full dry-run creates no commit SHA, so Renovate can report no-work for a selected upgrade.
 	if result := repo.Branches[0].Result; result != "done" && result != "pr-created" && result != "no-work" {
@@ -79,7 +121,10 @@ func verifyFullDryRunPlan(data []byte, r Record) error {
 		return errEngine
 	}
 	for _, u := range upgrades {
-		if u.File != r.Dependency.PackageFile || u.Package != r.Dependency.PackageName || u.Current == nil || u.Value == nil || *u.Current != *r.Dependency.CurrentValue || *u.Value != *r.Candidate.NewValue || u.Digest != nil {
+		if u.Current != nil && *u.Current == "" {
+			u.Current = nil
+		}
+		if u.File != r.Dependency.PackageFile || u.Package != r.Dependency.PackageName || !reflect.DeepEqual(u.Current, r.Dependency.CurrentValue) || !reflect.DeepEqual(u.Value, r.Candidate.NewValue) || !reflect.DeepEqual(u.CurrentDigest, r.Dependency.CurrentDigest) || !reflect.DeepEqual(u.Digest, r.Candidate.NewDigest) || (r.Candidate.NewDigest != nil && u.Type != r.Candidate.UpdateType) {
 			return errEngine
 		}
 	}
@@ -125,7 +170,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 		return errEngine
 	}
 	invoke := func(write bool) error {
-		p := engineProfile(r, work, write)
+		p := engineProfile(r, work, write, c.config.GeneratedFingerprintFile)
 		b, _ := json.Marshal(p)
 		path := filepath.Join(work, "config.json")
 		if os.WriteFile(path, b, 0600) != nil {
@@ -179,7 +224,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	}
 	id[6], id[8] = id[6]&15|64, id[8]&63|128
 	now := time.Now().UTC()
-	profile, _ := json.Marshal(engineProfile(r, work, false))
+	profile, _ := json.Marshal(engineProfile(r, work, false, c.config.GeneratedFingerprintFile))
 	m := snapshot.Metadata{RunID: fmt.Sprintf("%x-%x-%x-%x-%x", id[:4], id[4:6], id[6:8], id[8:10], id[10:]), StartedAt: started, CompletedAt: now, Producer: snapshot.Producer{RenovateVersion: snapshot.RenovateVersion, RenovateImage: snapshot.RenovateImage, AdapterVersion: snapshot.AdapterVersion, PolicyHash: snapshot.ID(string(profile))}, Repository: r.Repository, DryRun: "full", CheckoutCommit: base, BeforeCommit: base, AfterCommit: base}
 	s, e := snapshot.Normalize(data, m)
 	if e != nil {
@@ -201,7 +246,7 @@ func (c *Controller) runEngine(ctx context.Context, r Record) (result error) {
 	if err != nil || exists {
 		return errEngine
 	}
-	// The writer receives the same scope and fixed tag, with no approval/check bypass.
+	// The writer receives the same scope and target binding, with no approval/check bypass.
 	phase = "writer"
 	mayHaveWritten = true
 	if invoke(true) != nil {

@@ -1,0 +1,66 @@
+{
+  "request": {
+    "snapshotDigest": "b63d518b968cc3c278cd0a3484fa9a6370832302d3790d00be548d098547b21f",
+    "id": "75d976278f1fac532e7b38a54b61329389805fdc5827d77f009387132ff9e2a7",
+    "repository": {
+      "platform": "github",
+      "name": "guilycst/balemoh-renovate-engine-poc-20261101",
+      "baseBranch": "main",
+      "commit": "c981d765e96ef95157eca15984657f151265aabb"
+    },
+    "dependency": {
+      "id": "8edba5e04ed253c2fef5fda2cebc50bf95a62125ff00dc747c12df5131873cf6",
+      "manager": "kubernetes",
+      "packageFile": "k8s/alpha6-hmg-selected.yaml",
+      "dependencyKey": "[\"docker.io/library/nginx\",\"\"]",
+      "packageName": "docker.io/library/nginx",
+      "sourceOccurrences": 1,
+      "currentValue": "1.25.3",
+      "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+      "assessment": "updates_found",
+      "candidates": [
+        {
+          "id": "75b856b8200a09a28b0e476e82c2c1857ef92ca7add20779e914df2622858216",
+          "newValue": "1.26.3",
+          "newDigest": "sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860",
+          "updateType": "minor",
+          "policy": "unknown",
+          "workflow": "unknown"
+        }
+      ],
+      "reasons": []
+    },
+    "candidate": {
+      "id": "75b856b8200a09a28b0e476e82c2c1857ef92ca7add20779e914df2622858216",
+      "newValue": "1.26.3",
+      "newDigest": "sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860",
+      "updateType": "minor",
+      "policy": "unknown",
+      "workflow": "unknown"
+    },
+    "branch": "balemoh-renovate/75d976278f1fac532e7b38a54b61329389805fdc5827d77f009387132ff9e2a7",
+    "state": "open",
+    "createdAt": "2026-11-05T12:24:19.913548355Z",
+    "updatedAt": "2026-11-05T12:27:17.790290289Z",
+    "trackedAt": "2026-11-05T12:27:17.790290289Z",
+    "trackingError": false,
+    "pr": {
+      "number": 15,
+      "url": "https://github.com/guilycst/balemoh-renovate-engine-poc-20261101/pull/15",
+      "headSha": "5476cefd83e053879cc63d17583882b3715a4906",
+      "state": "open",
+      "checks": "passing"
+    }
+  },
+  "transitions": [
+    [
+      "open",
+      null,
+      "passing",
+      false
+    ]
+  ],
+  "freshTrackingAfterPodReplacement": true,
+  "retainedRequestAndPR": true,
+  "checksPassing": true
+}

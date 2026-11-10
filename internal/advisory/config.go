@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -22,14 +23,15 @@ type Mapping struct {
 	ServiceID    string `json:"serviceId"`
 }
 type Config struct {
-	ControllerURL         string    `json:"controllerURL"`
-	SnapshotURL           string    `json:"snapshotURL"`
-	BrowserRepositoryURL  string    `json:"browserRepositoryURL"`
-	IntervalSeconds       int       `json:"intervalSeconds"`
-	MaxSnapshotAgeSeconds int       `json:"maxSnapshotAgeSeconds"`
-	NotificationsEnabled  bool      `json:"notificationsEnabled"`
-	ServiceMappingsJSON   string    `json:"serviceMappingsJSON"`
-	ServiceMappings       []Mapping `json:"-"`
+	ControllerURL           string    `json:"controllerURL"`
+	SnapshotURL             string    `json:"snapshotURL"`
+	BrowserRepositoryURL    string    `json:"browserRepositoryURL"`
+	IntervalSeconds         int       `json:"intervalSeconds"`
+	MaxSnapshotAgeSeconds   int       `json:"maxSnapshotAgeSeconds"`
+	NotificationsEnabled    bool      `json:"notificationsEnabled"`
+	NotificationUpdateTypes []string  `json:"notificationUpdateTypes"`
+	ServiceMappingsJSON     string    `json:"serviceMappingsJSON"`
+	ServiceMappings         []Mapping `json:"-"`
 }
 
 func decode(b []byte, v any) error {
@@ -56,6 +58,14 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 	}
 	if c.ControllerURL != "" && (!snapshot.SafeURL(c.ControllerURL) || len(c.ControllerURL) > 2048 || strings.HasSuffix(c.ControllerURL, "/")) {
 		return c, nil, backend.Fail("invalid_argument")
+	}
+	if len(c.NotificationUpdateTypes) > 6 {
+		return c, nil, backend.Fail("invalid_argument")
+	}
+	for i, kind := range c.NotificationUpdateTypes {
+		if !slices.Contains([]string{"major", "minor", "patch", "digest", "pinDigest", "pin"}, kind) || slices.Contains(c.NotificationUpdateTypes[:i], kind) {
+			return c, nil, backend.Fail("invalid_argument")
+		}
 	}
 	if c.ServiceMappingsJSON != "" {
 		if !strings.HasPrefix(strings.TrimSpace(c.ServiceMappingsJSON), "[") || decode([]byte(c.ServiceMappingsJSON), &c.ServiceMappings) != nil || len(c.ServiceMappings) > 256 {
@@ -97,13 +107,20 @@ func parseConfig(data []byte, secrets map[string]string) (Config, *http.Client, 
 		}
 		roots.AddCert(cert)
 	}
-	if c.ControllerURL != "" && (secrets["controller-read-token"] == "" || secrets["controller-action-token"] == "" || secrets["controller-read-token"] == secrets["controller-action-token"]) {
+	if c.ControllerURL != "" && (secrets["controller-read-token"] == "" || secrets["controller-read-token"] == secrets["controller-action-token"]) {
 		return c, nil, backend.Fail("invalid_argument")
 	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12, RootCAs: roots}
 	client := &http.Client{Transport: transport, Timeout: 10 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	return c, client, nil
+}
+
+func (c Config) notificationTypeAllowed(kind string) bool {
+	if c.NotificationUpdateTypes == nil {
+		return kind == "major" || kind == "minor" || kind == "patch"
+	}
+	return slices.Contains(c.NotificationUpdateTypes, kind)
 }
 func validID(s string) bool {
 	if len(s) != 64 {

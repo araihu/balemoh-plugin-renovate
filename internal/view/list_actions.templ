@@ -1,0 +1,54 @@
+package view
+
+import (
+ "github.com/araihu/goshtoso/components/badge"
+ "github.com/araihu/goshtoso/components/icon/heroicons"
+)
+
+templ ListPRStatus(m Model) {
+ <div class="image-upgrades-cell">
+ if r:=m.listRequest();r!=nil {
+ @badge.Badge(badge.Config{Label:listRequestLabel(*r),Appearance:badge.AppearanceSoft})
+ if !m.Meta.ControllerAvailable || r.TrackingError {
+ <small>Tracking unavailable · last known status</small>
+ } else if r.PR!=nil {
+ <small>{ m.requestChecks(*r,true) }</small>
+ }
+ if r.TrackedAt!=nil {
+ <small>Checked <time datetime={ r.TrackedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ r.TrackedAt.UTC().Format("15:04 UTC") }</time></small>
+ }
+ } else if prs:=m.reportedPRs();len(prs)>0 {
+ for _,pr:=range prs {
+ <span>{ "Reported PR #"+count(pr.Number) }</span>
+ }
+ <small>Status not verified</small>
+ } else if !m.Meta.ControllerAvailable {
+ <span>PR status unavailable</span>
+ } else if !m.Meta.Controller.Enabled {
+ <span>Requests disabled</span>
+ } else {
+ <span>Not requested</span>
+ }
+ </div>
+}
+
+templ ListActions(m Model,scope string) {
+ <div class="image-upgrades-row-actions">
+ if r:=m.listRequest();r!=nil {
+ if r.PR!=nil {
+ @IconAction(m,scope+"-pr",r.PR.URL,"View PR #"+count(r.PR.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
+ } else {
+ @IconAction(m,scope+"-request",m.StatusURL,"View request",heroicons.Icon16SolidClipboardDocumentList,false)
+ }
+ }
+ for _,pr:=range m.reportedPRs() {
+ @IconAction(m,scope+"-reported-"+count(pr.Number),pr.URL,"View reported PR #"+count(pr.Number),heroicons.Icon16SolidArrowTopRightOnSquare,true)
+ }
+ for _,candidate:=range m.Detail.Dependency.Candidates {
+ if m.CanReviewAgain(candidate) && m.RequestLinks[candidate.ID]!="" {
+ @IconAction(m,scope+"-review-"+candidate.ID,m.RequestLinks[candidate.ID],reviewPRLabel(m.Detail.Dependency,candidate),heroicons.Icon16SolidArrowUp,false)
+ }
+ }
+ @IconAction(m,scope+"-details",m.StatusURL,"Details",heroicons.Icon16SolidEye,false)
+ </div>
+}

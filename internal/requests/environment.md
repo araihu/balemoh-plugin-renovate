@@ -14,6 +14,7 @@
  - `UPGRADES_CONTROLLER_PR_AUTHOR` (**required**, non-empty) - Expected GitHub login creating PRs, including the [bot] suffix for a GitHub App.
  - `UPGRADES_CONTROLLER_GITHUB_WRITE_TOKEN_FILE` - Dedicated GitHub writer token file, required only after an authorized writer migration.
  - `UPGRADES_CONTROLLER_WRITER_ENABLED` (default: `false`) - Disabled by default. Enabling requires a separate writer handover and credential.
+ - `UPGRADES_CONTROLLER_GENERATED_FINGERPRINT_FILE` - Optional Markdown fingerprint artifact. Only its Source digest line may change.
  - `UPGRADES_CONTROLLER_MAX_SNAPSHOT_AGE_SECONDS` (default: `3600`) - Maximum accepted collection age in seconds.
  - `UPGRADES_CONTROLLER_TLS_CERT` (**required**, non-empty) - HTTPS certificate path.
  - `UPGRADES_CONTROLLER_TLS_KEY` (**required**, non-empty) - HTTPS private key path.

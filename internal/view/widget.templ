@@ -1,0 +1,69 @@
+package view
+
+import (
+ "github.com/araihu/goshtoso/components/card"
+ "github.com/araihu/goshtoso/components/badge"
+ "github.com/araihu/goshtoso/components/link"
+)
+
+templ Widget(m Model) {
+ <div class="image-upgrades">
+ @card.Card(card.Config{Title:"Image upgrades",RootClass:"image-upgrades-widget",Body:WidgetOverview(m),Footer:WidgetFooter(m)})
+ </div>
+}
+
+templ WidgetOverview(m Model) {
+ <div class="image-upgrades-widget-body">
+ <p class="image-upgrades-exact text-sm">{ m.Meta.Repository.Name }</p>
+ <div class="image-upgrades-widget-state">
+ if m.Result.State=="stale" {
+ @badge.Badge(badge.Config{Label:"Stale data",Tone:badge.ToneWarning,Appearance:badge.AppearanceSoft})
+ }
+ if m.Meta.Coverage.Status=="partial" {
+ @link.Link(m.CoverageURL,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":"Partial coverage for "+m.Meta.Repository.Name})){ Partial coverage }
+ }
+ </div>
+ if m.Summary.Candidates>0 {
+ <p class="text-lg font-semibold">{ count(m.Summary.Assessments["updates_found"])+" "+plural(m.Summary.Assessments["updates_found"],"image group","image groups")+" with upgrades" }</p>
+ <p class="text-sm">{ count(m.Summary.Candidates)+" "+plural(m.Summary.Candidates,"upgrade candidate","upgrade candidates") }</p>
+ <dl class="image-upgrades-widget-types" aria-label="Upgrade candidates by type">
+ for _,row:=range m.widgetTypes() {
+ <div><dt>@link.Link(row.Href,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":row.Label+" upgrade candidates for "+m.Meta.Repository.Name})){ { row.Label } }</dt><dd>{ count(row.Count) }</dd></div>
+ }
+ </dl>
+ } else {
+ <p class="font-semibold">No upgrade candidates reported</p>
+ }
+ if m.Summary.SecurityCandidates>0 {
+ @badge.Badge(badge.Config{Label:count(m.Summary.SecurityCandidates)+" Renovate security "+plural(m.Summary.SecurityCandidates,"flag","flags"),Tone:badge.ToneWarning,Appearance:badge.AppearanceSoft})
+ }
+ <div class="image-upgrades-widget-requests border-t border-outline dark:border-outline-dark">
+ <h4 class="font-semibold">PR status</h4>
+ if !m.Meta.ControllerAvailable {
+ <p class="text-sm">PR tracking unavailable</p>
+ } else {
+ if rows:=m.widgetRequests();len(rows)>0 {
+ <dl class="image-upgrades-widget-prs">
+ for _,row:=range rows {
+ <div><dt>{ row.Label }</dt><dd>{ count(row.Count) }</dd></div>
+ }
+ </dl>
+ } else if m.Summary.UnconfirmedRequests==0 {
+ <p class="text-sm">No tracked requests</p>
+ }
+ if m.Summary.UnconfirmedRequests>0 {
+ <p class="text-sm">{ count(m.Summary.UnconfirmedRequests)+" "+plural(m.Summary.UnconfirmedRequests,"request needs","requests need")+" a tracking refresh" }</p>
+ }
+ }
+ </div>
+ </div>
+}
+
+templ WidgetFooter(m Model) {
+ <div class="image-upgrades-widget-footer">
+ @link.Link(m.BackURL,link.WithRootClass("image-upgrades-action"),link.WithAttrs(templ.Attributes{"aria-label":"View image upgrades for "+m.Meta.Repository.Name})){ View image upgrades }
+ if !m.Meta.CompletedAt.IsZero() {
+ <small>Collected <time datetime={ m.Meta.CompletedAt.UTC().Format("2006-01-02T15:04:05Z07:00") }>{ m.Meta.CompletedAt.UTC().Format("02 Jan, 15:04 UTC") }</time></small>
+ }
+ </div>
+}

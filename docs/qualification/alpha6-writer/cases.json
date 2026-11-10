@@ -1,0 +1,54 @@
+{
+  "pinned-tag": {
+    "file": "k8s/alpha6-selected.yaml",
+    "manager": "kubernetes",
+    "currentValue": "1.25.3",
+    "newValue": "1.26.3",
+    "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "newDigest": "sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860",
+    "updateType": "minor",
+    "packageName": "docker.io/library/nginx",
+    "depType": "",
+    "before": "docker.io/library/nginx:1.25.3@sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "after": "docker.io/library/nginx:1.26.3@sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860"
+  },
+  "dockerfile-digest": {
+    "file": "alpha6/Dockerfile",
+    "manager": "dockerfile",
+    "currentValue": "1.26.3",
+    "newValue": "1.26.3",
+    "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "newDigest": "sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860",
+    "updateType": "digest",
+    "packageName": "docker.io/library/nginx",
+    "depType": "final",
+    "before": "docker.io/library/nginx:1.26.3@sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "after": "docker.io/library/nginx:1.26.3@sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860"
+  },
+  "compose-untagged": {
+    "file": "alpha6/compose.yaml",
+    "manager": "docker-compose",
+    "currentValue": null,
+    "newValue": null,
+    "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "newDigest": "sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+    "updateType": "digest",
+    "packageName": "docker.io/library/nginx",
+    "depType": "",
+    "before": "docker.io/library/nginx@sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "after": "docker.io/library/nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82"
+  },
+  "hmg-action": {
+    "file": "k8s/alpha6-hmg-selected.yaml",
+    "manager": "kubernetes",
+    "currentValue": "1.25.3",
+    "newValue": "1.26.3",
+    "currentDigest": "sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "newDigest": "sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860",
+    "updateType": "minor",
+    "packageName": "docker.io/library/nginx",
+    "depType": "",
+    "before": "docker.io/library/nginx:1.25.3@sha256:c7a6ad68be85142c7fe1089e48faa1e7c7166a194caa9180ddea66345876b9d2",
+    "after": "docker.io/library/nginx:1.26.3@sha256:41b194461e4bae16f9b25d68b0976ed4735b89ca625c89aad88e1c1c3b7e8860"
+  }
+}
