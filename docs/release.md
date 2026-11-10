@@ -12,7 +12,7 @@ The alpha.8 pair was published and qualified in the isolated repository. Its [wr
 
 Alpha.7 introduced the overview card, list PR states and candidate-review links.
 Its [UI qualification](qualification/alpha7-ui/README.md) remains the evidence
-for those unchanged interfaces. Alpha.8 requires its own publication receipt.
+for those unchanged interfaces. Alpha.8 satisfied its separate publication and shipped-writer qualification gates; those receipts remain historical.
 
 Alpha.6 introduced pinned-image requests, notification type selection,
 collection diagnostics, coverage tables and automatic checkbox filters. Its
@@ -53,4 +53,4 @@ Existing Alertmanager installation entries must remain unchanged. No production 
 
 The App token refresher, request archive format and Restic runner belong to this repository and are compiled into the carrier image. Their source is not injected by GitOps ConfigMaps. See [runtime commands](runtime.md).
 
-Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 must obtain its own successful publication receipt and qualify the shipped writer in the isolated repository. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
+Homelab owns deployment inputs, credential references, storage, schedule and retention. Alpha.3 introduced the packaged commands and has separate read-only production qualification. Alpha.6 has its own verified publication receipt and replacement-artifact writer qualification. Alpha.8 obtained its own successful publication receipt and qualified the shipped writer in the isolated repository. Those historical receipts do not qualify later source corrections. Neither an alpha.6 receipt nor a local/HMG package digest supplies alpha.8 deployment pins. The old alpha.2 image cannot run these commands. A new image publication does not authorize deployment or writer cutover. Requalify the normal renewal and production backup after an approved deployment. Earlier Python-runtime receipts do not qualify this Go replacement.
