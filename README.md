@@ -1,7 +1,7 @@
 # Balemoh Renovate
 
 
-[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The source manifest declares `0.0.1-alpha.14` and requires SDK `v0.0.1-alpha.4`. [Release notes](docs/releases/v0.0.1-alpha.14.md) distinguish the immutable published artifact from unpublished integration fixes.
+[Runtime commands and repository ownership](docs/runtime.md) cover App token renewal, request backup/restore and the deployment boundary. The source manifest declares `0.0.1-alpha.15` and requires SDK `v0.0.1-alpha.4`. [Release notes](docs/releases/v0.0.1-alpha.15.md) cover tracking and safe rebases.
 Renovate advisory plugin with optional selected-upgrade PR requests. Lists image/file groups, Git references, candidates, policy/workflow evidence and coverage. Includes an overview widget with upgrade-type, security-flag and tracked-PR counts, a read-only hourly collector, private snapshot endpoint and durable request controller. Merging stays manual.
 
 Alpha pre-release plugin at https://github.com/araihu/balemoh-plugin-renovate. CI validates the source; image publication is a separate manual workflow. Production activation remains separate. Each deployment owns its writer handover and image pins. Source integration does not change either. Request support requires the companion Balemoh/SDK action changes; it defaults disabled.
