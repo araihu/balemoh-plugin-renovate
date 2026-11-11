@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "id": "araihu.image-upgrades",
-  "version": "0.0.1-alpha.14",
+  "version": "0.0.1-alpha.15",
   "name": "Image upgrades",
   "protocol": "balemoh.plugins/v1alpha1",
   "uiProfile": "balemoh.goshtoso/v1alpha2",

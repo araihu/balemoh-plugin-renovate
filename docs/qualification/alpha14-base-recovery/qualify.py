@@ -43,7 +43,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def run():
     assert os.environ['GITHUB_REPOSITORY'] == REPOSITORY, 'fixture repository required'
     branch = os.environ['GITHUB_REF_NAME']
-    assert re.fullmatch(r'qualification/alpha14-[a-z0-9-]+', branch), 'disposable fixture base required'
+    series = re.fullmatch(r'qualification/alpha(14|15)-[a-z0-9-]+', branch)
+    assert series, 'disposable fixture base required'
     source = os.environ['CANDIDATE_SOURCE']
     assert re.fullmatch(r'[a-f0-9]{40}', source)
     published_image = os.environ.get('QUALIFICATION_IMAGE')
@@ -104,7 +105,7 @@ def run():
     results = []
     new_prs = set()
     package = json.loads(Path('/opt/image-upgrades/package/plugin.json').read_text())
-    assert package['version'] == '0.0.1-alpha.14'
+    assert package['version'] == '0.0.1-alpha.' + series[1]
     reader, action = secrets.token_hex(32), secrets.token_hex(32)
     timestamp = lambda x: x.isoformat().replace('+00:00', 'Z')
     repo = {'platform': 'github', 'name': REPOSITORY, 'baseBranch': branch, 'commit': approved_base}
@@ -206,7 +207,7 @@ def run():
                     Path('/out/latest-' + name + '.json').write_bytes(encode(r))
                     if predicate(r):
                         return r
-                    assert r['state'] not in ['needs_attention', 'blocked'] or name == 'changed' or r.get('reason') in ['base_changed', 'rebase_pending'], 'request rejected: ' + r.get('reason', '')
+                    assert r['state'] not in ['needs_attention', 'blocked'] or name == 'changed' or r.get('reason') in ['base_changed', 'rebase_pending', 'pr_observation_unavailable', 'rebase_blocked'], 'request rejected: ' + r.get('reason', '')
                 time.sleep(1)
             raise TimeoutError('request observation deadline')
         def exact_diff(r, expected_base, generation):
@@ -288,7 +289,30 @@ def run():
                 raise AssertionError('disabled writer accepted submission')
             except urllib.error.HTTPError as error:
                 assert error.code == 403, 'unexpected disabled writer response'
-            results.append({'case': name, 'request': final, 'oldHead': before_head, 'newHead': pending['rebaseHead'],
+            regression = {}
+            if series[1] == '15' and name == 'queued':
+                alternate = branch + '-retarget'
+                api('/git/refs', {'ref': 'refs/heads/' + alternate, 'sha': base})
+                path = '/pulls/' + str(before_pr)
+                api(path, {'base': alternate}, 'PATCH')
+                missing = wait_for(lambda r: r.get('reason') == 'pr_observation_unavailable', 120)
+                assert missing['state'] == 'needs_attention' and missing['trackingError']
+                assert missing['pr']['checks'] == 'unknown' and missing['pr']['number'] == before_pr
+                assert ref(final['branch']) == pending['rebaseHead']
+                api(path, {'base': branch}, 'PATCH')
+                wait_for(lambda r: r['state'] == 'open' and not r['trackingError'], 120)
+                regression['missingAssociationInvalidatedAndRecovered'] = True
+            if series[1] == '15' and name == 'blocked':
+                stop()
+                env['UPGRADES_CONTROLLER_WRITER_ENABLED'] = 'true'
+                base = commit(base, {'.gitattributes': dependency['packageFile'] + ' text eol=crlf\n'},
+                    'test: apply checkout attributes without changing the approved image blob')
+                start()
+                rejected = wait_for(lambda r: r.get('reason') == 'rebase_blocked', 180)
+                assert rejected['state'] == 'needs_attention' and not rejected.get('rebaseHead')
+                assert ref(final['branch']) == pending['rebaseHead'], 'Git attributes changed the published branch'
+                regression['checkoutAttributeChangeRejectedBeforePush'] = True
+            results.append({'case': name, 'request': final, **regression, 'oldHead': before_head, 'newHead': pending['rebaseHead'],
                 'executionBase': pr['base']['sha'], 'approvedBase': approved_base,
                 'rebasePreservedApprovedUpgrade': True, 'exactDiffVerified': True, 'fingerprintRecomputed': True,
                 'pendingBackupRestore': True, 'readOnlyRestartNoReplay': True, 'checks': 'passing',
